@@ -8,6 +8,12 @@ async function bootstrap() {
   //configurar un prefijo para todas las rutas
   app.setGlobalPrefix('api');
 
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+  });
+
   const configService = app.get(ConfigService);
 
   const port = configService.get<number>('PORT') || 4000;
