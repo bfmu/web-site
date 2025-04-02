@@ -5,10 +5,9 @@ ENV PUBLIC_BASE_URL=$PUBLIC_BASE_URL
 
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm install -g pnpm@latest-10
-RUN pnpm ci
+RUN npm ci
 COPY . .
-RUN pnpm run build
+RUN npm run build
 
 FROM nginx:alpine AS runner
 # Copiar archivos de Astro
