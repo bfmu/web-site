@@ -4,7 +4,7 @@ ARG PUBLIC_BASE_URL
 ENV PUBLIC_BASE_URL=$PUBLIC_BASE_URL
 
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json ./
 RUN npm ci
 COPY . .
 RUN npm run build
