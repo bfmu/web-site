@@ -1,8 +1,8 @@
 ---
 import MainLayout from "@layouts/MainLayout.astro";
 
-const backendUrl = import.meta.env.PUBLIC_API_BASE_URL;
-
+const backendUrl = import.meta.env.PUBLIC_API_BASE_URL ? import.meta.env.PUBLIC_API_BASE_URL : "http://localhost:8080/api";
+print(backendUrl);
 // ✅ Función de carga resiliente con manejo de errores
 async function fetchData(endpoint: string) {
   try {

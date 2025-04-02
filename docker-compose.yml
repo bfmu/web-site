@@ -1,0 +1,28 @@
+#how to execute this file: docker-compose -f docker-compose-dev.yml up -d
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: website_backend
+    ports:
+      - "3000:3000" # Asegúrate de que el puerto esté correctamente mapeado
+    networks:
+      - red_internal
+    env_file:
+      - ./.env
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: website_frontend
+    ports:
+      - "4322:80" # Asegúrate de que el puerto esté correctamente mapeado
+    networks:
+      - red_internal
+    env_file:
+      - ./.env
+
+networks:
+  red_internal:
