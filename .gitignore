@@ -1,0 +1,22 @@
+# Ignorar archivos de entorno
+.env
+.env.*
+
+# Ignorar dependencias de Node.js
+node_modules/
+
+# Ignorar directorios de salida de Astro y NestJS
+dist/
+out/
+build/
+
+# Ignorar archivos de logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignorar configuraciones del sistema operativo
+.DS_Store
+Thumbs.db
