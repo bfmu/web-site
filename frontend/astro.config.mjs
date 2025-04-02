@@ -31,9 +31,13 @@ const oklchToHex = str => {
   })
 }
 
+const runtimeConfig = {
+  baseUrl: process.env.PUBLIC_BASE_URL || 'http://localhost:82/'
+};
+
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://fuwari.vercel.app/',
+  site: runtimeConfig.baseUrl,
   base: '/',
   trailingSlash: 'always',
   integrations: [tailwind(), swup({

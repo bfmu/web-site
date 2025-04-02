@@ -1,4 +1,3 @@
-#how to execute this file: docker-compose -f docker-compose-dev.yml up -d
 services:
   backend:
     build:
@@ -6,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: website-backend
     expose:
-      - 3000 
+      - 3000
     networks:
       - red_internal
     env_file:
@@ -16,27 +15,34 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - PUBLIC_BASE_URL=${PUBLIC_BASE_URL}
     container_name: website-frontend
+    ports:
+      - "82:80" 
     expose:
-      - 4321 
+      - 8080  # Cambiado de 80 a 8080 (puerto interno)
     networks:
       - red_internal
     env_file:
       - ./.env
     environment:
-      - PUBLIC_API_BASE_URL=http://website_backend:3000/api
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL}
     depends_on:
       - backend
+
   nginx:
     image: nginx:latest
     container_name: website-nginx
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     ports:
-      - "81:80"  # Solo expone el puerto del Nginx
+      - "81:81"  # Acceso externo al proxy
     depends_on:
       - frontend
       - backend
+    networks:
+      - red_internal
 
 networks:
   red_internal:

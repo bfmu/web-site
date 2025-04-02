@@ -1,9 +1,12 @@
 ---
-import { siteConfig } from '../config'
+import bannerImage from '@/assets/images/DSC_2453.jpg';
+// Necesitamos obtener la URL pública de la imagen
+const bannerUrl = typeof bannerImage === 'string' ? bannerImage : bannerImage.src;
+
 ---
 
 <section class="relative w-full h-[70vh] flex items-center justify-center text-center bg-cover bg-center rounded-[var(--radius-large)] shadow-md"
-    style=`background-image: url(${siteConfig.banner.src})`>
+    style=`background-image: url(${bannerUrl})`>
     <div class="bg-black/50 w-full h-full flex flex-col items-center justify-center px-6 rounded-[var(--radius-large)]">
         <h1 class="text-4xl md:text-6xl font-bold text-white drop-shadow-lg">
             Desarrollo, Fotografía y Reflexión

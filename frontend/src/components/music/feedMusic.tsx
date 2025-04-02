@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
-const backendUrl = import.meta.env.PUBLIC_API_BASE_URL
-  ? import.meta.env.PUBLIC_API_BASE_URL
+const backendUrl = import.meta.env.SITE
+  ? import.meta.env.SITE
   : "http://website_backend:3000/api";
 
 // Función para calcular el tiempo transcurrido
@@ -35,7 +35,7 @@ export const FeedMusic = () => {
     // ✅ Función de carga resiliente con manejo de errores
     async function fetchData(endpoint: string) {
       try {
-        const url = `${backendUrl}/${endpoint}`;
+        const url = `${backendUrl}${endpoint}`;
         const res = await fetch(url);
 
         if (!res.ok) throw new Error(`Error en ${endpoint}: ${res.status}`);
@@ -52,10 +52,10 @@ export const FeedMusic = () => {
       try {
         const [lastPlayed, topArtists, recentlyPlayed, topTracks] =
           await Promise.all([
-            fetchData("spotify/last-played"),
-            fetchData("spotify/top-artists"),
-            fetchData("spotify/recently-played"),
-            fetchData("spotify/top-tracks"),
+            fetchData("api/spotify/last-played"),
+            fetchData("api/spotify/top-artists"),
+            fetchData("api/spotify/recently-played"),
+            fetchData("api/spotify/top-tracks"),
           ]);
 
         setData({
