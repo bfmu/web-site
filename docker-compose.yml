@@ -24,7 +24,7 @@ services:
     env_file:
       - ./.env
     environment:
-      - PUBLIC_API_BASE_URL=http://website_backend_dev:3000/api
+      - PUBLIC_API_BASE_URL=http://website_backend:3000/api
     depends_on:
       - backend
 
