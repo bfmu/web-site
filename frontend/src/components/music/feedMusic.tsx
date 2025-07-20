@@ -82,7 +82,7 @@ export const FeedMusic = () => {
   const handleMusicClick = (type: string, id: string) => {
     if (type === "track") {
       const player = document.getElementById(
-        "spotify-player"
+        "spotify-player",
       ) as HTMLIFrameElement;
       if (player) {
         player.src = `https://open.spotify.com/embed/track/${id}?autoplay=1`;
@@ -97,9 +97,17 @@ export const FeedMusic = () => {
   const initialTrackId = lastPlayed ? (lastPlayed as any).id : null;
 
   if (loading)
-    return <div className="text-center py-8 text-2xl font-semibold text-[var(--primary)] dark:text-neutral-50">Cargando datos de Spotify...</div>;
+    return (
+      <div className="text-center py-8 text-2xl font-semibold text-[var(--primary)] dark:text-neutral-50">
+        Cargando datos de Spotify...
+      </div>
+    );
   if (error)
-    return <div className="text-center py-8 text-2xl font-semibold text-[var(--primary)] dark:text-neutral-50">Error: {error}</div>;
+    return (
+      <div className="text-center py-8 text-2xl font-semibold text-[var(--primary)] dark:text-neutral-50">
+        Error: {error}
+      </div>
+    );
 
   return (
     <div className="relative max-w-[var(--page-width)] mx-auto pointer-events-auto">
@@ -171,7 +179,7 @@ export const FeedMusic = () => {
                 .sort(
                   (a, b) =>
                     new Date(b.played_at).getTime() -
-                    new Date(a.played_at).getTime()
+                    new Date(a.played_at).getTime(),
                 )
                 .map((data, index) => (
                   <div

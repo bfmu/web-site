@@ -21,4 +21,3 @@ timedatectl set-local-rtc 1 --adjust-system-clock
 Este comando indica a Linux que utilice la hora local, similar a cómo lo hace Windows, evitando así los desajustes de tiempo al cambiar de un sistema a otro.
 
 Después de ejecutar este comando, la hora debería permanecer sincronizada correctamente entre ambos sistemas operativos. 😊
-

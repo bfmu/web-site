@@ -83,3 +83,85 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+# Backend - web-site
+
+Este backend está construido con [NestJS](https://nestjs.com/) y ahora incluye:
+
+- **Módulo Blog**: API RESTful para gestión de posts de blog (CRUD, búsqueda, categorías, tags, posts relacionados, recientes, etc.)
+- **Integración con MongoDB** usando Mongoose
+- **Endpoints para Spotify** (ya existentes)
+- **Tests unitarios y de integración** para el módulo blog
+- **Documentación interactiva con Swagger**
+
+## Configuración rápida
+
+1. Instala dependencias:
+   ```bash
+   npm install
+   ```
+2. Crea un archivo `.env` en la raíz de `backend` (ver ejemplo en `.env.example` o en `BLOG_API_README.md`).
+3. Levanta MongoDB (puedes usar Docker):
+   ```bash
+   docker run -d --name mongodb-blog -p 27017:27017 -e MONGO_INITDB_DATABASE=blog mongo:latest
+   ```
+4. Ejecuta el backend:
+   ```bash
+   npm run start:dev
+   ```
+
+## Endpoints principales
+
+- `/api/blog` - Endpoints RESTful para el blog (ver detalles en `BLOG_API_README.md`)
+- `/api/spotify` - Endpoints para integración con Spotify
+
+## Formatear el código (Prettier)
+
+Para formatear todo el código del backend y corregir errores de estilo automáticamente, ejecuta:
+
+```bash
+npx prettier --write .
+```
+
+Esto aplicará el formato recomendado a todos los archivos del proyecto.
+
+## Documentación interactiva (Swagger)
+
+El backend expone la documentación de la API de forma interactiva usando **Swagger**. Puedes acceder a ella en:
+
+```
+http://localhost:PUERTO/api/docs
+```
+
+> Reemplaza `PUERTO` por el puerto configurado en tu `.env` (por defecto 4000 o 82).
+
+Desde esta interfaz puedes:
+- Consultar todos los endpoints y sus parámetros
+- Ver ejemplos de request y response
+- Probar la API directamente desde el navegador
+
+## Tests
+
+Para ejecutar los tests unitarios y de integración del módulo blog:
+
+```bash
+npm test
+```
+
+Verás algo como:
+```
+Test Suites: 2 passed, 2 total
+Tests:       16 passed, 16 total
+```
+
+## Documentación de la API
+
+Consulta el archivo [`BLOG_API_README.md`](./BLOG_API_README.md) para:
+- Detalles de todos los endpoints del blog
+- Ejemplos de uso
+- Estructura de datos
+- Cómo ejecutar los tests
+
+---
+
+Para dudas o mejoras, ¡abre un issue o PR!

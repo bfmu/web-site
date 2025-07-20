@@ -21,7 +21,7 @@ services:
     #ports:
     #  - "82:80"
     expose:
-      - 8080  # Cambiado de 80 a 8080 (puerto interno)
+      - 8080 # Cambiado de 80 a 8080 (puerto interno)
     networks:
       - red_internal
     env_file:
