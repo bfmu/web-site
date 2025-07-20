@@ -8,7 +8,6 @@ category: Sistemas Operativos
 draft: false
 ---
 
-
 Windows 11 trae muchas novedades, pero el nuevo menú contextual puede ser un cambio incómodo para algunos usuarios que prefieren el menú clásico de Windows 10. Afortunadamente, puedes restaurar el menú contextual de Windows 10 en Windows 11 con un simple ajuste en el registro usando **PowerShell**. Aquí te muestro cómo hacerlo.
 
 ## Cambiar al menú contextual de Windows 10
@@ -42,4 +41,3 @@ Esto actualizará el menú contextual sin necesidad de reiniciar todo el sistema
 ---
 
 Con estos simples pasos, puedes personalizar tu experiencia en Windows 11 para adaptarla mejor a tus preferencias. Si tienes alguna pregunta o comentario, ¡déjamelo saber! 😊
-

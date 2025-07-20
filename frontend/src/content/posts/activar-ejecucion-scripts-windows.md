@@ -19,4 +19,3 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 Este comando permite la ejecución de scripts descargados de internet siempre que estén firmados por un editor de confianza. Solo afecta al usuario actual (`CurrentUser`), lo cual es útil si no tienes permisos de administrador en tu sistema.
 
 Recuerda que modificar la política de ejecución puede tener implicaciones de seguridad, por lo que es importante saber qué scripts estás ejecutando y confiar en ellos. 😊
-

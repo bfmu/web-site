@@ -17,6 +17,7 @@ TypeScript es un lenguaje tipado que se construye sobre JavaScript, proporcionan
 ## **Tipos en TypeScript**
 
 ### **Inferencia de Tipos**
+
 TypeScript puede **inferir** automáticamente los tipos de datos básicos. Esto significa que no siempre es necesario declarar el tipo explícitamente. Por ejemplo:
 
 ```typescript
@@ -31,10 +32,11 @@ En este ejemplo, **TypeScript** infiere que `a`, `b` y `c` son de tipo `number` 
 ---
 
 ### **`any`**
+
 El tipo `any` indica a TypeScript que **ignore el tipado**. Es importante evitar su uso, ya que contradice la filosofía de TypeScript, que busca promover la seguridad en el código.
 
 ```typescript
-let anyValue: any = 'Hola';
+let anyValue: any = "Hola";
 // TypeScript no verifica el tipo de anyValue
 anyValue = 42; // Cambia a number sin problemas
 ```
@@ -44,12 +46,13 @@ anyValue = 42; // Cambia a number sin problemas
 ---
 
 ### **`unknown`**
+
 El tipo `unknown` representa un valor cuyo tipo no se conoce. Es más seguro que `any` porque no permite operar sobre él sin verificar primero su tipo.
 
 ```typescript
-let variable: unknown = 'Hola';
+let variable: unknown = "Hola";
 
-if (typeof variable === 'string') {
+if (typeof variable === "string") {
   console.log(variable.toUpperCase()); // Ahora TypeScript sabe que es un string
 }
 ```
@@ -57,6 +60,7 @@ if (typeof variable === 'string') {
 ---
 
 ### **`never`**
+
 El tipo `never` indica que una expresión **nunca produce un valor**. Esto ocurre en funciones que siempre lanzan errores o que tienen bucles infinitos.
 
 ```typescript
@@ -70,13 +74,13 @@ También se utiliza en situaciones donde el código **nunca debería ser alcanza
 
 ```typescript
 function processValue(value: string | number): never {
-  if (typeof value === 'string') {
-    console.log('Es un string');
-  } else if (typeof value === 'number') {
-    console.log('Es un número');
+  if (typeof value === "string") {
+    console.log("Es un string");
+  } else if (typeof value === "number") {
+    console.log("Es un número");
   } else {
     // Esta parte nunca se ejecutará
-    throw new Error('Tipo no soportado');
+    throw new Error("Tipo no soportado");
   }
 }
 ```
@@ -84,6 +88,7 @@ function processValue(value: string | number): never {
 ---
 
 ### **`void`**
+
 El tipo `void` se utiliza para funciones que **no devuelven un valor**. Es común en funciones con efectos secundarios, como imprimir en la consola.
 
 ```typescript
@@ -99,13 +104,15 @@ En este caso, `logMessage` no tiene un valor de retorno, por lo que TypeScript a
 ### **Otros Tipos Comunes**
 
 #### **`string`**
+
 Se utiliza para representar texto:
 
 ```typescript
-let saludo: string = 'Hola, TypeScript!';
+let saludo: string = "Hola, TypeScript!";
 ```
 
 #### **`number`**
+
 Representa valores numéricos:
 
 ```typescript
@@ -113,6 +120,7 @@ let edad: number = 25;
 ```
 
 #### **`boolean`**
+
 Representa valores verdaderos o falsos:
 
 ```typescript
@@ -120,6 +128,7 @@ let esActivo: boolean = true;
 ```
 
 #### **`array`**
+
 Se utiliza para representar listas de valores:
 
 ```typescript
@@ -127,6 +136,7 @@ let numeros: number[] = [1, 2, 3, 4];
 ```
 
 #### **`tuple`**
+
 Permite representar un arreglo con un número fijo de elementos de tipos específicos:
 
 ```typescript
@@ -134,6 +144,7 @@ let coordenada: [number, number] = [10, 20];
 ```
 
 #### **`enum`**
+
 Define un conjunto de valores con nombre:
 
 ```typescript
@@ -149,6 +160,7 @@ let colorFavorito: Color = Color.Rojo;
 ---
 
 ## **Buenas Prácticas**
+
 - Evita el uso de `any` y prefiere tipos específicos o `unknown`.
 - Declara explícitamente los tipos cuando no sea evidente para mejorar la legibilidad del código.
 - Usa **interfaces** o **type aliases** para definir estructuras complejas.
@@ -158,4 +170,3 @@ let colorFavorito: Color = Color.Rojo;
 ¡Y eso es todo por ahora! TypeScript es una herramienta poderosa que mejora tu productividad y la calidad de tu código. 🎉 Si quieres explorar más, no dudes en consultar la [documentación oficial](https://www.typescriptlang.org/).
 
 ¿Listo para escribir código más seguro y limpio? 💻✨
-
