@@ -126,6 +126,18 @@ export class BlogService {
     return categories.filter((category) => category && category.trim() !== '');
   }
 
+  async getCategoriesWithCount(): Promise<{ name: string; count: number }[]> {
+    const categories = await this.postModel
+      .aggregate([
+        { $match: { draft: false } },
+        { $group: { _id: '$category', count: { $sum: 1 } } },
+        { $project: { name: '$_id', count: 1, _id: 0 } },
+      ])
+      .exec();
+
+    return categories.filter((cat) => cat.name && cat.name.trim() !== '');
+  }
+
   async getTags(): Promise<string[]> {
     const tags = await this.postModel.distinct('tags').exec();
     return tags.filter((tag) => tag && tag.trim() !== '');

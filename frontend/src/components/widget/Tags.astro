@@ -2,15 +2,15 @@
 
 import WidgetLayout from './WidgetLayout.astro'
 import ButtonTag from '../control/ButtonTag.astro'
-import { getTagList } from '../../utils/content-utils'
+import { fetchTags } from '../../utils/api-blog'
 import { i18n } from '../../i18n/translation'
 import I18nKey from '../../i18n/i18nKey'
 import { url } from '../../utils/url-utils'
 
-const tags = await getTagList()
+// Obtener todos los tags únicos desde la API
+const tags = await fetchTags()
 
 const COLLAPSED_HEIGHT = '7.5rem'
-
 const isCollapsed = tags.length >= 20
 
 interface Props {
@@ -22,9 +22,9 @@ const style = Astro.props.style
 ---
 <WidgetLayout name={i18n(I18nKey.tags)} id="tags" isCollapsed={isCollapsed} collapsedHeight={COLLAPSED_HEIGHT} class={className} style={style}>
     <div class="flex gap-2 flex-wrap">
-        {tags.map(t => (
-            <ButtonTag href={url(`/archive/tag/${t.name}/`)} label={`View all posts with the ${t.name} tag`}>
-                {t.name}
+        {tags.map((t : string) => (
+            <ButtonTag href={url(`/archive/tag/${t}/`)} label={`View all posts with the ${t} tag`}>
+                {t}
             </ButtonTag>
         ))}
     </div>

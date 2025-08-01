@@ -1,23 +1,44 @@
 ---
-import type { GetStaticPaths } from 'astro'
 import PostPage from '../../components/PostPage.astro'
 import Pagination from '../../components/control/Pagination.astro'
 import { PAGE_SIZE } from '../../constants/constants'
 import MainGridLayout from '../../layouts/MainGridLayout.astro'
-import { getSortedPosts } from '../../utils/content-utils'
+import { fetchPosts } from '../../utils/api-blog'
 
-export const getStaticPaths = (async ({ paginate }) => {
-  const allBlogPosts = await getSortedPosts()
-  return paginate(allBlogPosts, { pageSize: PAGE_SIZE })
-}) satisfies GetStaticPaths
-// https://github.com/withastro/astro/issues/6507#issuecomment-1489916992
+// function get({ params, request }) {
+//   // Obtener el número de página desde la URL
+//   const pageNum = Number(params.page?.[0] || 1)
+//   const res = await fetchPosts({ page: pageNum, limit: PAGE_SIZE })
+//   return {
+//     props: {
+//       page: {
+//         data: res.docs,
+//         currentPage: res.page,
+//         totalPages: res.totalPages,
+//         totalDocs: res.totalDocs,
+//         limit: res.limit,
+//       }
+//     }
+//   }
+// }
 
 const { page } = Astro.props
+const pageNum = Number(page?.[0] || 1)
+const res = await fetchPosts({ page: pageNum, limit: PAGE_SIZE })
 
-const len = page.data.length
+
+// Adaptar la respuesta
+const pageData = {
+  data: res.posts, // Aquí adaptamos
+  currentPage: res.pagination.page,
+  totalPages: res.pagination.pages,
+  totalDocs: res.pagination.total,
+  limit: res.pagination.limit
+}
+
+const len = pageData.data.length
 ---
-
 <MainGridLayout>
-    <PostPage page={page}></PostPage>
-    <Pagination class="mx-auto onload-animation" page={page} style=`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`></Pagination>
+    <PostPage page={pageData}></PostPage>
+    <!-- <Pagination class="mx-auto onload-animation" page={pageData} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination> -->
 </MainGridLayout>

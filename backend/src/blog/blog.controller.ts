@@ -68,7 +68,16 @@ export class BlogController {
   @Get('categories')
   @ApiOperation({ summary: 'Obtener todas las categorías' })
   @ApiResponse({ status: 200, description: 'Lista de categorías' })
-  async getCategories() {
+  @ApiQuery({
+    name: 'withCount',
+    required: false,
+    type: Boolean,
+    description: 'Incluir conteo de posts por categoría',
+  })
+  async getCategories(@Query('withCount') withCount?: string) {
+    if (withCount === 'true') {
+      return this.blogService.getCategoriesWithCount();
+    }
     return this.blogService.getCategories();
   }
 
