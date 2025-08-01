@@ -33,7 +33,7 @@ const oklchToHex = (str) => {
 };
 
 const runtimeConfig = {
-  baseUrl: process.env.PUBLIC_BASE_URL || "http://localhost:82/",
+  baseUrl: process.env.PUBLIC_BASE_URL || "http://localhost:3000/",
 };
 
 // https://astro.build/config
