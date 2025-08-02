@@ -1,7 +1,7 @@
 // Utilidades para consumir la API REST del backend de blog
 
 const BASE_API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:82/api';
-const API_URL = `${BASE_API_URL}/blog`;
+const API_URL = `${BASE_API_URL}api/blog`;
 
 export async function fetchPosts(params: Record<string, any> = {}) {
   const query = new URLSearchParams(params).toString();

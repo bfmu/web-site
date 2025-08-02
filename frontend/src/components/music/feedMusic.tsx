@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
-const backendUrl = import.meta.env.PUBLIC_BACKEND_URL
-  ? import.meta.env.PUBLIC_BACKEND_URL
+const backendUrl = import.meta.env.PUBLIC_API_URL
+  ? import.meta.env.PUBLIC_API_URL
   : "http://website_backend:3000/";
 
 // Función para calcular el tiempo transcurrido
