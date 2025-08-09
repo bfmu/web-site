@@ -1,17 +1,72 @@
 ---
 import '@fontsource-variable/jetbrains-mono'
 import '@fontsource-variable/jetbrains-mono/wght-italic.css'
+import MarkdownIt from 'markdown-it'
+import sanitizeHtml from 'sanitize-html'
 
 interface Props {
   class: string
+  content?: string
 }
 const className = Astro.props.class
+const content: string | undefined = Astro.props.content
+
+let html = ''
+if (content) {
+  const parser = new MarkdownIt({ html: true, linkify: true, breaks: true })
+  const rendered = parser.render(content)
+  html = sanitizeHtml(rendered, {
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+      'img',
+      'figure',
+      'figcaption',
+      'iframe',
+      'video',
+      'source',
+    ]),
+    allowedAttributes: {
+      ...sanitizeHtml.defaults.allowedAttributes,
+      a: ['href', 'name', 'target', 'rel'],
+      img: [
+        'src',
+        'alt',
+        'title',
+        'width',
+        'height',
+        'srcset',
+        'sizes',
+        'loading',
+        'decoding',
+      ],
+      iframe: [
+        'src',
+        'width',
+        'height',
+        'allow',
+        'allowfullscreen',
+        'frameborder',
+        'loading',
+        'referrerpolicy',
+      ],
+      video: ['controls', 'src', 'width', 'height', 'poster'],
+      source: ['src', 'type'],
+      span: ['class', 'style'],
+      div: ['class', 'style'],
+    },
+    allowedSchemesByTag: {
+      img: ['http', 'https', 'data'],
+      source: ['http', 'https', 'data'],
+    },
+  })
+}
 ---
-<div class={`prose dark:prose-invert prose-base !max-w-none custom-md ${className}`}>
-    <!--<div class="prose dark:prose-invert max-w-none custom-md">-->
-    <!--<div class="max-w-none custom-md">-->
-    <slot/>
-</div>
+{content ? (
+  <div class={`prose dark:prose-invert prose-base !max-w-none custom-md ${className}`} set:html={html}></div>
+) : (
+  <div class={`prose dark:prose-invert prose-base !max-w-none custom-md ${className}`}>
+    <slot />
+  </div>
+)}
 
 <script>
   const observer = new MutationObserver(addPreCopyButton);
