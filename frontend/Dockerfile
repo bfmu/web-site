@@ -3,12 +3,15 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 
+# Instala las dependencias de producción
 FROM base AS prod-deps
 RUN npm install --production
 
+# Instala las dependencias de desarrollo
 FROM base AS build-deps
 RUN npm install --production=false
 
+# Construye la aplicación
 FROM build-deps AS build
 COPY . .
 
@@ -19,7 +22,6 @@ ARG PUBLIC_API_URL
 ENV PUBLIC_API_URL=${PUBLIC_API_URL}
 
 RUN npm run build
-
 FROM base AS runtime
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
