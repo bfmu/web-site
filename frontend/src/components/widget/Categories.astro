@@ -8,6 +8,7 @@ import ButtonLink from '../control/ButtonLink.astro'
 
 // Obtener todas las categorías únicas con cuenta de post desde la API
 const categoriesWithCount = await fetchCategories({withCount: true})
+console.log(categoriesWithCount)
 const COLLAPSED_HEIGHT = '7.5rem'
 const COLLAPSE_THRESHOLD = 5
 const isCollapsed = categoriesWithCount.length >= COLLAPSE_THRESHOLD
