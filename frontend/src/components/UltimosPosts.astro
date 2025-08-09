@@ -4,8 +4,6 @@ import { fetchRecentPosts } from '@utils/api-blog'
 
 const ultimosPosts = await fetchRecentPosts(3)
 
-// Log para depuración de slugs y URLs generadas
-console.log('[UltimosPosts] Slugs y URLs generadas:');
 ultimosPosts.forEach(entry => {
   console.log('slug:', entry.slug, 'url:', getPostUrlBySlug(entry.slug));
 });
