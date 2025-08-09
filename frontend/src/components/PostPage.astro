@@ -4,7 +4,6 @@ import PostCard from "./PostCard.astro";
 
 const { page } = Astro.props;
 
-console.log("PAGEEEEEEEEEEEEEEE:", page);
 
 const transformedData = page.data.map((post: any) => ({
   slug: post.slug,
