@@ -20,7 +20,6 @@ if (!slugStr) {
   // 404 page not found
 }
 const entry = await fetchPostBySlug(slugStr);
-console.log(entry)
 
 
 const jsonLd = {
@@ -88,9 +87,7 @@ const jsonLd = {
                 <ImageWrapper id="post-cover" src={entry.image} basePath={getDir(entry.slug)} class="mb-8 rounded-xl banner-container onload-animation"/>
             }
 
-            <Markdown class="mb-6 markdown-content onload-animation">
-                {entry.content}
-            </Markdown>
+            <Markdown class="mb-6 markdown-content onload-animation" content={entry.content} />
 
             {licenseConfig.enable && <License title={entry.title} slug={entry.slug} pubDate={entry.published} class="mb-6 rounded-xl license-container onload-animation"></License>}
         </div>
