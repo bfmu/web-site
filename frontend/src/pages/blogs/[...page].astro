@@ -5,40 +5,38 @@ import { PAGE_SIZE } from '../../constants/constants'
 import MainGridLayout from '../../layouts/MainGridLayout.astro'
 import { fetchPosts } from '../../utils/api-blog'
 
-// function get({ params, request }) {
-//   // Obtener el número de página desde la URL
-//   const pageNum = Number(params.page?.[0] || 1)
-//   const res = await fetchPosts({ page: pageNum, limit: PAGE_SIZE })
-//   return {
-//     props: {
-//       page: {
-//         data: res.docs,
-//         currentPage: res.page,
-//         totalPages: res.totalPages,
-//         totalDocs: res.totalDocs,
-//         limit: res.limit,
-//       }
-//     }
-//   }
-// }
 
-const { page } = Astro.props
-const pageNum = Number(page?.[0] || 1)
+// Obtener número de página desde la URL dinámica [...page]
+const pageParam = Astro.params.page
+const pageNum = Number(Array.isArray(pageParam) ? pageParam[0] : (pageParam ?? 1)) || 1
 const res = await fetchPosts({ page: pageNum, limit: PAGE_SIZE })
 
 
 // Adaptar la respuesta
+const pagination = res.pagination
 const pageData = {
-  data: res.posts, // Aquí adaptamos
-  currentPage: res.pagination.page,
-  totalPages: res.pagination.pages,
-  totalDocs: res.pagination.total,
-  limit: res.pagination.limit
+  data: res.posts,
+  currentPage: pagination.page,
+  totalPages: pagination.pages,
+  totalDocs: pagination.total,
+  limit: pagination.limit,
+}
+
+// Adaptar para el componente de paginación (espera un objeto tipo Astro Page)
+const lastPage = pagination.pages
+const currentPage = pagination.page
+const prevUrl = currentPage > 1 ? (currentPage - 1 === 1 ? '/blogs/' : `/blogs/${currentPage - 1}/`) : undefined
+const nextUrl = currentPage < lastPage ? `/blogs/${currentPage + 1}/` : undefined
+
+const pageForPagination = {
+  currentPage,
+  lastPage,
+  url: { prev: prevUrl, next: nextUrl },
 }
 
 const len = pageData.data.length
 ---
 <MainGridLayout>
     <PostPage page={pageData}></PostPage>
-    <!-- <Pagination class="mx-auto onload-animation" page={pageData} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination> -->
+    <Pagination class="mx-auto onload-animation" page={pageForPagination as any} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination>
 </MainGridLayout>
