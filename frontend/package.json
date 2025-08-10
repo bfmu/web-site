@@ -53,7 +53,8 @@
     "svelte": "^5.36.13",
     "tailwindcss": "^3.4.10",
     "typescript": "^5.5.4",
-    "unist-util-visit": "^5.0.0"
+    "unist-util-visit": "^5.0.0",
+    "remark-github-admonitions-to-directives": "^1.0.5"
   },
   "devDependencies": {
     "@astrojs/ts-plugin": "^1.10.2",
@@ -69,7 +70,6 @@
     "@types/mdast": "^4.0.4",
     "@types/sanitize-html": "^2.13.0",
     "photoswipe": "^5.4.4",
-    "remark-github-admonitions-to-directives": "^1.0.5",
     "sass": "^1.77.8",
     "stylus": "^0.63.0"
   },
