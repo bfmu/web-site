@@ -11,8 +11,14 @@ export class BlogService {
   constructor(@InjectModel(Post.name) private postModel: Model<PostDocument>) {}
 
   async create(createPostDto: CreatePostDto): Promise<Post> {
+    const computedReading =
+      typeof createPostDto.readingTime === 'number'
+        ? createPostDto.readingTime
+        : estimateReadingMinutes(createPostDto.content || '');
+
     const createdPost = new this.postModel({
       ...createPostDto,
+      readingTime: computedReading,
       published: new Date(createPostDto.published),
     });
     return createdPost.save();
@@ -65,14 +71,36 @@ export class BlogService {
     const sort: any = {};
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-    // Ejecutar consulta
+    // Ejecutar consulta (seleccionar solo campos necesarios para listados)
     const [posts, total] = await Promise.all([
-      this.postModel.find(filter).sort(sort).skip(skip).limit(limit).exec(),
+      this.postModel
+        .find(filter)
+        .select(
+          'slug title description image tags category draft published language readingTime content',
+        )
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .exec(),
       this.postModel.countDocuments(filter).exec(),
     ]);
 
+    // Enriquecer con excerpt calculado si no hay descripción
+    const enriched = posts.map((p: any) => {
+      const excerpt = p.description || generateExcerpt(String(p.content || ''));
+      const readingTime =
+        typeof p.readingTime === 'number' && p.readingTime > 0
+          ? p.readingTime
+          : estimateReadingMinutes(String(p.content || ''));
+      // Eliminar content del resultado
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { content, ...rest } = p;
+      return { ...rest, excerpt, readingTime };
+    });
+
     return {
-      posts,
+      posts: enriched,
       pagination: {
         page,
         limit,
@@ -101,6 +129,15 @@ export class BlogService {
     if (updatePostDto.published) {
       // Aceptar string o Date, pero no forzar el tipo
       updateData.published = updatePostDto.published;
+    }
+
+    // Si no envían readingTime pero cambió el contenido, recalcular
+    if (
+      (updatePostDto.readingTime === undefined ||
+        updatePostDto.readingTime === null) &&
+      typeof updatePostDto.content === 'string'
+    ) {
+      updateData.readingTime = estimateReadingMinutes(updatePostDto.content);
     }
 
     const updatedPost = await this.postModel
@@ -144,11 +181,26 @@ export class BlogService {
   }
 
   async getRecentPosts(limit: number = 5): Promise<Post[]> {
-    return this.postModel
+    const posts = await this.postModel
       .find({ draft: false })
+      .select(
+        'slug title description image tags category draft published language readingTime content',
+      )
       .sort({ published: -1 })
       .limit(limit)
+      .lean()
       .exec();
+
+    return posts.map((p: any) => {
+      const excerpt = p.description || generateExcerpt(String(p.content || ''));
+      const readingTime =
+        typeof p.readingTime === 'number' && p.readingTime > 0
+          ? p.readingTime
+          : estimateReadingMinutes(String(p.content || ''));
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { content, ...rest } = p;
+      return { ...rest, excerpt, readingTime } as any;
+    });
   }
 
   async getRelatedPosts(slug: string, limit: number = 3): Promise<Post[]> {
@@ -167,4 +219,27 @@ export class BlogService {
       .limit(limit)
       .exec();
   }
+}
+
+// Helpers
+function stripMarkdown(md: string): string {
+  return md
+    .replace(/`{1,3}[^`]*`{1,3}/g, ' ')
+    .replace(/!\[[^\]]*\]\([^\)]*\)/g, ' ')
+    .replace(/\[[^\]]*\]\([^\)]*\)/g, ' ')
+    .replace(/[#>*_~`\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function generateExcerpt(content: string, maxLen: number = 160): string {
+  const plain = stripMarkdown(content);
+  if (plain.length <= maxLen) return plain;
+  return plain.slice(0, maxLen).trimEnd() + '…';
+}
+
+function estimateReadingMinutes(content: string): number {
+  const words = stripMarkdown(content).split(/\s+/).filter(Boolean).length;
+  // promedio de 200 wpm
+  return Math.max(1, Math.ceil(words / 200));
 }
