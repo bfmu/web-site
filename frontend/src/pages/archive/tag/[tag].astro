@@ -26,6 +26,7 @@ const fetchUrlBase = apiUrl.endsWith("/")
     initialPosts={initialPosts}
     initialPagination={initialPagination}
     fetchUrlBase={fetchUrlBase}
+    filterQuery={`tag=${params.tag}`}
     client:load
   />
 </MainGridLayout>

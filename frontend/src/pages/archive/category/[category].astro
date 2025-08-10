@@ -26,6 +26,7 @@ const fetchUrlBase = apiUrl.endsWith("/")
     initialPosts={initialPosts}
     initialPagination={initialPagination}
     fetchUrlBase={fetchUrlBase}
+    filterQuery={`category=${params.category}`}
     client:load
   />
 </MainGridLayout>

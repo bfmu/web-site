@@ -30,6 +30,7 @@ export default function PostsArchive({
   initialPosts,
   initialPagination,
   fetchUrlBase = "/api/posts",
+  filterQuery = "",
 }) {
   const [posts, setPosts] = useState(initialPosts);
   const [pagination, setPagination] = useState(initialPagination);
@@ -41,7 +42,8 @@ export default function PostsArchive({
     if (loading || pagination.page >= pagination.pages) return;
     setLoading(true);
     const nextPage = pagination.page + 1;
-    const res = await fetch(`${fetchUrlBase}?page=${nextPage}`);
+    const prefix = filterQuery ? `${filterQuery}&` : "";
+    const res = await fetch(`${fetchUrlBase}?${prefix}page=${nextPage}`);
     const data = await res.json();
     setPosts((prev) => [...prev, ...data.posts]);
     setPagination(data.pagination);
@@ -105,7 +107,7 @@ export default function PostsArchive({
       {pagination.page < pagination.pages && (
         <button
           type="button"
-          className="btn-primary mt-4 mx-auto block"
+          className="btn-regular px-6 h-11 rounded-lg mx-auto mt-4 active:scale-95"
           onClick={handleLoadMore}
           disabled={loading}
         >
