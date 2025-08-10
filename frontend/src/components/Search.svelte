@@ -1,12 +1,12 @@
 <script lang="ts">
 import { onMount } from 'svelte'
-import { url } from '@utils/url-utils.ts'
+import { getPostUrlBySlug } from '@utils/url-utils.ts'
 import { i18n } from '@i18n/translation'
 import I18nKey from '@i18n/i18nKey'
 import { fetchPosts } from '@utils/api-blog'
 let keywordDesktop = ''
 let keywordMobile = ''
-let result = []
+let result: Array<{ url: string; meta: { title: string }; excerpt: string }> = []
 
 let search = async (keyword: string, isDesktop: boolean) => {
   let panel = document.getElementById('search-panel')
@@ -22,8 +22,9 @@ let search = async (keyword: string, isDesktop: boolean) => {
   if (keyword) {
     try {
       const res = await fetchPosts({ search: keyword, limit: 10 })
-      arr = (res.docs || res).map((post: any) => ({
-        url: url(`/posts/${post.slug}`),
+      const list = res.posts || res.docs || res
+      arr = list.map((post: any) => ({
+        url: getPostUrlBySlug(post.slug),
         meta: { title: post.title },
         excerpt: post.description || '',
       }))
