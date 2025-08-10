@@ -41,9 +41,12 @@ export class BlogService {
     // Construir filtros
     const filter: any = {};
 
-    if (draft !== undefined) {
-      filter.draft = draft;
-    }
+    // Por defecto no devolver borradores
+    if (draft === undefined) {
+      filter.draft = false;
+    } else if (draft === false) {
+      filter.draft = false;
+    } // if draft === true => no filter (mostrar ambos)
 
     if (category) {
       filter.category = category;

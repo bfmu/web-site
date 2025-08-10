@@ -3,7 +3,13 @@
 const BASE_API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:82/api';
 const API_URL = `${BASE_API_URL}api/blog`;
 
+// Permitir ver borradores en frontend si PUBLIC_SHOW_DRAFTS=true
+const SHOW_DRAFTS = import.meta.env.PUBLIC_SHOW_DRAFTS === 'true';
+
 export async function fetchPosts(params: Record<string, any> = {}) {
+  if (SHOW_DRAFTS && params.draft === undefined) {
+    params.draft = true;
+  }
   const query = new URLSearchParams(params).toString();
   console.log(`[fetchPosts] GET: ${API_URL}${query ? `?${query}` : ''}`);
   const res = await fetch(`${API_URL}${query ? `?${query}` : ''}`);
@@ -20,7 +26,7 @@ export async function fetchPostBySlug(slug: string) {
 }
 
 export async function fetchRecentPosts(limit = 5) {
-  const url = `${API_URL}/recent?limit=${limit}`;
+  const url = `${API_URL}/recent?limit=${limit}${SHOW_DRAFTS ? '&draft=true' : ''}`;
   console.log(`[fetchRecentPosts] GET: ${url}`);
   const res = await fetch(url);
   if (!res.ok) throw new Error('Error al obtener posts recientes');
