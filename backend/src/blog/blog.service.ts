@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
+import readingTimeLib from 'reading-time';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { QueryPostDto } from './dto/query-post.dto';
@@ -93,10 +94,11 @@ export class BlogService {
         typeof p.readingTime === 'number' && p.readingTime > 0
           ? p.readingTime
           : estimateReadingMinutes(String(p.content || ''));
+      const words = countWords(String(p.content || ''));
       // Eliminar content del resultado
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { content, ...rest } = p;
-      return { ...rest, excerpt, readingTime };
+      return { ...rest, excerpt, readingTime, words };
     });
 
     return {
@@ -110,8 +112,8 @@ export class BlogService {
     };
   }
 
-  async findOne(slug: string): Promise<Post> {
-    const post = await this.postModel.findOne({ slug }).exec();
+  async findOne(slug: string): Promise<any> {
+    const post = await this.postModel.findOne({ slug }).lean().exec();
     if (!post) {
       throw new NotFoundException(`Post with slug "${slug}" not found`);
     }
@@ -119,7 +121,14 @@ export class BlogService {
     // Incrementar vistas
     await this.postModel.updateOne({ slug }, { $inc: { views: 1 } }).exec();
 
-    return post;
+    // Enriquecer con métricas
+    const words = countWords(String(post.content || ''));
+    const readingTime =
+      typeof post.readingTime === 'number' && post.readingTime > 0
+        ? post.readingTime
+        : estimateReadingMinutes(String(post.content || ''));
+
+    return { ...post, words, readingTime };
   }
 
   async update(slug: string, updatePostDto: UpdatePostDto): Promise<Post> {
@@ -197,9 +206,10 @@ export class BlogService {
         typeof p.readingTime === 'number' && p.readingTime > 0
           ? p.readingTime
           : estimateReadingMinutes(String(p.content || ''));
+      const words = countWords(String(p.content || ''));
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { content, ...rest } = p;
-      return { ...rest, excerpt, readingTime } as any;
+      return { ...rest, excerpt, readingTime, words } as any;
     });
   }
 
@@ -239,7 +249,17 @@ function generateExcerpt(content: string, maxLen: number = 160): string {
 }
 
 function estimateReadingMinutes(content: string): number {
-  const words = stripMarkdown(content).split(/\s+/).filter(Boolean).length;
-  // promedio de 200 wpm
-  return Math.max(1, Math.ceil(words / 200));
+  const text = stripMarkdown(content);
+  const rt = readingTimeLib(text);
+  return Math.max(1, Math.round(rt.minutes));
+}
+
+function countWords(content: string): number {
+  const text = stripMarkdown(content);
+  return rtWordCount(text);
+}
+
+function rtWordCount(text: string): number {
+  // Mismo criterio que reading-time: dividir por espacios
+  return String(text).trim().split(/\s+/).filter(Boolean).length;
 }
