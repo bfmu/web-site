@@ -1,32 +1,32 @@
 ---
-import ArchivePanel from '@components/ArchivePanel.astro'
-import I18nKey from '@i18n/i18nKey'
-import { i18n } from '@i18n/translation'
-import MainGridLayout from '@layouts/MainGridLayout.astro'
-import { getSortedPosts } from '@utils/content-utils'
+import ArchivePanel from "@components/ArchivePanel.astro";
+import I18nKey from "@i18n/i18nKey";
+import { fetchPosts } from "@/utils/api-blog";
+import PostsArchive from "@/components/PostsArchive.jsx";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
 
-export async function getStaticPaths() {
-  const posts = await getSortedPosts()
-
-  // タグを集めるための Set の型を指定
-  const allTags = posts.reduce<Set<string>>((acc, post) => {
-    // biome-ignore lint/complexity/noForEach: <explanation>
-    post.data.tags.forEach(tag => acc.add(tag))
-    return acc
-  }, new Set())
-
-  const allTagsArray = Array.from(allTags)
-
-  return allTagsArray.map(tag => ({
-    params: {
-      tag: tag,
-    },
-  }))
-}
-
-const tag = Astro.params.tag as string
+// Puedes poner aquí tus filtros si quieres
+const params = { tag: Astro.params.tag as string, page: 1 };
+const res = await fetchPosts(params);
+const initialPosts = res.posts || res;
+const initialPagination = res.pagination;
+const apiUrl = import.meta.env.PUBLIC_API_URL;
+const fetchUrlBase = apiUrl.endsWith("/")
+  ? apiUrl + "api/blog"
+  : apiUrl + "/api/blog";
 ---
 
-<MainGridLayout title={i18n(I18nKey.archive)} description={i18n(I18nKey.archive)}>
-    <ArchivePanel tags={[tag]}></ArchivePanel>
+<MainGridLayout
+  title={i18n(I18nKey.archive)}
+  description={i18n(I18nKey.archive)}
+>
+  <!-- <ArchivePanel tags={[tag]} /> -->
+  <PostsArchive
+    initialPosts={initialPosts}
+    initialPagination={initialPagination}
+    fetchUrlBase={fetchUrlBase}
+    filterQuery={`tag=${params.tag}`}
+    client:load
+  />
 </MainGridLayout>

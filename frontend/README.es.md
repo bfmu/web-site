@@ -26,7 +26,7 @@ Un tema estático para blogs construido con [Astro](https://astro.build).
 2. Para editar tu blog localmente, clona tu repositorio, ejecuta `pnpm install` y `pnpm add sharp` para instalar las dependencias.
    - Instala [pnpm](https://pnpm.io) `npm install -g pnpm` si aún no lo tienes.
 3. Edita el archivo de configuración `src/config.ts` para personalizar tu blog.
-4. Ejecuta `pnpm new-post <nombre-de-archivo>` para crear una nueva entrada y edítala en `src/content/posts/`.
+4. [ELIMINADO: Ya no se usa `pnpm new-post` ni se edita en `src/content/posts/`. Ahora los posts se gestionan desde el backend.]
 5. Despliega tu blog en Vercel, Netlify, GitHub Pages, etc., siguiendo [las guías](https://docs.astro.build/en/guides/deploy/). Necesitas editar la configuración del sitio en `astro.config.mjs` antes del despliegue.
 
 ## ⚙️ Cabecera de las Entradas
@@ -53,6 +53,5 @@ Todos los comandos se ejecutan desde la raíz del proyecto, desde una terminal:
 | `pnpm dev`                          | Inicia el servidor de desarrollo local en `localhost:4321` |
 | `pnpm build`                        | Compila tu web para producción en `./dist/`                |
 | `pnpm preview`                      | Previsualiza la web localmente, antes del despliegue       |
-| `pnpm new-post <nombre-de-archivo>` | Crea una nueva entrada                                     |
 | `pnpm astro ...`                    | Ejecuta comandos CLI como `astro add`, `astro check`       |
 | `pnpm astro --help`                 | Obtén ayuda para usar el CLI de Astro                      |

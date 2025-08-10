@@ -28,26 +28,4 @@ if (!fileExtensionRegex.test(fileName)) {
   fileName += ".md";
 }
 
-const targetDir = "./src/content/posts/";
-const fullPath = path.join(targetDir, fileName);
-
-if (fs.existsSync(fullPath)) {
-  console.error(`Error：File ${fullPath} already exists `);
-  process.exit(1);
-}
-
-const content = `---
-title: ${args[0]}
-published: ${getDate()}
-description: ''
-image: ''
-tags: []
-category: ''
-draft: false 
-lang: ''
----
-`;
-
-fs.writeFileSync(path.join(targetDir, fileName), content);
-
-console.log(`Post ${fullPath} created`);
+// [ELIMINADO: Este script ya no es necesario. La creación de posts debe hacerse vía backend API.]

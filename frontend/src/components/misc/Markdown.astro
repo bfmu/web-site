@@ -1,67 +1,192 @@
 ---
 import '@fontsource-variable/jetbrains-mono'
 import '@fontsource-variable/jetbrains-mono/wght-italic.css'
+import MarkdownIt from 'markdown-it'
+import sanitizeHtml from 'sanitize-html'
+import { unified } from 'unified'
+import remarkParse from 'remark-parse'
+import remarkRehype from 'remark-rehype'
+import rehypeStringify from 'rehype-stringify'
+import rehypeComponents from 'rehype-components'
+import rehypeKatex from 'rehype-katex'
+import rehypeSlug from 'rehype-slug'
+import rehypeAutolinkHeadings from 'rehype-autolink-headings'
+import remarkDirective from 'remark-directive'
+import remarkGithubAdmonitionsToDirectives from 'remark-github-admonitions-to-directives'
+import remarkMath from 'remark-math'
+import { parseDirectiveNode } from '../../plugins/remark-directive-rehype.js'
+import { AdmonitionComponent } from '../../plugins/rehype-component-admonition.mjs'
+import { GithubCardComponent } from '../../plugins/rehype-component-github-card.mjs'
 
 interface Props {
   class: string
+  content?: string
 }
 const className = Astro.props.class
+const content: string | undefined = Astro.props.content
+
+let html = ''
+if (content) {
+  const file = await unified()
+    .use(remarkParse)
+    .use(remarkMath)
+    .use(remarkGithubAdmonitionsToDirectives)
+    .use(remarkDirective)
+    .use(parseDirectiveNode)
+    .use(remarkRehype)
+    .use(rehypeKatex)
+    .use(rehypeSlug)
+    .use(rehypeComponents as any, {
+      components: {
+        github: GithubCardComponent as any,
+        note: (((x: any, y: any) => AdmonitionComponent(x, y, 'note')) as any),
+        tip: (((x: any, y: any) => AdmonitionComponent(x, y, 'tip')) as any),
+        important: (((x: any, y: any) => AdmonitionComponent(x, y, 'important')) as any),
+        caution: (((x: any, y: any) => AdmonitionComponent(x, y, 'caution')) as any),
+        warning: (((x: any, y: any) => AdmonitionComponent(x, y, 'warning')) as any),
+      },
+    } as any)
+    .use(rehypeAutolinkHeadings, {
+      behavior: 'append',
+      properties: { className: ['anchor'] },
+      content: {
+        type: 'element',
+        tagName: 'span',
+        properties: { className: ['anchor-icon'], 'data-pagefind-ignore': true },
+        children: [{ type: 'text', value: '#' }],
+      },
+    })
+    .use(rehypeStringify)
+    .process(content)
+
+  const rendered = String(file)
+  html = sanitizeHtml(rendered, {
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+      'img',
+      'figure',
+      'figcaption',
+      'iframe',
+      'video',
+      'source',
+    ]),
+    allowedAttributes: {
+      ...sanitizeHtml.defaults.allowedAttributes,
+      a: ['href', 'name', 'target', 'rel', 'class', 'id', 'repo'],
+      img: [
+        'src',
+        'alt',
+        'title',
+        'width',
+        'height',
+        'srcset',
+        'sizes',
+        'loading',
+        'decoding',
+      ],
+      iframe: [
+        'src',
+        'width',
+        'height',
+        'allow',
+        'allowfullscreen',
+        'frameborder',
+        'loading',
+        'referrerpolicy',
+      ],
+      video: ['controls', 'src', 'width', 'height', 'poster'],
+      source: ['src', 'type'],
+      span: ['class', 'style', 'id'],
+      div: ['class', 'style', 'id'],
+    },
+    allowedSchemesByTag: {
+      img: ['http', 'https', 'data'],
+      source: ['http', 'https', 'data'],
+    },
+  })
+}
 ---
-<div data-pagefind-body class=`prose dark:prose-invert prose-base !max-w-none custom-md ${className}`>
-    <!--<div class="prose dark:prose-invert max-w-none custom-md">-->
-    <!--<div class="max-w-none custom-md">-->
-    <slot/>
-</div>
+{content ? (
+  <div class={`prose dark:prose-invert prose-base !max-w-none custom-md ${className}`} set:html={html}></div>
+) : (
+  <div class={`prose dark:prose-invert prose-base !max-w-none custom-md ${className}`}>
+    <slot />
+  </div>
+)}
 
 <script>
-  const observer = new MutationObserver(addPreCopyButton);
+  const observer = new MutationObserver(runEnhancers);
   observer.observe(document.body, { childList: true, subtree: true });
-  
-  document.addEventListener("DOMContentLoaded", addPreCopyButton);
+  document.addEventListener("DOMContentLoaded", runEnhancers);
+
+  function runEnhancers() {
+    observer.disconnect();
+    addPreCopyButton();
+    hydrateGithubCards();
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
 
   function addPreCopyButton() {
-    observer.disconnect();
-    
     let codeBlocks = Array.from(document.querySelectorAll("pre"));
-
     for (let codeBlock of codeBlocks) {
       if (codeBlock.parentElement?.nodeName === "DIV" && codeBlock.parentElement?.classList.contains("code-block")) continue
-
       let wrapper = document.createElement("div");
       wrapper.className = "relative code-block";
-
       let copyButton = document.createElement("button");
       copyButton.className = "copy-btn btn-regular-dark absolute active:scale-90 h-8 w-8 top-2 right-2 opacity-75 text-sm p-1.5 rounded-lg transition-all ease-in-out";
-
       codeBlock.setAttribute("tabindex", "0");
       if (codeBlock.parentNode) {
         codeBlock.parentNode.insertBefore(wrapper, codeBlock);
       }
-
       let copyIcon = `<svg class="copy-btn-icon copy-icon" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px"><path d="M368.37-237.37q-34.48 0-58.74-24.26-24.26-24.26-24.26-58.74v-474.26q0-34.48 24.26-58.74 24.26-24.26 58.74-24.26h378.26q34.48 0 58.74 24.26 24.26 24.26 24.26 58.74v474.26q0 34.48-24.26 58.74-24.26 24.26-58.74 24.26H368.37Zm0-83h378.26v-474.26H368.37v474.26Zm-155 238q-34.48 0-58.74-24.26-24.26-24.26-24.26-58.74v-515.76q0-17.45 11.96-29.48 11.97-12.02 29.33-12.02t29.54 12.02q12.17 12.03 12.17 29.48v515.76h419.76q17.45 0 29.48 11.96 12.02 11.97 12.02 29.33t-12.02 29.54q-12.03 12.17-29.48 12.17H213.37Zm155-238v-474.26 474.26Z"/></svg>`
-      let successIcon = `<svg class="copy-btn-icon success-icon" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px"><path d="m389-377.13 294.7-294.7q12.58-12.67 29.52-12.67 16.93 0 29.61 12.67 12.67 12.68 12.67 29.53 0 16.86-12.28 29.14L419.07-288.41q-12.59 12.67-29.52 12.67-16.94 0-29.62-12.67L217.41-430.93q-12.67-12.68-12.79-29.45-.12-16.77 12.55-29.45 12.68-12.67 29.62-12.67 16.93 0 29.28 12.67L389-377.13Z"/></svg>`
-      copyButton.innerHTML = `<div>${copyIcon} ${successIcon}</div>
-      `
-
+      let successIcon = `<svg class="copy-btn-icon success-icon" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px"><path d="m389-377.13 294.7-294.7q12.58-12.67 29.52-12.67 16.93 0 29.61 12.67 12.67 12.68 12.67 29.53 0 16.86-12.28 29.14L419.07-288.41q-12.59 12.67-29.52 12.67-16.94 0-29.62-12.67L217.41-430.93q-12.67-12.68-12.79-29.45-.12-16.77 12.55-29.45 12.68-12.67 29.62-12.67 16.93 0 29.28 12.67L389-377.13Z"/></svg>`
+      copyButton.innerHTML = `<div>${copyIcon} ${successIcon}</div>`
       wrapper.appendChild(codeBlock);
       wrapper.appendChild(copyButton);
-
-      let timeout: ReturnType<typeof setTimeout>;
+      let timeout: number | undefined;
       copyButton.addEventListener("click", async () => {
-        if (timeout) {
-            clearTimeout(timeout);
-        }
+        if (timeout) clearTimeout(timeout as number);
         let text = codeBlock?.querySelector("code")?.innerText;
         if (text === undefined) return;
         await navigator.clipboard.writeText(text);
         copyButton.classList.add("success");
-        timeout = setTimeout(() => {
-          copyButton.classList.remove("success");
-        }, 1000);
+        timeout = window.setTimeout(() => { copyButton.classList.remove("success"); }, 1000);
       });
     }
-    
-    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function hydrateGithubCards() {
+    const cards = Array.from(document.querySelectorAll('a.card-github.fetch-waiting[href*="github.com/"]')) as HTMLAnchorElement[]
+    for (const card of cards) {
+      if ((card as HTMLAnchorElement).dataset.hydrated === '1') continue
+      ;(card as HTMLAnchorElement).dataset.hydrated = '1'
+      const href = card.getAttribute('href') || ''
+      const m = href.match(/github\.com\/([^\/]+\/[^\/]+)/)
+      if (!m) continue
+      const repo = m[1]
+      const descEl = card.querySelector('.gc-description') as HTMLElement | null
+      const langEl = card.querySelector('.gc-language') as HTMLElement | null
+      const forksEl = card.querySelector('.gc-forks') as HTMLElement | null
+      const starsEl = card.querySelector('.gc-stars') as HTMLElement | null
+      const avatarEl = card.querySelector('.gc-avatar') as HTMLElement | null
+      const licEl = card.querySelector('.gc-license') as HTMLElement | null
+      fetch(`https://api.github.com/repos/${repo}`, { referrerPolicy: 'no-referrer' })
+        .then(r => r.json())
+        .then(data => {
+          if (descEl) descEl.textContent = data.description ? data.description.replace(/:[a-zA-Z0-9_]+:/g, '') : 'Description not set'
+          if (langEl) langEl.textContent = data.language || ''
+          if (forksEl) forksEl.textContent = Intl.NumberFormat('en-us', { notation: 'compact', maximumFractionDigits: 1 }).format(data.forks || 0).replaceAll('\u202f','')
+          if (starsEl) starsEl.textContent = Intl.NumberFormat('en-us', { notation: 'compact', maximumFractionDigits: 1 }).format(data.stargazers_count || 0).replaceAll('\u202f','')
+          if (licEl && data.license?.spdx_id) licEl.textContent = data.license.spdx_id
+          if (avatarEl && data.owner?.avatar_url) {
+            ;(avatarEl as HTMLElement).style.backgroundImage = `url(${data.owner.avatar_url})`
+            ;(avatarEl as HTMLElement).style.backgroundColor = 'transparent'
+          }
+          card.classList.remove('fetch-waiting')
+        })
+        .catch(() => {
+          card.classList.add('fetch-error')
+        })
+    }
   }
 </script>
 
@@ -440,5 +565,22 @@ const className = Astro.props.class
     transition-property: all
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1)
     transition-duration: 0.15s
+
+  /* Evitar marcador de lista cuando la card está dentro de un <li> */
+  .custom-md li:has(> a.card-github)
+    list-style: none
+    padding-left: 0
+    margin-left: 0
+  .custom-md li:has(> p > a.card-github)
+    list-style: none
+    padding-left: 0
+    margin-left: 0
+  .custom-md li > p:has(> a.card-github)
+    margin: 0
+    padding: 0
+  .custom-md li > a.card-github
+    display: block
+  .custom-md li > p > a.card-github
+    display: block
 
 </style>

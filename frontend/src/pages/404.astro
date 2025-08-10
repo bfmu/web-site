@@ -1,0 +1,11 @@
+---
+// @ts-ignore path alias
+import MainLayout from '@layouts/MainLayout.astro'
+---
+<MainLayout title="404 – Página no encontrada">
+  <section class="w-full flex flex-col items-center justify-center py-24 pointer-events-auto" style="min-height:60vh">
+    <div class="text-[6rem] font-extrabold text-[var(--primary)] animate-bounce mb-4">404</div>
+    <p class="text-xl md:text-2xl text-50 mb-6 transition">Oops, la página que buscas no existe.</p>
+    <a href="/" class="btn-regular px-6 h-11 rounded-lg active:scale-95">Volver al inicio</a>
+  </section>
+</MainLayout>

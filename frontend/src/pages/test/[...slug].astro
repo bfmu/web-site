@@ -1,0 +1,14 @@
+---
+export async function get({ params }) {
+  return {
+    props: {
+      mensaje: "SSR FUNCIONA",
+      slug: params.slug,
+    }
+  };
+}
+
+const { mensaje, slug } = Astro.props;
+---
+<h1>{mensaje}</h1>
+<pre>{JSON.stringify(slug, null, 2)}</pre>

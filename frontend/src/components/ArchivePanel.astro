@@ -2,7 +2,7 @@
 import { UNCATEGORIZED } from '@constants/constants'
 import I18nKey from '../i18n/i18nKey'
 import { i18n } from '../i18n/translation'
-import { getSortedPosts } from '../utils/content-utils'
+import { fetchPosts } from '../utils/api-blog'
 import { getPostUrlBySlug } from '../utils/url-utils'
 
 interface Props {
@@ -12,28 +12,18 @@ interface Props {
 }
 const { keyword, tags, categories } = Astro.props
 
-let posts = await getSortedPosts()
+let params: Record<string, any> = {}
+if (Array.isArray(tags) && tags.length > 0) params.tag = tags[0]
+if (Array.isArray(categories) && categories.length > 0) params.category = categories[0]
+if (keyword) params.search = keyword
 
-if (Array.isArray(tags) && tags.length > 0) {
-  posts = posts.filter(
-    post =>
-      Array.isArray(post.data.tags) &&
-      post.data.tags.some(tag => tags.includes(tag)),
-  )
-}
-
-if (Array.isArray(categories) && categories.length > 0) {
-  posts = posts.filter(
-    post =>
-      (post.data.category && categories.includes(post.data.category)) ||
-      (!post.data.category && categories.includes(UNCATEGORIZED)),
-  )
-}
+const res = await fetchPosts(params)
+let posts = res.docs || res
 
 const groups: { year: number; posts: typeof posts }[] = (() => {
   const groupedPosts = posts.reduce(
     (grouped: { [year: number]: typeof posts }, post) => {
-      const year = post.data.published.getFullYear()
+      const year = new Date(post.published).getFullYear()
       if (!grouped[year]) {
         grouped[year] = []
       }
@@ -54,9 +44,10 @@ const groups: { year: number; posts: typeof posts }[] = (() => {
   return groupedPostsArray
 })()
 
-function formatDate(date: Date) {
-  const month = (date.getMonth() + 1).toString().padStart(2, '0')
-  const day = date.getDate().toString().padStart(2, '0')
+function formatDate(date: string | Date) {
+  const d = new Date(date)
+  const month = (d.getMonth() + 1).toString().padStart(2, '0')
+  const day = d.getDate().toString().padStart(2, '0')
   return `${month}-${day}`
 }
 

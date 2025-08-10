@@ -47,7 +47,6 @@ export class SpotifyService {
       if (response.status === 200) {
         this.accessToken = response.data.access_token; // Guardamos el nuevo token de acceso
         this.refreshToken = response.data.refresh_token || this.refreshToken; // Actualizamos el refresh token si se devuelve uno nuevo
-        console.log('Access token refreshed successfully:', this.accessToken);
       } else {
         throw new Error('Failed to refresh access token');
       }

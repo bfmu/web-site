@@ -14,7 +14,7 @@ import { url } from '../../utils/url-utils'
 const { id, src, alt, position = 'center', basePath = '/' } = Astro.props
 const className = Astro.props.class
 
-const isLocal = !(
+let isLocal = !(
   src.startsWith('/') ||
   src.startsWith('http') ||
   src.startsWith('https') ||
@@ -33,10 +33,13 @@ if (isLocal) {
     .normalize(path.join('../../', basePath, src))
     .replace(/\\/g, '/')
   const file = files[normalizedPath]
-  if (!file) {
-    console.error(`\n[ERROR] Image file not found: ${normalizedPath.replace('../../', 'src/')}`)
+  if (typeof file !== 'function') {
+    // No se encontró el asset local; degradar a <img> estándar
+    isLocal = false
+    console.warn(`\n[WARN] Image file not found, fallback to <img>: ${normalizedPath.replace('../../', 'src/')}`)
+  } else {
+    img = await file()
   }
-  img = await file()
 }
 
 const imageClass = 'w-full h-full object-cover'

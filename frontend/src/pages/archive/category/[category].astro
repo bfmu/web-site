@@ -1,24 +1,32 @@
 ---
-import { getCategoryList } from '@utils/content-utils'
-import MainGridLayout from '@layouts/MainGridLayout.astro'
-import ArchivePanel from '@components/ArchivePanel.astro'
-import { i18n } from '@i18n/translation'
-import I18nKey from '@i18n/i18nKey'
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import ArchivePanel from "@components/ArchivePanel.astro";
+import PostsArchive from "@/components/PostsArchive.jsx";
+import { fetchPosts } from "@/utils/api-blog";
+import { i18n } from "@i18n/translation";
+import I18nKey from "@i18n/i18nKey";
 
-export async function getStaticPaths() {
-  const categories = await getCategoryList()
-  return categories.map(category => {
-    return {
-      params: {
-        category: category.name,
-      },
-    }
-  })
-}
-
-const category = Astro.params.category as string
+// Puedes poner aquí tus filtros si quieres
+const params = { category: Astro.params.category as string, page: 1 };
+const res = await fetchPosts(params);
+const initialPosts = res.posts || res;
+const initialPagination = res.pagination;
+const apiUrl = import.meta.env.PUBLIC_API_URL;
+const fetchUrlBase = apiUrl.endsWith("/")
+  ? apiUrl + "api/blog"
+  : apiUrl + "/api/blog";
 ---
 
-<MainGridLayout title={i18n(I18nKey.archive)} description={i18n(I18nKey.archive)}>
-    <ArchivePanel categories={[category]}></ArchivePanel>
+<MainGridLayout
+  title={i18n(I18nKey.archive)}
+  description={i18n(I18nKey.archive)}
+>
+  <!-- <ArchivePanel categories={[category]} /> -->
+  <PostsArchive
+    initialPosts={initialPosts}
+    initialPagination={initialPagination}
+    fetchUrlBase={fetchUrlBase}
+    filterQuery={`category=${params.category}`}
+    client:load
+  />
 </MainGridLayout>

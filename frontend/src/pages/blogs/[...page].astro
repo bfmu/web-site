@@ -1,23 +1,42 @@
 ---
-import type { GetStaticPaths } from 'astro'
 import PostPage from '../../components/PostPage.astro'
 import Pagination from '../../components/control/Pagination.astro'
 import { PAGE_SIZE } from '../../constants/constants'
 import MainGridLayout from '../../layouts/MainGridLayout.astro'
-import { getSortedPosts } from '../../utils/content-utils'
+import { fetchPosts } from '../../utils/api-blog'
 
-export const getStaticPaths = (async ({ paginate }) => {
-  const allBlogPosts = await getSortedPosts()
-  return paginate(allBlogPosts, { pageSize: PAGE_SIZE })
-}) satisfies GetStaticPaths
-// https://github.com/withastro/astro/issues/6507#issuecomment-1489916992
 
-const { page } = Astro.props
+// Obtener número de página desde la URL dinámica [...page]
+const pageParam = Astro.params.page
+const pageNum = Number(Array.isArray(pageParam) ? pageParam[0] : (pageParam ?? 1)) || 1
+const res = await fetchPosts({ page: pageNum, limit: PAGE_SIZE })
 
-const len = page.data.length
+
+// Adaptar la respuesta
+const pagination = res.pagination
+const pageData = {
+  data: res.posts,
+  currentPage: pagination.page,
+  totalPages: pagination.pages,
+  totalDocs: pagination.total,
+  limit: pagination.limit,
+}
+
+// Adaptar para el componente de paginación (espera un objeto tipo Astro Page)
+const lastPage = pagination.pages
+const currentPage = pagination.page
+const prevUrl = currentPage > 1 ? (currentPage - 1 === 1 ? '/blogs/' : `/blogs/${currentPage - 1}/`) : undefined
+const nextUrl = currentPage < lastPage ? `/blogs/${currentPage + 1}/` : undefined
+
+const pageForPagination = {
+  currentPage,
+  lastPage,
+  url: { prev: prevUrl, next: nextUrl },
+}
+
+const len = pageData.data.length
 ---
-
 <MainGridLayout>
-    <PostPage page={page}></PostPage>
-    <Pagination class="mx-auto onload-animation" page={page} style=`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`></Pagination>
+    <PostPage page={pageData}></PostPage>
+    <Pagination class="mx-auto onload-animation" page={pageForPagination as any} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination>
 </MainGridLayout>

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
+import readingTimeLib from 'reading-time';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { QueryPostDto } from './dto/query-post.dto';
@@ -11,8 +12,14 @@ export class BlogService {
   constructor(@InjectModel(Post.name) private postModel: Model<PostDocument>) {}
 
   async create(createPostDto: CreatePostDto): Promise<Post> {
+    const computedReading =
+      typeof createPostDto.readingTime === 'number'
+        ? createPostDto.readingTime
+        : estimateReadingMinutes(createPostDto.content || '');
+
     const createdPost = new this.postModel({
       ...createPostDto,
+      readingTime: computedReading,
       published: new Date(createPostDto.published),
     });
     return createdPost.save();
@@ -34,9 +41,12 @@ export class BlogService {
     // Construir filtros
     const filter: any = {};
 
-    if (draft !== undefined) {
-      filter.draft = draft;
-    }
+    // Por defecto no devolver borradores
+    if (draft === undefined) {
+      filter.draft = false;
+    } else if (draft === false) {
+      filter.draft = false;
+    } // if draft === true => no filter (mostrar ambos)
 
     if (category) {
       filter.category = category;
@@ -65,14 +75,37 @@ export class BlogService {
     const sort: any = {};
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-    // Ejecutar consulta
+    // Ejecutar consulta (seleccionar solo campos necesarios para listados)
     const [posts, total] = await Promise.all([
-      this.postModel.find(filter).sort(sort).skip(skip).limit(limit).exec(),
+      this.postModel
+        .find(filter)
+        .select(
+          'slug title description image tags category draft published language readingTime content',
+        )
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .exec(),
       this.postModel.countDocuments(filter).exec(),
     ]);
 
+    // Enriquecer con excerpt calculado si no hay descripción
+    const enriched = posts.map((p: any) => {
+      const excerpt = p.description || generateExcerpt(String(p.content || ''));
+      const readingTime =
+        typeof p.readingTime === 'number' && p.readingTime > 0
+          ? p.readingTime
+          : estimateReadingMinutes(String(p.content || ''));
+      const words = countWords(String(p.content || ''));
+      // Eliminar content del resultado
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { content, ...rest } = p;
+      return { ...rest, excerpt, readingTime, words };
+    });
+
     return {
-      posts,
+      posts: enriched,
       pagination: {
         page,
         limit,
@@ -82,8 +115,8 @@ export class BlogService {
     };
   }
 
-  async findOne(slug: string): Promise<Post> {
-    const post = await this.postModel.findOne({ slug }).exec();
+  async findOne(slug: string): Promise<any> {
+    const post = await this.postModel.findOne({ slug }).lean().exec();
     if (!post) {
       throw new NotFoundException(`Post with slug "${slug}" not found`);
     }
@@ -91,7 +124,14 @@ export class BlogService {
     // Incrementar vistas
     await this.postModel.updateOne({ slug }, { $inc: { views: 1 } }).exec();
 
-    return post;
+    // Enriquecer con métricas
+    const words = countWords(String(post.content || ''));
+    const readingTime =
+      typeof post.readingTime === 'number' && post.readingTime > 0
+        ? post.readingTime
+        : estimateReadingMinutes(String(post.content || ''));
+
+    return { ...post, words, readingTime };
   }
 
   async update(slug: string, updatePostDto: UpdatePostDto): Promise<Post> {
@@ -101,6 +141,15 @@ export class BlogService {
     if (updatePostDto.published) {
       // Aceptar string o Date, pero no forzar el tipo
       updateData.published = updatePostDto.published;
+    }
+
+    // Si no envían readingTime pero cambió el contenido, recalcular
+    if (
+      (updatePostDto.readingTime === undefined ||
+        updatePostDto.readingTime === null) &&
+      typeof updatePostDto.content === 'string'
+    ) {
+      updateData.readingTime = estimateReadingMinutes(updatePostDto.content);
     }
 
     const updatedPost = await this.postModel
@@ -126,17 +175,45 @@ export class BlogService {
     return categories.filter((category) => category && category.trim() !== '');
   }
 
+  async getCategoriesWithCount(): Promise<{ name: string; count: number }[]> {
+    const categories = await this.postModel
+      .aggregate([
+        { $match: { draft: false } },
+        { $group: { _id: '$category', count: { $sum: 1 } } },
+        { $project: { name: '$_id', count: 1, _id: 0 } },
+      ])
+      .exec();
+
+    return categories.filter((cat) => cat.name && cat.name.trim() !== '');
+  }
+
   async getTags(): Promise<string[]> {
     const tags = await this.postModel.distinct('tags').exec();
     return tags.filter((tag) => tag && tag.trim() !== '');
   }
 
   async getRecentPosts(limit: number = 5): Promise<Post[]> {
-    return this.postModel
+    const posts = await this.postModel
       .find({ draft: false })
+      .select(
+        'slug title description image tags category draft published language readingTime content',
+      )
       .sort({ published: -1 })
       .limit(limit)
+      .lean()
       .exec();
+
+    return posts.map((p: any) => {
+      const excerpt = p.description || generateExcerpt(String(p.content || ''));
+      const readingTime =
+        typeof p.readingTime === 'number' && p.readingTime > 0
+          ? p.readingTime
+          : estimateReadingMinutes(String(p.content || ''));
+      const words = countWords(String(p.content || ''));
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { content, ...rest } = p;
+      return { ...rest, excerpt, readingTime, words } as any;
+    });
   }
 
   async getRelatedPosts(slug: string, limit: number = 3): Promise<Post[]> {
@@ -155,4 +232,37 @@ export class BlogService {
       .limit(limit)
       .exec();
   }
+}
+
+// Helpers
+function stripMarkdown(md: string): string {
+  return md
+    .replace(/`{1,3}[^`]*`{1,3}/g, ' ')
+    .replace(/!\[[^\]]*\]\([^\)]*\)/g, ' ')
+    .replace(/\[[^\]]*\]\([^\)]*\)/g, ' ')
+    .replace(/[#>*_~`\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function generateExcerpt(content: string, maxLen: number = 160): string {
+  const plain = stripMarkdown(content);
+  if (plain.length <= maxLen) return plain;
+  return plain.slice(0, maxLen).trimEnd() + '…';
+}
+
+function estimateReadingMinutes(content: string): number {
+  const text = stripMarkdown(content);
+  const rt = readingTimeLib(text);
+  return Math.max(1, Math.round(rt.minutes));
+}
+
+function countWords(content: string): number {
+  const text = stripMarkdown(content);
+  return rtWordCount(text);
+}
+
+function rtWordCount(text: string): number {
+  // Mismo criterio que reading-time: dividir por espacios
+  return String(text).trim().split(/\s+/).filter(Boolean).length;
 }

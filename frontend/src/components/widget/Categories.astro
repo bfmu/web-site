@@ -1,18 +1,17 @@
 ---
 import WidgetLayout from './WidgetLayout.astro'
-
 import { i18n } from '../../i18n/translation'
 import I18nKey from '../../i18n/i18nKey'
-import { getCategoryList } from '../../utils/content-utils'
+import { fetchCategories } from '../../utils/api-blog'
 import { getCategoryUrl } from '../../utils/url-utils'
 import ButtonLink from '../control/ButtonLink.astro'
 
-const categories = await getCategoryList()
-
+// Obtener todas las categorías únicas con cuenta de post desde la API
+const categoriesWithCount = await fetchCategories({withCount: true})
+console.log(categoriesWithCount)
 const COLLAPSED_HEIGHT = '7.5rem'
 const COLLAPSE_THRESHOLD = 5
-
-const isCollapsed = categories.length >= COLLAPSE_THRESHOLD
+const isCollapsed = categoriesWithCount.length >= COLLAPSE_THRESHOLD
 
 interface Props {
   class?: string
@@ -25,11 +24,11 @@ const style = Astro.props.style
 <WidgetLayout name={i18n(I18nKey.categories)} id="categories" isCollapsed={isCollapsed} collapsedHeight={COLLAPSED_HEIGHT}
                 class={className} style={style}
 >
-    {categories.map((c) =>
+    {categoriesWithCount.map((c : {name: string, count: number}) =>
         <ButtonLink
             url={getCategoryUrl(c.name)}
             badge={String(c.count)}
-            label=`View all posts in the ${c.name} category`
+            label={`View all posts in the ${c.name} category`}
         >
             {c.name}
         </ButtonLink>

@@ -20,6 +20,7 @@ import { remarkExcerpt } from "./src/plugins/remark-excerpt.js";
 import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
 
 import react from "@astrojs/react";
+import node from "@astrojs/node";
 
 const oklchToHex = (str) => {
   const DEFAULT_HUE = 250;
@@ -32,14 +33,16 @@ const oklchToHex = (str) => {
 };
 
 const runtimeConfig = {
-  baseUrl: process.env.PUBLIC_BASE_URL || "http://localhost:82/",
+  baseUrl: process.env.PUBLIC_BASE_URL || "http://localhost:3000/",
 };
 
 // https://astro.build/config
 export default defineConfig({
   site: runtimeConfig.baseUrl,
+  output: "server",
+  adapter: node({ mode: "standalone" }),
   base: "/",
-  trailingSlash: "always",
+  trailingSlash: "ignore",
   integrations: [
     tailwind(),
     swup({
