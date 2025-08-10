@@ -15,11 +15,21 @@ import { fetchPostBySlug } from '../../utils/api-blog'
 
 
 const { slug } = Astro.params;
-const slugStr = Array.isArray(slug) ? slug[0] : slug;
-if (!slugStr) {
-  // 404 page not found
+const slugArr = Array.isArray(slug) ? slug : [slug];
+
+// Si la URL tiene más de un segmento (/posts/a/b/), retornar 404
+if (slugArr.length !== 1) {
+  return new Response(undefined, { status: 404 });
 }
-const entry = await fetchPostBySlug(slugStr);
+
+const slugStr = slugArr[0];
+
+let entry: any = null;
+try {
+  entry = await fetchPostBySlug(slugStr);
+} catch {
+  return new Response(undefined, { status: 404 });
+}
 
 
 const jsonLd = {
