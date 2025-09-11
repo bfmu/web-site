@@ -1,0 +1,27 @@
+# Archivo de ejemplo para configurar las variables de entorno
+# Copia este archivo a .env y configura los valores reales
+
+# Base de datos
+MONGODB_URI=mongodb://localhost:27017/blog
+
+# Autenticación JWT
+JWT_SECRET=tu_jwt_secret_super_seguro_aqui
+JWT_REFRESH_SECRET=tu_jwt_refresh_secret_super_seguro_aqui
+
+# Google OAuth
+GOOGLE_CLIENT_ID=tu_google_client_id_aqui
+GOOGLE_CLIENT_SECRET=tu_google_client_secret_aqui
+GOOGLE_CALLBACK_URL=http://localhost:82/api/auth/google/callback
+
+# GitHub OAuth
+GITHUB_CLIENT_ID=tu_github_client_id_aqui
+GITHUB_CLIENT_SECRET=tu_github_client_secret_aqui
+GITHUB_CALLBACK_URL=http://localhost:82/api/auth/github/callback
+
+# URLs del frontend
+FRONTEND_ADMIN_URL=http://localhost:4200
+
+# Spotify (si lo usas)
+SPOTIFY_CLIENT_ID=tu_spotify_client_id
+SPOTIFY_CLIENT_SECRET=tu_spotify_client_secret
+SPOTIFY_REDIRECT_URI=http://localhost:82/api/spotify/callback

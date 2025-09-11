@@ -1,0 +1,194 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+  
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+  
+  --font-family-sans: 'Inter', ui-sans-serif, system-ui;
+}
+
+/* Estilos personalizados para el admin */
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: colors 0.15s;
+  outline: none;
+  
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+  }
+  
+  &:disabled {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+}
+
+@utility btn-primary {
+  @apply btn;
+  background-color: var(--color-primary-600);
+  color: white;
+  padding: 0.5rem 1rem;
+  
+  &:hover {
+    background-color: var(--color-primary-700);
+  }
+}
+
+@utility btn-secondary {
+  @apply btn;
+  background-color: var(--color-gray-200);
+  color: var(--color-gray-900);
+  padding: 0.5rem 1rem;
+  
+  &:hover {
+    background-color: var(--color-gray-300);
+  }
+}
+
+@utility btn-outline {
+  @apply btn;
+  border: 1px solid var(--color-gray-300);
+  background-color: white;
+  color: var(--color-gray-700);
+  padding: 0.5rem 1rem;
+  
+  &:hover {
+    background-color: var(--color-gray-50);
+  }
+}
+
+@utility card {
+  background-color: white;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-gray-200);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+@utility input {
+  display: block;
+  width: 100%;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-gray-300);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  font-size: 0.875rem;
+  
+  &:focus {
+    border-color: var(--color-primary-500);
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: -2px;
+  }
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  background-color: var(--color-gray-50);
+  font-family: var(--font-family-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Estilos para la vista previa de Markdown */
+.prose {
+  max-width: none;
+}
+
+.prose h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #1f2937;
+}
+
+.prose h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #374151;
+}
+
+.prose h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: #4b5563;
+}
+
+.prose p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+  color: #374151;
+}
+
+.prose ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.prose li {
+  margin-bottom: 0.25rem;
+  line-height: 1.6;
+}
+
+.prose code {
+  background-color: #f3f4f6;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-family: 'Courier New', monospace;
+  color: #dc2626;
+}
+
+.prose a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.prose a:hover {
+  color: #1d4ed8;
+}
+
+.prose strong {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.prose em {
+  font-style: italic;
+}

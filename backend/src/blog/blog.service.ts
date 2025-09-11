@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
-import readingTimeLib from 'reading-time';
+import * as readingTimeLib from 'reading-time';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { QueryPostDto } from './dto/query-post.dto';
@@ -253,7 +253,7 @@ function generateExcerpt(content: string, maxLen: number = 160): string {
 
 function estimateReadingMinutes(content: string): number {
   const text = stripMarkdown(content);
-  const rt = readingTimeLib(text);
+  const rt = (readingTimeLib as any)(text);
   return Math.max(1, Math.round(rt.minutes));
 }
 
