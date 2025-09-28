@@ -28,6 +28,7 @@ ARG GOOGLE_CLIENT_ID=""
 ARG GITHUB_CLIENT_ID=""
 ARG ENABLE_REGISTRATION=false
 ARG ENABLE_OAUTH=true
+ARG APP_BASE_PATH="/"
 
 # Configurar variables de entorno
 ENV NODE_ENV=${NODE_ENV}
@@ -38,9 +39,14 @@ ENV GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
 ENV GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
 ENV ENABLE_REGISTRATION=${ENABLE_REGISTRATION}
 ENV ENABLE_OAUTH=${ENABLE_OAUTH}
+ENV APP_BASE_PATH=${APP_BASE_PATH}
 
 # Build de la aplicación para producción con configuración dinámica
-RUN npm run build:${NODE_ENV}
+RUN if [ "$APP_BASE_PATH" != "/" ]; then \
+      npm run build:subpath; \
+    else \
+      npm run build:${NODE_ENV}; \
+    fi
 
 # ====================
 # Stage 2: Production

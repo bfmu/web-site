@@ -14,6 +14,7 @@ const environments = {
     apiUrl: process.env.API_URL || 'http://localhost:82/api',
     appName: process.env.APP_NAME || 'Blog Admin Panel',
     version: process.env.APP_VERSION || '1.0.0',
+    basePath: process.env.APP_BASE_PATH || '/',
     
     auth: {
       google: {
@@ -52,6 +53,7 @@ const environments = {
     apiUrl: process.env.API_URL || 'https://api.bfmu.dev/api',
     appName: process.env.APP_NAME || 'Blog Admin Panel',
     version: process.env.APP_VERSION || '1.0.0',
+    basePath: process.env.APP_BASE_PATH || '/',
     
     auth: {
       google: {
@@ -90,6 +92,7 @@ const environments = {
     apiUrl: process.env.API_URL || 'https://api-staging.bfmu.dev/api',
     appName: process.env.APP_NAME || 'Blog Admin Panel (Staging)',
     version: process.env.APP_VERSION || '1.0.0-staging',
+    basePath: process.env.APP_BASE_PATH || '/',
     
     auth: {
       google: {
