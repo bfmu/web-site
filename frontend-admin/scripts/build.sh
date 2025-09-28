@@ -191,3 +191,4 @@ echo "  docker stop blog-admin-$ENVIRONMENT && docker rm blog-admin-$ENVIRONMENT
 echo ""
 echo "  # Usar docker-compose:"
 echo "  ADMIN_PORT=8080 docker-compose -f docker-compose.prod.yml up -d"
+

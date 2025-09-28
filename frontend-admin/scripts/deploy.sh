@@ -293,3 +293,4 @@ log "Limpiando imágenes antiguas..."
 docker images blog-admin --format "{{.ID}}" | tail -n +4 | xargs -r docker rmi 2>/dev/null || true
 
 success "Deploy finalizado!"
+

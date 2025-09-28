@@ -138,3 +138,4 @@ El refactor utiliza las mismas dependencias existentes:
 
 Este refactor mantiene toda la funcionalidad existente mientras proporciona una experiencia visual mucho más profesional y moderna, inspirada en las mejores prácticas de diseño web contemporáneo.
 
+
