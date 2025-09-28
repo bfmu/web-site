@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
-import readingTimeLib from 'reading-time';
+import * as readingTimeLib from 'reading-time';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { QueryPostDto } from './dto/query-post.dto';
@@ -17,8 +17,12 @@ export class BlogService {
         ? createPostDto.readingTime
         : estimateReadingMinutes(createPostDto.content || '');
 
+    // Verificar si el slug ya existe y generar uno único si es necesario
+    const uniqueSlug = await this.generateUniqueSlug(createPostDto.slug);
+
     const createdPost = new this.postModel({
       ...createPostDto,
+      slug: uniqueSlug,
       readingTime: computedReading,
       published: new Date(createPostDto.published),
     });
@@ -38,15 +42,23 @@ export class BlogService {
       sortOrder = 'desc',
     } = queryDto;
 
+    console.log('BlogService.findAll - queryDto:', queryDto);
+    console.log('BlogService.findAll - draft parameter:', draft, typeof draft);
+
     // Construir filtros
     const filter: any = {};
 
     // Por defecto no devolver borradores
     if (draft === undefined) {
       filter.draft = false;
+      console.log('Draft undefined - filtering only published posts');
     } else if (draft === false) {
       filter.draft = false;
-    } // if draft === true => no filter (mostrar ambos)
+      console.log('Draft false - filtering only published posts');
+    } else if (draft === true) {
+      // No agregar filtro de draft - mostrar todos (borradores y publicados)
+      console.log('Draft true - showing all posts (drafts and published)');
+    }
 
     if (category) {
       filter.category = category;
@@ -75,6 +87,9 @@ export class BlogService {
     const sort: any = {};
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
+    console.log('Final filter:', JSON.stringify(filter));
+    console.log('Sort:', JSON.stringify(sort));
+
     // Ejecutar consulta (seleccionar solo campos necesarios para listados)
     const [posts, total] = await Promise.all([
       this.postModel
@@ -89,6 +104,9 @@ export class BlogService {
         .exec(),
       this.postModel.countDocuments(filter).exec(),
     ]);
+
+    console.log(`Found ${posts.length} posts, total: ${total}`);
+    console.log('Posts drafts status:', posts.map(p => ({ slug: p.slug, draft: p.draft })));
 
     // Enriquecer con excerpt calculado si no hay descripción
     const enriched = posts.map((p: any) => {
@@ -232,6 +250,40 @@ export class BlogService {
       .limit(limit)
       .exec();
   }
+
+  async checkSlugExists(slug: string): Promise<boolean> {
+    const post = await this.postModel.findOne({ slug }).exec();
+    return !!post;
+  }
+
+  async generateUniqueSlug(baseSlug: string): Promise<string> {
+    let uniqueSlug = baseSlug;
+    let counter = 1;
+
+    while (await this.checkSlugExists(uniqueSlug)) {
+      uniqueSlug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    return uniqueSlug;
+  }
+
+  async validateSlug(slug: string, currentSlug?: string): Promise<{ isValid: boolean; suggestedSlug?: string }> {
+    const exists = await this.checkSlugExists(slug);
+    
+    // Si es el mismo slug del post actual (en edición), es válido
+    if (currentSlug && slug === currentSlug) {
+      return { isValid: true };
+    }
+
+    if (!exists) {
+      return { isValid: true };
+    }
+
+    // Si existe, generar una sugerencia
+    const suggestedSlug = await this.generateUniqueSlug(slug);
+    return { isValid: false, suggestedSlug };
+  }
 }
 
 // Helpers
@@ -253,7 +305,7 @@ function generateExcerpt(content: string, maxLen: number = 160): string {
 
 function estimateReadingMinutes(content: string): number {
   const text = stripMarkdown(content);
-  const rt = readingTimeLib(text);
+  const rt = (readingTimeLib as any)(text);
   return Math.max(1, Math.round(rt.minutes));
 }
 

@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SpotifyModule } from './spotify/spotify.module';
 import { ConfigModule } from '@nestjs/config';
 import { BlogModule } from './blog/blog.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { BlogModule } from './blog/blog.module';
     ),
     SpotifyModule,
     BlogModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [],

@@ -11,6 +11,7 @@ import {
   UsePipes,
   HttpStatus,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import { BlogService } from './blog.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -23,7 +24,11 @@ import {
   ApiQuery,
   ApiParam,
   ApiBody,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('blog')
 @Controller('blog')
@@ -31,7 +36,10 @@ export class BlogController {
   constructor(private readonly blogService: BlogService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Crear un nuevo post' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'editor')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Crear un nuevo post (requiere autenticación)' })
   @ApiBody({ type: CreatePostDto })
   @ApiResponse({ status: 201, description: 'Post creado correctamente' })
   @UsePipes(new ValidationPipe({ transform: true }))
@@ -88,6 +96,21 @@ export class BlogController {
     return this.blogService.getTags();
   }
 
+  @Get('validate-slug/:slug')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'editor')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Validar si un slug está disponible (requiere autenticación)' })
+  @ApiParam({ name: 'slug', description: 'Slug a validar' })
+  @ApiQuery({ name: 'currentSlug', required: false, description: 'Slug actual del post (para edición)' })
+  @ApiResponse({ status: 200, description: 'Resultado de la validación' })
+  async validateSlug(
+    @Param('slug') slug: string,
+    @Query('currentSlug') currentSlug?: string,
+  ) {
+    return this.blogService.validateSlug(slug, currentSlug);
+  }
+
   @Get('related/:slug')
   @ApiOperation({ summary: 'Obtener posts relacionados' })
   @ApiParam({ name: 'slug', description: 'Slug del post de referencia' })
@@ -110,7 +133,10 @@ export class BlogController {
   }
 
   @Patch(':slug')
-  @ApiOperation({ summary: 'Actualizar un post por slug' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'editor')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Actualizar un post (requiere autenticación)' })
   @ApiParam({ name: 'slug', description: 'Slug del post' })
   @ApiBody({ type: UpdatePostDto })
   @ApiResponse({ status: 200, description: 'Post actualizado' })
@@ -123,7 +149,10 @@ export class BlogController {
   }
 
   @Delete(':slug')
-  @ApiOperation({ summary: 'Eliminar un post por slug' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Eliminar un post (solo admin)' })
   @ApiParam({ name: 'slug', description: 'Slug del post' })
   @ApiResponse({ status: 204, description: 'Post eliminado' })
   @HttpCode(HttpStatus.NO_CONTENT)

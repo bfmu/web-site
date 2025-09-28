@@ -3,10 +3,6 @@ import { getPostUrlBySlug } from '@utils/url-utils'
 import { fetchRecentPosts } from '@utils/api-blog'
 
 const ultimosPosts = await fetchRecentPosts(3)
-
-ultimosPosts.forEach(entry => {
-  console.log('slug:', entry.slug, 'url:', getPostUrlBySlug(entry.slug));
-});
 ---
 
 <section class="w-full py-16 bg-[var(--card-bg)] text-center rounded-[var(--radius-large)] shadow-md">
