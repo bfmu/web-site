@@ -156,7 +156,7 @@ export class AuthService {
     localStorage.removeItem('refreshToken');
   }
 
-  getAccessToken(): string | null {
+  public getAccessToken(): string | null {
     return localStorage.getItem('accessToken');
   }
 

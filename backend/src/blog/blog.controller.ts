@@ -96,6 +96,21 @@ export class BlogController {
     return this.blogService.getTags();
   }
 
+  @Get('validate-slug/:slug')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'editor')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Validar si un slug está disponible (requiere autenticación)' })
+  @ApiParam({ name: 'slug', description: 'Slug a validar' })
+  @ApiQuery({ name: 'currentSlug', required: false, description: 'Slug actual del post (para edición)' })
+  @ApiResponse({ status: 200, description: 'Resultado de la validación' })
+  async validateSlug(
+    @Param('slug') slug: string,
+    @Query('currentSlug') currentSlug?: string,
+  ) {
+    return this.blogService.validateSlug(slug, currentSlug);
+  }
+
   @Get('related/:slug')
   @ApiOperation({ summary: 'Obtener posts relacionados' })
   @ApiParam({ name: 'slug', description: 'Slug del post de referencia' })

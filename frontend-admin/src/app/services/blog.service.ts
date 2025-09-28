@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { tap, catchError } from 'rxjs/operators';
 import {
   BlogPost,
   CreatePostRequest,
@@ -101,5 +101,25 @@ export class BlogService {
 
   getRelatedPosts(slug: string, limit: number = 3): Observable<BlogPost[]> {
     return this.http.get<BlogPost[]>(`${this.API_URL}/related/${slug}?limit=${limit}`);
+  }
+
+  validateSlug(slug: string, currentSlug?: string): Observable<{ isValid: boolean; suggestedSlug?: string }> {
+    let params = new HttpParams();
+    if (currentSlug) {
+      params = params.set('currentSlug', currentSlug);
+    }
+    
+    console.log('Making request to validate slug:', slug, 'with params:', params.toString());
+    
+    return this.http.get<{ isValid: boolean; suggestedSlug?: string }>(
+      `${this.API_URL}/validate-slug/${slug}`, 
+      { params }
+    ).pipe(
+      tap(result => console.log('Received validation result:', result)),
+      catchError(error => {
+        console.error('Validation request failed:', error);
+        throw error;
+      })
+    );
   }
 }

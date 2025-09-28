@@ -25,32 +25,37 @@ export const routes: Routes = [
     ]
   },
   {
-    path: 'dashboard',
+    path: '',
+    loadComponent: () => import('./layouts/admin-layout.component').then(m => m.AdminLayoutComponent),
     canActivate: [authGuard],
-    loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent)
-  },
-  {
-    path: 'posts',
-    canActivate: [editorGuard],
     children: [
       {
-        path: '',
-        loadComponent: () => import('./pages/posts/posts-list.component').then(m => m.PostsListComponent)
+        path: 'dashboard',
+        loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
       {
-        path: 'new',
-        loadComponent: () => import('./pages/posts/post-editor.component').then(m => m.PostEditorComponent)
+        path: 'posts',
+        canActivate: [editorGuard],
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./pages/posts/posts-list.component').then(m => m.PostsListComponent)
+          },
+          {
+            path: 'new',
+            loadComponent: () => import('./pages/posts/post-editor.component').then(m => m.PostEditorComponent)
+          },
+          {
+            path: 'edit/:slug',
+            loadComponent: () => import('./pages/posts/post-editor.component').then(m => m.PostEditorComponent)
+          }
+        ]
       },
       {
-        path: 'edit/:slug',
-        loadComponent: () => import('./pages/posts/post-editor.component').then(m => m.PostEditorComponent)
+        path: 'users',
+        loadComponent: () => import('./pages/users/users-list.component').then(m => m.UsersListComponent)
       }
     ]
-  },
-  {
-    path: 'users',
-    loadComponent: () => import('./pages/users/users-list.component').then(m => m.UsersListComponent),
-    canActivate: [authGuard] // Solo admins pueden ver usuarios
   },
   {
     path: '**',
