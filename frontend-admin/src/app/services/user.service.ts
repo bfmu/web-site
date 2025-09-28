@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { User } from '../types/auth.types';
+import { environment } from '../../environments/environment';
 
 export interface ChangeRoleResponse {
   user: User;
@@ -18,7 +19,7 @@ export interface ToggleStatusResponse {
 })
 export class UserService {
   private http = inject(HttpClient);
-  private readonly API_URL = 'http://localhost:82/api/auth';
+  private readonly API_URL = `${environment.apiUrl}/auth`;
 
   // Get all users (admin only)
   async getAllUsers(): Promise<User[]> {

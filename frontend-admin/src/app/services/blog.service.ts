@@ -9,13 +9,14 @@ import {
   PostsResponse,
   PostQuery
 } from '../types/blog.types';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BlogService {
   private readonly http = inject(HttpClient);
-  private readonly API_URL = 'http://localhost:82/api/blog';
+  private readonly API_URL = `${environment.apiUrl}/blog`;
   
   // Signals para cache y estado
   private readonly _posts = signal<BlogPost[]>([]);

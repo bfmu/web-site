@@ -4,9 +4,12 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "node scripts/configure-env.js && ng build",
+    "build:prod": "NODE_ENV=production node scripts/configure-env.js && ng build --configuration=production",
+    "build:staging": "NODE_ENV=staging node scripts/configure-env.js && ng build --configuration=staging",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "configure-env": "node scripts/configure-env.js"
   },
   "prettier": {
     "printWidth": 100,

@@ -19,8 +19,28 @@ RUN npm ci --silent
 # Copiar código fuente
 COPY . .
 
-# Build de la aplicación para producción
-RUN npm run build
+# Configurar variables de entorno de build
+ARG NODE_ENV=production
+ARG API_URL=https://api.bfmu.dev/api
+ARG APP_NAME="Blog Admin Panel"
+ARG APP_VERSION="1.0.0"
+ARG GOOGLE_CLIENT_ID=""
+ARG GITHUB_CLIENT_ID=""
+ARG ENABLE_REGISTRATION=false
+ARG ENABLE_OAUTH=true
+
+# Configurar variables de entorno
+ENV NODE_ENV=${NODE_ENV}
+ENV API_URL=${API_URL}
+ENV APP_NAME=${APP_NAME}
+ENV APP_VERSION=${APP_VERSION}
+ENV GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+ENV GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+ENV ENABLE_REGISTRATION=${ENABLE_REGISTRATION}
+ENV ENABLE_OAUTH=${ENABLE_OAUTH}
+
+# Build de la aplicación para producción con configuración dinámica
+RUN npm run build:${NODE_ENV}
 
 # ====================
 # Stage 2: Production

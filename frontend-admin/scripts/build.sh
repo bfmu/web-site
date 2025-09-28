@@ -130,16 +130,29 @@ export NODE_ENV="$ENVIRONMENT"
 case $ENVIRONMENT in
     development)
         export PUBLIC_API_URL="http://localhost:82/api"
+        export ENABLE_REGISTRATION="true"
+        export ENABLE_OAUTH="true"
         ;;
     staging)
-        export PUBLIC_API_URL="https://api-staging.tudominio.com/api"
+        export PUBLIC_API_URL="https://api-staging.bfmu.dev/api"
+        export ENABLE_REGISTRATION="true"
+        export ENABLE_OAUTH="true"
         ;;
     production)
-        export PUBLIC_API_URL="https://api.tudominio.com/api"
+        export PUBLIC_API_URL="https://api.bfmu.dev/api"
+        export ENABLE_REGISTRATION="false"
+        export ENABLE_OAUTH="true"
         ;;
 esac
 
+# Configurar variables OAuth desde entorno si existen
+export GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-}"
+export GITHUB_CLIENT_ID="${GITHUB_CLIENT_ID:-}"
+
 log "API URL configurada: $PUBLIC_API_URL"
+log "OAuth Google configurado: ${GOOGLE_CLIENT_ID:+SI}"
+log "OAuth GitHub configurado: ${GITHUB_CLIENT_ID:+SI}"
+log "Registro habilitado: $ENABLE_REGISTRATION"
 
 # Build de la imagen Docker
 IMAGE_NAME="blog-admin"
@@ -151,7 +164,13 @@ log "Construyendo imagen Docker: $FULL_TAG"
 docker build \
     --target production \
     --build-arg NODE_ENV="$ENVIRONMENT" \
-    --build-arg PUBLIC_API_URL="$PUBLIC_API_URL" \
+    --build-arg API_URL="$PUBLIC_API_URL" \
+    --build-arg APP_NAME="Blog Admin Panel" \
+    --build-arg APP_VERSION="$TAG" \
+    --build-arg GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
+    --build-arg GITHUB_CLIENT_ID="$GITHUB_CLIENT_ID" \
+    --build-arg ENABLE_REGISTRATION="$ENABLE_REGISTRATION" \
+    --build-arg ENABLE_OAUTH="$ENABLE_OAUTH" \
     --tag "$FULL_TAG" \
     --label "environment=$ENVIRONMENT" \
     --label "build-date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
