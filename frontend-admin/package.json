@@ -4,9 +4,13 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "node scripts/configure-env.js && ng build",
+    "build:prod": "NODE_ENV=production node scripts/configure-env.js && ng build --configuration=production --base-href=/admin/",
+    "build:staging": "NODE_ENV=staging node scripts/configure-env.js && ng build --configuration=staging --base-href=/admin/",
+    "build:subpath": "NODE_ENV=production APP_BASE_PATH=/admin node scripts/configure-env.js && ng build --configuration=production --base-href=/admin/ --deploy-url=/admin/",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "configure-env": "node scripts/configure-env.js"
   },
   "prettier": {
     "printWidth": 100,

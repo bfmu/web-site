@@ -10,6 +10,7 @@ import {
   RegisterRequest, 
   AuthTokens 
 } from '../types/auth.types';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +19,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   
-  private readonly API_URL = 'http://localhost:82/api/auth';
+  private readonly API_URL = `${environment.apiUrl}/auth`;
   
   // Signals para estado moderno
   private readonly _user = signal<User | null>(null);
