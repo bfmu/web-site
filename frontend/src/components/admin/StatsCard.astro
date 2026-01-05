@@ -1,0 +1,46 @@
+---
+interface Props {
+  title: string;
+  value: string | number;
+  icon?: string;
+  trend?: {
+    value: number;
+    isPositive: boolean;
+  };
+}
+
+const { title, value, icon, trend } = Astro.props;
+---
+
+<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+  <div class="flex items-center justify-between">
+    <div class="flex-1">
+      <p class="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</p>
+      <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+        {typeof value === 'number' ? value.toLocaleString() : value}
+      </p>
+      {trend && (
+        <div class="mt-2 flex items-center gap-1 text-sm">
+          <span
+            class:list={[
+              'font-medium',
+              {
+                'text-green-600 dark:text-green-400': trend.isPositive,
+                'text-red-600 dark:text-red-400': !trend.isPositive,
+              },
+            ]}
+          >
+            {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
+          </span>
+          <span class="text-gray-500 dark:text-gray-400">vs mes anterior</span>
+        </div>
+      )}
+    </div>
+    {icon && (
+      <div class="rounded-full bg-indigo-100 p-3 dark:bg-indigo-900/20">
+        <span class="text-2xl">{icon}</span>
+      </div>
+    )}
+  </div>
+</div>
+

@@ -1,0 +1,203 @@
+---
+import AdminLayout from '@components/admin/AdminLayout.astro';
+import StatsCard from '@components/admin/StatsCard.astro';
+import { getStats, getRecentPosts, getMostViewedPosts } from '../../lib/admin-api';
+import type { BlogPost } from '../../lib/admin-api';
+
+let stats;
+let recentPosts: BlogPost[] = [];
+let mostViewed: BlogPost[] = [];
+
+try {
+  stats = await getStats();
+  recentPosts = await getRecentPosts(5);
+  mostViewed = await getMostViewedPosts(5);
+} catch (error) {
+  console.error('Error loading dashboard data:', error);
+  stats = {
+    totalPosts: 0,
+    publishedPosts: 0,
+    draftPosts: 0,
+    totalViews: 0,
+    categoriesCount: 0,
+    tagsCount: 0,
+  };
+}
+---
+
+<AdminLayout title="Dashboard">
+  <div class="space-y-6">
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <StatsCard
+        title="Total Posts"
+        value={stats.totalPosts}
+        icon="📝"
+      />
+      <StatsCard
+        title="Publicados"
+        value={stats.publishedPosts}
+        icon="✅"
+      />
+      <StatsCard
+        title="Borradores"
+        value={stats.draftPosts}
+        icon="📄"
+      />
+      <StatsCard
+        title="Vistas Totales"
+        value={stats.totalViews}
+        icon="👁️"
+      />
+      <StatsCard
+        title="Categorías"
+        value={stats.categoriesCount}
+        icon="📁"
+      />
+      <StatsCard
+        title="Tags"
+        value={stats.tagsCount}
+        icon="🏷️"
+      />
+    </div>
+
+    <!-- Recent Posts and Most Viewed -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <!-- Recent Posts -->
+      <div class="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            Posts Recientes
+          </h3>
+        </div>
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+          {recentPosts.length > 0 ? (
+            recentPosts.map((post) => (
+              <a
+                href={`/admin/posts/${post.slug}`}
+                class="block px-6 py-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex-1 min-w-0">
+                    <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
+                      {post.title}
+                    </p>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {new Date(post.published).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </p>
+                  </div>
+                  {post.draft && (
+                    <span class="ml-2 rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
+                      Borrador
+                    </span>
+                  )}
+                </div>
+              </a>
+            ))
+          ) : (
+            <div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+              No hay posts recientes
+            </div>
+          )}
+        </div>
+        <div class="border-t border-gray-200 px-6 py-4 dark:border-gray-700">
+          <a
+            href="/admin/posts"
+            class="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+          >
+            Ver todos los posts →
+          </a>
+        </div>
+      </div>
+
+      <!-- Most Viewed -->
+      <div class="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            Más Vistos
+          </h3>
+        </div>
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+          {mostViewed.length > 0 ? (
+            mostViewed.map((post) => (
+              <a
+                href={`/admin/posts/${post.slug}`}
+                class="block px-6 py-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex-1 min-w-0">
+                    <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
+                      {post.title}
+                    </p>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {post.views.toLocaleString()} vistas
+                    </p>
+                  </div>
+                  <span class="ml-2 text-sm font-medium text-gray-600 dark:text-gray-400">
+                    👁️ {post.views}
+                  </span>
+                </div>
+              </a>
+            ))
+          ) : (
+            <div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+              No hay datos de vistas
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+        Acciones Rápidas
+      </h3>
+      <div class="flex flex-wrap gap-3">
+        <a
+          href="/admin/posts/new"
+          class="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+        >
+          <svg
+            class="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          Nuevo Post
+        </a>
+        <a
+          href="/admin/posts"
+          class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+        >
+          <svg
+            class="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          Ver Todos los Posts
+        </a>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
