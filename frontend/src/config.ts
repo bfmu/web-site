@@ -76,7 +76,7 @@ export const navBarConfig: NavBarConfig = {
     // LinkPreset.Gallery,
     LinkPreset.Music,
     LinkPreset.Blog,
-    LinkPreset.Archive,
+    // LinkPreset.Archive, // Removido - ahora está en el sidebar de blog
     LinkPreset.About,
     {
       name: "Portafolio",

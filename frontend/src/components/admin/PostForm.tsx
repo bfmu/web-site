@@ -78,19 +78,23 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
     setLoading(true);
     try {
       const readingTime = calculateReadingTime(content);
+      
+      // Limpiar datos antes de enviar
       const postData = {
-        title,
-        slug,
-        content,
-        description: description || undefined,
-        image: image || undefined,
-        tags,
-        category: category || undefined,
+        title: title.trim(),
+        slug: slug.trim(),
+        content: content.trim(),
+        description: description?.trim() || undefined,
+        image: image?.trim() || undefined,
+        tags: tags && tags.length > 0 ? tags : undefined,
+        category: category?.trim() || undefined,
         draft: isDraft,
         published: new Date(published).toISOString(),
         language: language || 'es',
         readingTime,
       };
+      
+      console.log('Enviando post:', { ...postData, content: content.substring(0, 100) + '...' });
 
       if (post) {
         await updatePost(post.slug, postData);
@@ -104,7 +108,10 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
         window.location.href = '/admin/posts';
       }
     } catch (error: any) {
-      alert(`Error al ${isDraft ? 'guardar' : 'publicar'} el post: ${error.message}`);
+      console.error('Error al crear/actualizar post:', error);
+      const errorMessage = error?.message || error?.data?.message || error?.statusText || 'Error desconocido';
+      const errorDetails = error?.data ? JSON.stringify(error.data, null, 2) : '';
+      alert(`Error al ${isDraft ? 'guardar' : 'publicar'} el post: ${errorMessage}${errorDetails ? '\n\nDetalles: ' + errorDetails : ''}`);
     } finally {
       setLoading(false);
     }
@@ -124,7 +131,7 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
             placeholder="Título del post"
           />
         </div>
@@ -140,7 +147,7 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               required
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
               placeholder="url-del-post"
             />
             <button
@@ -176,7 +183,7 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
           placeholder="Breve descripción del post"
         />
       </div>
@@ -208,7 +215,7 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
             id="language"
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           >
             <option value="es">Español</option>
             <option value="en">English</option>
@@ -225,7 +232,7 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
             value={published}
             onChange={(e) => setPublished(e.target.value)}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           />
         </div>
       </div>

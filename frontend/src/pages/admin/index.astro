@@ -4,24 +4,38 @@ import StatsCard from '@components/admin/StatsCard.astro';
 import { getStats, getRecentPosts, getMostViewedPosts } from '../../lib/admin-api';
 import type { BlogPost } from '../../lib/admin-api';
 
-let stats;
+// Inicializar valores por defecto
+let stats = {
+  totalPosts: 0,
+  publishedPosts: 0,
+  draftPosts: 0,
+  totalViews: 0,
+  categoriesCount: 0,
+  tagsCount: 0,
+};
 let recentPosts: BlogPost[] = [];
 let mostViewed: BlogPost[] = [];
 
+// Cargar datos de forma segura, manejando errores individualmente
 try {
   stats = await getStats();
+} catch (error) {
+  console.error('Error loading stats:', error);
+  // stats ya tiene valores por defecto
+}
+
+try {
   recentPosts = await getRecentPosts(5);
+} catch (error) {
+  console.error('Error loading recent posts:', error);
+  recentPosts = [];
+}
+
+try {
   mostViewed = await getMostViewedPosts(5);
 } catch (error) {
-  console.error('Error loading dashboard data:', error);
-  stats = {
-    totalPosts: 0,
-    publishedPosts: 0,
-    draftPosts: 0,
-    totalViews: 0,
-    categoriesCount: 0,
-    tagsCount: 0,
-  };
+  console.error('Error loading most viewed posts:', error);
+  mostViewed = [];
 }
 ---
 
@@ -134,11 +148,11 @@ try {
                       {post.title}
                     </p>
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      {post.views.toLocaleString()} vistas
+                      {(post.views || 0).toLocaleString()} vistas
                     </p>
                   </div>
                   <span class="ml-2 text-sm font-medium text-gray-600 dark:text-gray-400">
-                    👁️ {post.views}
+                    👁️ {post.views || 0}
                   </span>
                 </div>
               </a>

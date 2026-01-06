@@ -195,23 +195,39 @@ export async function uploadImage(file: File): Promise<{ url: string }> {
  */
 export async function getStats(): Promise<Stats> {
   try {
-    // Obtener todos los posts para calcular estadísticas
-    const [allPosts, categories, tags] = await Promise.all([
-      getPosts({ draft: true, limit: 1000 }), // Obtener todos incluyendo borradores
-      getCategories(true),
-      getTags(),
+    // En SSR, no podemos obtener borradores sin autenticación
+    // Obtener solo posts publicados y luego intentar obtener borradores si hay token
+    // El backend tiene un límite máximo de 100, así que usamos ese valor
+    const [publishedPosts, categories, tags] = await Promise.all([
+      getPosts({ draft: false, limit: 100 }), // Solo publicados (máximo permitido)
+      getCategories(true).catch(() => []), // Si falla, retornar array vacío
+      getTags().catch(() => []), // Si falla, retornar array vacío
     ]);
 
+    let allPosts = publishedPosts;
+    let draftPosts = 0;
+    
+    // Intentar obtener borradores solo si hay token (en el cliente)
+    if (typeof window !== 'undefined') {
+      try {
+        const allPostsWithDrafts = await getPosts({ draft: true, limit: 100 });
+        allPosts = allPostsWithDrafts;
+        draftPosts = allPosts.posts.filter(p => p.draft).length;
+      } catch (error) {
+        // Si falla, usar solo los publicados
+        console.warn('No se pudieron obtener borradores:', error);
+      }
+    }
+
     const totalPosts = allPosts.pagination.total;
-    const publishedPosts = allPosts.posts.filter(p => !p.draft).length;
-    const draftPosts = allPosts.posts.filter(p => p.draft).length;
+    const publishedCount = allPosts.posts.filter(p => !p.draft).length;
     const totalViews = allPosts.posts.reduce((sum, p) => sum + (p.views || 0), 0);
     const categoriesCount = Array.isArray(categories) ? categories.length : 0;
     const tagsCount = tags.length;
 
     return {
       totalPosts,
-      publishedPosts,
+      publishedPosts: publishedCount,
       draftPosts,
       totalViews,
       categoriesCount,
@@ -262,5 +278,26 @@ export function generateSlug(title: string): string {
     .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
     .replace(/[^a-z0-9]+/g, '-') // Reemplazar caracteres especiales con guiones
     .replace(/^-+|-+$/g, ''); // Eliminar guiones al inicio y final
+}
+
+/**
+ * Obtener perfil del usuario actual
+ */
+export async function getProfile(): Promise<any> {
+  return apiGet('auth/profile');
+}
+
+/**
+ * Actualizar perfil del usuario
+ */
+export async function updateProfile(data: { name?: string; avatar?: string }): Promise<any> {
+  return apiPatch('auth/profile', data);
+}
+
+/**
+ * Subir avatar del usuario
+ */
+export async function uploadAvatar(file: File): Promise<{ url: string; filename: string }> {
+  return apiUpload('auth/upload-avatar', file);
 }
 

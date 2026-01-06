@@ -1,5 +1,6 @@
 ---
 import AdminLayout from '@components/admin/AdminLayout.astro';
+import { Fragment } from 'astro/jsx-runtime';
 import { getPosts } from '../../../lib/admin-api';
 import type { BlogPost, PostQuery } from '../../../lib/admin-api';
 
@@ -34,6 +35,23 @@ try {
 }
 
 const { posts, pagination } = response;
+
+// Función auxiliar para filtrar páginas de paginación
+function getVisiblePages(totalPages: number, currentPage: number): number[] {
+  const pages: number[] = [];
+  for (let i = 1; i <= totalPages; i++) {
+    if (
+      i === 1 ||
+      i === totalPages ||
+      (i >= currentPage - 1 && i <= currentPage + 1)
+    ) {
+      pages.push(i);
+    }
+  }
+  return pages;
+}
+
+const visiblePages = getVisiblePages(pagination.pages, pagination.page);
 ---
 
 <AdminLayout title="Posts">
@@ -63,10 +81,10 @@ const { posts, pagination } = response;
     </div>
 
     <!-- Filters -->
-    <div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+    <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <form id="filters-form" method="get" class="grid grid-cols-1 gap-4 sm:grid-cols-4">
         <div>
-          <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Buscar
           </label>
           <input
@@ -75,18 +93,18 @@ const { posts, pagination } = response;
             name="search"
             value={query.search || ''}
             placeholder="Título, contenido..."
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500"
           />
         </div>
 
         <div>
-          <label for="draft" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label for="draft" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Estado
           </label>
           <select
             id="draft"
             name="draft"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           >
             <option value="">Todos</option>
             <option value="false" selected={query.draft === false}>Publicados</option>
@@ -95,13 +113,13 @@ const { posts, pagination } = response;
         </div>
 
         <div>
-          <label for="sortBy" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label for="sortBy" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Ordenar por
           </label>
           <select
             id="sortBy"
             name="sortBy"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           >
             <option value="published" selected={query.sortBy === 'published'}>Fecha</option>
             <option value="title" selected={query.sortBy === 'title'}>Título</option>
@@ -112,7 +130,7 @@ const { posts, pagination } = response;
         <div class="flex items-end">
           <button
             type="submit"
-            class="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            class="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             Filtrar
           </button>
@@ -274,39 +292,46 @@ const { posts, pagination } = response;
                   </svg>
                 </a>
               )}
-              {Array.from({ length: pagination.pages }, (_, i) => i + 1)
-                .filter((page) => {
-                  // Mostrar primera, última, actual y páginas cercanas
-                  return (
-                    page === 1 ||
-                    page === pagination.pages ||
-                    (page >= pagination.page - 1 && page <= pagination.page + 1)
-                  );
-                })
-                .map((page, index, array) => {
-                  const showEllipsis = index > 0 && page - array[index - 1] > 1;
-                  return (
-                    <>
-                      {showEllipsis && (
+              {visiblePages.map((page, index) => {
+                  const showEllipsis = index > 0 && page - visiblePages[index - 1] > 1;
+                  if (showEllipsis) {
+                    return (
+                      <Fragment>
                         <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0 dark:text-gray-300 dark:ring-gray-600">
                           ...
                         </span>
-                      )}
-                      <a
-                        href={`?page=${page}`}
-                        class:list={[
-                          'relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0 dark:ring-gray-600',
-                          {
-                            'z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600':
-                              page === pagination.page,
-                            'text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700':
-                              page !== pagination.page,
-                          },
-                        ]}
-                      >
-                        {page}
-                      </a>
-                    </>
+                        <a
+                          href={`?page=${page}`}
+                          class:list={[
+                            'relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0 dark:ring-gray-600',
+                            {
+                              'z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600':
+                                page === pagination.page,
+                              'text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700':
+                                page !== pagination.page,
+                            },
+                          ]}
+                        >
+                          {page}
+                        </a>
+                      </Fragment>
+                    );
+                  }
+                  return (
+                    <a
+                      href={`?page=${page}`}
+                      class:list={[
+                        'relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0 dark:ring-gray-600',
+                        {
+                          'z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600':
+                            page === pagination.page,
+                          'text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700':
+                            page !== pagination.page,
+                        },
+                      ]}
+                    >
+                      {page}
+                    </a>
                   );
                 })}
               {pagination.page < pagination.pages && (

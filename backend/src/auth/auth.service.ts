@@ -323,6 +323,10 @@ export class AuthService {
 
   private sanitizeUser(user: UserDocument): Partial<User> {
     const { password, refreshToken, ...sanitizedUser } = user.toObject();
+    // Asegurar que siempre haya un avatar por defecto
+    if (!sanitizedUser.avatar) {
+      sanitizedUser.avatar = '/default-avatar.svg';
+    }
     return sanitizedUser;
   }
 
@@ -337,5 +341,26 @@ export class AuthService {
 
   async findById(id: string): Promise<User> {
     return this.userModel.findById(id);
+  }
+
+  // Actualizar perfil del usuario
+  async updateProfile(
+    userId: string,
+    updateData: { name?: string; avatar?: string },
+  ): Promise<Partial<User>> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    if (updateData.name) {
+      user.name = updateData.name;
+    }
+    if (updateData.avatar) {
+      user.avatar = updateData.avatar;
+    }
+
+    await user.save();
+    return this.sanitizeUser(user);
   }
 }

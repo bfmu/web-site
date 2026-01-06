@@ -9,7 +9,7 @@ import { fetchPosts } from '../../utils/api-blog'
 // Obtener número de página desde la URL dinámica [...page]
 const pageParam = Astro.params.page
 const pageNum = Number(Array.isArray(pageParam) ? pageParam[0] : (pageParam ?? 1)) || 1
-const res = await fetchPosts({ page: pageNum, limit: PAGE_SIZE })
+const res = await fetchPosts({ page: pageNum, limit: PAGE_SIZE, draft: false })
 
 
 // Adaptar la respuesta
@@ -36,7 +36,7 @@ const pageForPagination = {
 
 const len = pageData.data.length
 ---
-<MainGridLayout>
+<MainGridLayout showProfile={false} showCategories={true} showTags={true} showArchiveLink={true}>
     <PostPage page={pageData}></PostPage>
     <Pagination class="mx-auto onload-animation" page={pageForPagination as any} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination>
 </MainGridLayout>

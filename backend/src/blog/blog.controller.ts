@@ -62,7 +62,7 @@ export class BlogController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Subir imagen (requiere autenticación)' })
   @ApiResponse({ status: 201, description: 'Imagen subida correctamente' })
-  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+  async uploadImage(@UploadedFile() file: any) {
     if (!file) {
       throw new BadRequestException('No se proporcionó ningún archivo');
     }

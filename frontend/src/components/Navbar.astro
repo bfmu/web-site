@@ -55,6 +55,60 @@ let links: NavBarLink[] = navBarConfig.links.map(
                     </button>
             )}
             <LightDarkSwitch client:load></LightDarkSwitch>
+                <!-- Admin/Login Button with Dropdown -->
+                <div id="admin-user-menu" class="relative hidden" role="menu" tabindex="-1">
+                <button 
+                    id="admin-user-btn" 
+                    aria-label="Menú de usuario" 
+                    class="btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90 flex items-center justify-center overflow-hidden"
+                    title="Menú de usuario"
+                >
+                    <img 
+                        id="admin-user-avatar" 
+                        src="/default-avatar.svg" 
+                        alt="Avatar" 
+                        class="w-full h-full object-cover rounded-full border-2 border-gray-200 dark:border-gray-700"
+                        onerror="this.src='/default-avatar.svg'"
+                    />
+                </button>
+                <!-- Dropdown Menu -->
+                <div id="admin-user-dropdown" class="absolute right-0 top-12 mt-2 w-48 card-base float-panel float-panel-closed z-50">
+                    <div class="p-2">
+                        <a 
+                            href="/admin/profile" 
+                            class="flex items-center gap-3 px-3 py-2 rounded-lg btn-plain scale-animation transition whitespace-nowrap h-9 font-medium active:scale-95 mb-0.5"
+                        >
+                            <Icon name="material-symbols:person" class="text-[1.25rem]"></Icon>
+                            <span class="text-sm">Mi Perfil</span>
+                        </a>
+                        <a 
+                            href="/admin" 
+                            class="flex items-center gap-3 px-3 py-2 rounded-lg btn-plain scale-animation transition whitespace-nowrap h-9 font-medium active:scale-95 mb-0.5"
+                        >
+                            <Icon name="material-symbols:dashboard" class="text-[1.25rem]"></Icon>
+                            <span class="text-sm">Dashboard</span>
+                        </a>
+                        <hr class="my-2 border-[var(--line-divider)]" />
+                        <button 
+                            id="logout-menu-btn"
+                            class="w-full flex items-center gap-3 px-3 py-2 rounded-lg btn-plain scale-animation transition whitespace-nowrap h-9 font-medium active:scale-95 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                            <Icon name="material-symbols:logout" class="text-[1.25rem]"></Icon>
+                            <span class="text-sm">Cerrar Sesión</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Login Button (shown when not authenticated) -->
+            <a 
+                id="admin-login-btn" 
+                href="/admin/login" 
+                aria-label="Admin Login" 
+                class="btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90 flex items-center justify-center"
+                title="Iniciar sesión"
+            >
+                <Icon id="admin-login-icon" name="material-symbols:login" class="text-[1.25rem]"></Icon>
+            </a>
             <button aria-label="Menu" name="Nav Menu" class="btn-plain scale-animation rounded-lg w-11 h-11 active:scale-90 md:hidden" id="nav-menu-switch">
                 <Icon name="material-symbols:menu-rounded" class="text-[1.25rem]"></Icon>
             </button>
@@ -109,7 +163,221 @@ function loadButtonScript() {
 
 loadButtonScript();
 
-document.addEventListener('astro:after-swap', () => {
-    loadButtonScript();
-}, { once: false });
+// Actualizar botón de admin/login según estado de autenticación
+function updateAdminButton() {
+    const adminBtn = document.getElementById('admin-login-btn') as HTMLAnchorElement;
+    const userMenu = document.getElementById('admin-user-menu') as HTMLDivElement;
+    const userBtn = document.getElementById('admin-user-btn') as HTMLButtonElement;
+    const userAvatar = document.getElementById('admin-user-avatar') as HTMLImageElement;
+    const dropdown = document.getElementById('admin-user-dropdown') as HTMLDivElement;
+
+    // Verificar si hay token en localStorage
+    const token = localStorage.getItem('accessToken');
+    const userStr = localStorage.getItem('user');
+
+    if (token && userStr) {
+        try {
+            const user = JSON.parse(userStr);
+            
+            // Mostrar menú de usuario y ocultar botón de login
+            if (adminBtn) adminBtn.classList.add('hidden');
+            if (userMenu) userMenu.classList.remove('hidden');
+            
+            // Actualizar avatar
+            if (userAvatar) {
+                let avatarUrl = user.avatar || '/default-avatar.svg';
+                
+                // Si el avatar es una ruta de uploads, construir URL completa del backend
+                if (avatarUrl && avatarUrl.startsWith('/uploads/')) {
+                    // En el navegador, usar PUBLIC_API_URL (localhost)
+                    // En SSR, usar PUBLIC_API_URL_DOCKER (backend)
+                    const isServer = typeof window === 'undefined';
+                    const apiUrl = isServer 
+                        ? (import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:4000/')
+                        : (import.meta.env.PUBLIC_API_URL || 'http://localhost:4000/');
+                    avatarUrl = `${apiUrl.replace(/\/$/, '')}${avatarUrl}`;
+                } else if (!avatarUrl || avatarUrl === '/default-avatar.png' || avatarUrl === '/default-avatar.svg') {
+                    avatarUrl = '/default-avatar.svg';
+                } else if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('/default-avatar')) {
+                    // Si es otra ruta relativa, construir URL del backend
+                    const isServer = typeof window === 'undefined';
+                    const apiUrl = isServer 
+                        ? (import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:4000/')
+                        : (import.meta.env.PUBLIC_API_URL || 'http://localhost:4000/');
+                    avatarUrl = `${apiUrl.replace(/\/$/, '')}${avatarUrl}`;
+                }
+                
+                console.log('Setting avatar URL:', avatarUrl, 'User avatar:', user.avatar);
+                userAvatar.src = avatarUrl;
+                
+                // Manejar error de carga
+                userAvatar.onerror = function() {
+                    console.log('Avatar failed to load, using default. Original URL:', avatarUrl);
+                    this.src = '/default-avatar.svg';
+                    this.onerror = null; // Evitar loop infinito
+                };
+            }
+            
+            // Configurar el menú después de actualizar
+            userMenuInitialized = false; // Reset para permitir reinicialización
+            setTimeout(setupUserMenu, 100);
+        } catch (e) {
+            console.error('Error parsing user data:', e);
+        }
+    } else {
+        // Usuario no autenticado: mostrar botón de login y ocultar menú
+        if (adminBtn) adminBtn.classList.remove('hidden');
+        if (userMenu) userMenu.classList.add('hidden');
+    }
+}
+
+// Manejar click en botón de usuario para mostrar/ocultar dropdown
+let userMenuInitialized = false;
+
+function showUserMenu() {
+    const dropdown = document.getElementById('admin-user-dropdown');
+    if (dropdown) {
+        dropdown.classList.remove('float-panel-closed');
+    }
+}
+
+function hideUserMenu() {
+    const dropdown = document.getElementById('admin-user-dropdown');
+    if (dropdown) {
+        dropdown.classList.add('float-panel-closed');
+    }
+}
+
+function setupUserMenu() {
+    const userBtn = document.getElementById('admin-user-btn');
+    const dropdown = document.getElementById('admin-user-dropdown');
+    const logoutBtn = document.getElementById('logout-menu-btn');
+    const menuContainer = document.getElementById('admin-user-menu');
+
+    if (!userBtn || !dropdown || !menuContainer) {
+        // Si los elementos no existen aún, reintentar después de un breve delay
+        if (!userMenuInitialized) {
+            setTimeout(setupUserMenu, 100);
+        }
+        return;
+    }
+
+    // Solo inicializar una vez para evitar múltiples listeners
+    if (userMenuInitialized) return;
+    userMenuInitialized = true;
+
+    let hideTimeout: number | null = null;
+
+    // Función para cancelar el timeout de ocultar
+    function cancelHide() {
+        if (hideTimeout !== null) {
+            clearTimeout(hideTimeout);
+            hideTimeout = null;
+        }
+    }
+
+    // Función para programar el ocultamiento con delay
+    function scheduleHide() {
+        cancelHide();
+        hideTimeout = window.setTimeout(() => {
+            hideUserMenu();
+            hideTimeout = null;
+        }, 150); // Pequeño delay para permitir movimiento del mouse
+    }
+
+    // Usar mouseenter/mouseleave similar a LightDarkSwitch
+    // Abrir al entrar al botón o al contenedor
+    userBtn.addEventListener('mouseenter', () => {
+        cancelHide();
+        showUserMenu();
+    });
+
+    menuContainer.addEventListener('mouseenter', () => {
+        cancelHide();
+        showUserMenu();
+    });
+
+    // Cerrar al salir del contenedor completo (botón + menú)
+    menuContainer.addEventListener('mouseleave', scheduleHide);
+
+    // También permitir click para toggle (para móviles)
+    userBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        cancelHide();
+        if (dropdown.classList.contains('float-panel-closed')) {
+            showUserMenu();
+        } else {
+            hideUserMenu();
+        }
+    });
+
+    // Cerrar dropdown al hacer click fuera
+    const handleClickOutside = (e: MouseEvent) => {
+        const target = e.target as Node;
+        if (userBtn && dropdown && !userBtn.contains(target) && !dropdown.contains(target)) {
+            cancelHide();
+            hideUserMenu();
+        }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+
+    // Manejar logout
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+                const { logout } = await import('../lib/auth');
+                await logout();
+                window.location.href = '/';
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+                // Limpiar localStorage de todas formas
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                localStorage.removeItem('user');
+                window.location.href = '/';
+            }
+        });
+    }
+}
+
+// Detectar si estamos en un iframe y ocultar el enlace "Ver Sitio" del admin
+function hideAdminLinksInIframe() {
+    // Si estamos dentro de un iframe, ocultar el menú de admin
+    if (window.self !== window.top) {
+        const adminMenu = document.getElementById('admin-user-menu');
+        const adminLoginBtn = document.getElementById('admin-login-btn');
+        if (adminMenu) {
+            adminMenu.style.display = 'none';
+        }
+        if (adminLoginBtn) {
+            adminLoginBtn.style.display = 'none';
+        }
+    }
+}
+
+// Actualizar al cargar
+if (typeof window !== 'undefined') {
+    hideAdminLinksInIframe();
+    updateAdminButton();
+    setupUserMenu();
+    
+    // Escuchar cambios en localStorage (por si hay login/logout en otra pestaña)
+    window.addEventListener('storage', () => {
+        updateAdminButton();
+        setupUserMenu();
+    });
+    
+    // Actualizar después de navegación
+    document.addEventListener('astro:after-swap', () => {
+        loadButtonScript();
+        hideAdminLinksInIframe();
+        userMenuInitialized = false; // Reset para permitir reinicialización
+        updateAdminButton();
+        setTimeout(setupUserMenu, 100);
+    }, { once: false });
+}
 </script>

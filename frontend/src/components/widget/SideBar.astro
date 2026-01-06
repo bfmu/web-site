@@ -2,24 +2,38 @@
 import Profile from './Profile.astro'
 import Tag from './Tags.astro'
 import Categories from './Categories.astro'
+import ArchiveLink from './ArchiveLink.astro'
 import type { MarkdownHeading } from 'astro'
 import TOC from './TOC.astro'
 
 interface Props {
     class? : string
     headings? : MarkdownHeading[]
+    showProfile?: boolean
+    showCategories?: boolean
+    showTags?: boolean
+    showArchiveLink?: boolean
 }
 
 const className = Astro.props.class
 const headings = Astro.props.headings
+const showProfile = Astro.props.showProfile ?? true
+const showCategories = Astro.props.showCategories ?? true
+const showTags = Astro.props.showTags ?? true
+const showArchiveLink = Astro.props.showArchiveLink ?? false
 
 ---
 <div id="sidebar" class:list={[className, "w-full"]}>
-    <div class="flex flex-col w-full gap-4 mb-4">
-        <Profile></Profile>
-    </div>
-    <div id="sidebar-sticky" class="transition-all duration-700 flex flex-col w-full gap-4 top-4 sticky top-4">
-        <Categories class="onload-animation" style="animation-delay: 150ms"></Categories>
-        <Tag class="onload-animation" style="animation-delay: 200ms"></Tag>
-    </div>
+    {showProfile && (
+        <div class="flex flex-col w-full gap-4 mb-4">
+            <Profile></Profile>
+        </div>
+    )}
+    {(showCategories || showTags || showArchiveLink) && (
+        <div id="sidebar-sticky" class="transition-all duration-700 flex flex-col w-full gap-4 top-4 sticky top-4">
+            {showCategories && <Categories class="onload-animation" style="animation-delay: 150ms"></Categories>}
+            {showTags && <Tag class="onload-animation" style="animation-delay: 200ms"></Tag>}
+            {showArchiveLink && <ArchiveLink class="onload-animation" style="animation-delay: 250ms"></ArchiveLink>}
+        </div>
+    )}
 </div>

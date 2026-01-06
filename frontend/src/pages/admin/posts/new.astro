@@ -1,8 +1,8 @@
 ---
 import AdminLayout from '@components/admin/AdminLayout.astro';
-import PostForm from '../../../components/admin/PostForm';
+import { PostForm } from '../../../components/admin/PostForm.tsx';
 ---
 
 <AdminLayout title="Nuevo Post">
-  <PostForm client:load />
+  <PostForm client:only="react" />
 </AdminLayout>

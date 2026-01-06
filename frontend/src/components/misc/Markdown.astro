@@ -27,40 +27,12 @@ const content: string | undefined = Astro.props.content
 
 let html = ''
 if (content) {
-  const file = await unified()
-    .use(remarkParse)
-    .use(remarkMath)
-    .use(remarkGithubAdmonitionsToDirectives)
-    .use(remarkDirective)
-    .use(parseDirectiveNode)
-    .use(remarkRehype)
-    .use(rehypeKatex)
-    .use(rehypeSlug)
-    .use(rehypeComponents as any, {
-      components: {
-        github: GithubCardComponent as any,
-        note: (((x: any, y: any) => AdmonitionComponent(x, y, 'note')) as any),
-        tip: (((x: any, y: any) => AdmonitionComponent(x, y, 'tip')) as any),
-        important: (((x: any, y: any) => AdmonitionComponent(x, y, 'important')) as any),
-        caution: (((x: any, y: any) => AdmonitionComponent(x, y, 'caution')) as any),
-        warning: (((x: any, y: any) => AdmonitionComponent(x, y, 'warning')) as any),
-      },
-    } as any)
-    .use(rehypeAutolinkHeadings, {
-      behavior: 'append',
-      properties: { className: ['anchor'] },
-      content: {
-        type: 'element',
-        tagName: 'span',
-        properties: { className: ['anchor-icon'], 'data-pagefind-ignore': true },
-        children: [{ type: 'text', value: '#' }],
-      },
-    })
-    .use(rehypeStringify)
-    .process(content)
-
-  const rendered = String(file)
-  html = sanitizeHtml(rendered, {
+  // Detectar si el contenido es HTML (viene del editor Tiptap) o Markdown
+  const isHTML = content.trim().startsWith('<') || /<[a-z][\s\S]*>/i.test(content);
+  
+  if (isHTML) {
+    // Si es HTML, sanitizarlo directamente sin procesar como Markdown
+    html = sanitizeHtml(content, {
     allowedTags: sanitizeHtml.defaults.allowedTags.concat([
       'img',
       'figure',
@@ -102,7 +74,86 @@ if (content) {
       img: ['http', 'https', 'data'],
       source: ['http', 'https', 'data'],
     },
-  })
+    })
+  } else {
+    // Si es Markdown, procesarlo normalmente
+    const file = await unified()
+      .use(remarkParse)
+      .use(remarkMath)
+      .use(remarkGithubAdmonitionsToDirectives)
+      .use(remarkDirective)
+      .use(parseDirectiveNode)
+      .use(remarkRehype)
+      .use(rehypeKatex)
+      .use(rehypeSlug)
+      .use(rehypeComponents as any, {
+        components: {
+          github: GithubCardComponent as any,
+          note: (((x: any, y: any) => AdmonitionComponent(x, y, 'note')) as any),
+          tip: (((x: any, y: any) => AdmonitionComponent(x, y, 'tip')) as any),
+          important: (((x: any, y: any) => AdmonitionComponent(x, y, 'important')) as any),
+          caution: (((x: any, y: any) => AdmonitionComponent(x, y, 'caution')) as any),
+          warning: (((x: any, y: any) => AdmonitionComponent(x, y, 'warning')) as any),
+        },
+      } as any)
+      .use(rehypeAutolinkHeadings, {
+        behavior: 'append',
+        properties: { className: ['anchor'] },
+        content: {
+          type: 'element',
+          tagName: 'span',
+          properties: { className: ['anchor-icon'], 'data-pagefind-ignore': true },
+          children: [{ type: 'text', value: '#' }],
+        },
+      })
+      .use(rehypeStringify)
+      .process(content)
+
+    const rendered = String(file)
+    html = sanitizeHtml(rendered, {
+      allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+        'img',
+        'figure',
+        'figcaption',
+        'iframe',
+        'video',
+        'source',
+      ]),
+      allowedAttributes: {
+        ...sanitizeHtml.defaults.allowedAttributes,
+        a: ['href', 'name', 'target', 'rel', 'class', 'id', 'repo'],
+        img: [
+          'src',
+          'alt',
+          'title',
+          'width',
+          'height',
+          'srcset',
+          'sizes',
+          'loading',
+          'decoding',
+        ],
+        iframe: [
+          'src',
+          'width',
+          'height',
+          'allow',
+          'allowfullscreen',
+          'frameborder',
+          'loading',
+          'referrerpolicy',
+        ],
+        video: ['controls', 'src', 'width', 'height', 'poster'],
+        source: ['src', 'type'],
+        span: ['class', 'style', 'id'],
+        div: ['class', 'style', 'id'],
+      },
+      allowedSchemesByTag: {
+        img: ['http', 'https', 'data'],
+        source: ['http', 'https', 'data'],
+      },
+    })
+  }
 }
 ---
 {content ? (

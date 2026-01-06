@@ -1,6 +1,6 @@
 ---
 import AdminLayout from '@components/admin/AdminLayout.astro';
-import PostForm from '../../../components/admin/PostForm';
+import { PostForm } from '../../../components/admin/PostForm.tsx';
 import { getPost } from '../../../lib/admin-api';
 import type { BlogPost } from '../../../lib/admin-api';
 
@@ -20,6 +20,6 @@ try {
 ---
 
 <AdminLayout title={`Editar: ${post.title}`}>
-  <PostForm client:load post={post} />
+  <PostForm client:only="react" post={post} />
 </AdminLayout>
 

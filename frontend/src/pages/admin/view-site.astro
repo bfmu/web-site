@@ -1,0 +1,118 @@
+---
+import AdminLayout from '@components/admin/AdminLayout.astro';
+import { getUser, isAdmin } from '../../lib/auth';
+
+// Verificar que solo administradores puedan acceder
+if (typeof window !== 'undefined') {
+  const user = getUser();
+  if (!user || !isAdmin()) {
+    window.location.href = '/admin';
+  }
+}
+---
+
+<AdminLayout title="Vista Previa del Sitio">
+  <div class="h-[calc(100vh-8rem)] w-full">
+    <iframe
+      id="site-preview"
+      src="/"
+      class="h-full w-full border-0 rounded-lg shadow-lg"
+      title="Vista previa del sitio"
+      allow="fullscreen"
+      sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+    ></iframe>
+  </div>
+</AdminLayout>
+
+<script>
+  // Asegurar que solo administradores puedan acceder
+  import { getUser, isAdmin } from '../../lib/auth';
+  
+  if (typeof window !== 'undefined') {
+    const user = getUser();
+    if (!user || !isAdmin()) {
+      window.location.href = '/admin';
+    }
+  }
+
+  // Manejar navegación dentro del iframe
+  const iframe = document.getElementById('site-preview') as HTMLIFrameElement;
+  
+  if (iframe) {
+    // Interceptar navegación dentro del iframe para prevenir cargar rutas del admin
+    iframe.addEventListener('load', () => {
+      try {
+        const iframeWindow = iframe.contentWindow;
+        const iframeDoc = iframe.contentDocument;
+        
+        if (iframeWindow && iframeDoc) {
+          // Interceptar clicks en enlaces dentro del iframe
+          iframeDoc.addEventListener('click', (e) => {
+            const target = e.target as HTMLElement;
+            const link = target.closest('a');
+            
+            if (link && link.href) {
+              const url = new URL(link.href, window.location.origin);
+              
+              // Si el enlace apunta a una ruta del admin, prevenir la navegación
+              if (url.pathname.startsWith('/admin')) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // En su lugar, actualizar el iframe para ir a la página principal
+                iframe.src = '/';
+                
+                return false;
+              }
+            }
+          }, true);
+          
+          // También interceptar cambios de URL programáticos
+          const originalPushState = iframeWindow.history.pushState;
+          const originalReplaceState = iframeWindow.history.replaceState;
+          
+          iframeWindow.history.pushState = function(...args) {
+            const url = args[2];
+            if (url && typeof url === 'string' && url.startsWith('/admin')) {
+              iframe.src = '/';
+              return;
+            }
+            return originalPushState.apply(iframeWindow.history, args);
+          };
+          
+          iframeWindow.history.replaceState = function(...args) {
+            const url = args[2];
+            if (url && typeof url === 'string' && url.startsWith('/admin')) {
+              iframe.src = '/';
+              return;
+            }
+            return originalReplaceState.apply(iframeWindow.history, args);
+          };
+        }
+      } catch (e) {
+        // Error esperado por políticas de mismo origen
+        console.log('No se puede acceder al contenido del iframe (política de mismo origen)');
+      }
+    });
+    
+    // También interceptar cambios en el src del iframe
+    const observer = new MutationObserver(() => {
+      if (iframe.src && iframe.src.includes('/admin')) {
+        iframe.src = '/';
+      }
+    });
+    
+    observer.observe(iframe, {
+      attributes: true,
+      attributeFilter: ['src']
+    });
+  }
+</script>
+
+<style>
+  /* Asegurar que el iframe ocupe todo el espacio disponible */
+  #site-preview {
+    min-height: 600px;
+  }
+</style>
+

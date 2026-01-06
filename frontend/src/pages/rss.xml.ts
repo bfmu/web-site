@@ -8,7 +8,7 @@ import sanitizeHtml from "sanitize-html";
 const parser = new MarkdownIt();
 
 export async function GET(context: APIContext) {
-  const res = await fetchPosts({ limit: 100 });
+  const res = await fetchPosts({ limit: 100, draft: false });
   const blog = res.docs || res;
 
   return rss({

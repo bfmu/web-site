@@ -41,9 +41,17 @@ function getApiBaseUrl(): string {
 const API_BASE = `${getApiBaseUrl()}api/auth`;
 
 /**
+ * Verificar si estamos en el cliente (navegador)
+ */
+function isClient(): boolean {
+  return typeof window !== 'undefined';
+}
+
+/**
  * Guardar tokens en localStorage
  */
 export function setTokens(tokens: AuthTokens): void {
+  if (!isClient()) return;
   localStorage.setItem(TOKEN_KEY, tokens.accessToken);
   localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
 }
@@ -52,6 +60,7 @@ export function setTokens(tokens: AuthTokens): void {
  * Obtener access token
  */
 export function getAccessToken(): string | null {
+  if (!isClient()) return null;
   return localStorage.getItem(TOKEN_KEY);
 }
 
@@ -59,6 +68,7 @@ export function getAccessToken(): string | null {
  * Obtener refresh token
  */
 export function getRefreshToken(): string | null {
+  if (!isClient()) return null;
   return localStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
@@ -66,6 +76,7 @@ export function getRefreshToken(): string | null {
  * Limpiar tokens del localStorage
  */
 export function clearTokens(): void {
+  if (!isClient()) return;
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
@@ -75,6 +86,7 @@ export function clearTokens(): void {
  * Guardar usuario en localStorage
  */
 export function setUser(user: User): void {
+  if (!isClient()) return;
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
@@ -82,10 +94,16 @@ export function setUser(user: User): void {
  * Obtener usuario del localStorage
  */
 export function getUser(): User | null {
+  if (!isClient()) return null;
   const userStr = localStorage.getItem(USER_KEY);
   if (!userStr) return null;
   try {
-    return JSON.parse(userStr);
+    const user = JSON.parse(userStr);
+    // Asegurar que siempre haya un avatar (por defecto si no existe)
+    if (!user.avatar) {
+      user.avatar = '/default-avatar.svg';
+    }
+    return user;
   } catch {
     return null;
   }
@@ -95,6 +113,7 @@ export function getUser(): User | null {
  * Verificar si el usuario está autenticado
  */
 export function isAuthenticated(): boolean {
+  if (!isClient()) return false;
   return !!getAccessToken() && !!getUser();
 }
 

@@ -48,16 +48,17 @@ export class BlogService {
     // Construir filtros
     const filter: any = {};
 
-    // Por defecto no devolver borradores
-    if (draft === undefined) {
-      filter.draft = false;
-      console.log('Draft undefined - filtering only published posts');
-    } else if (draft === false) {
+    // Filtrar por draft solo si se especifica explícitamente
+    // Si draft es undefined, mostrar todos los posts (tanto borradores como publicados)
+    if (draft === false) {
       filter.draft = false;
       console.log('Draft false - filtering only published posts');
     } else if (draft === true) {
-      // No agregar filtro de draft - mostrar todos (borradores y publicados)
-      console.log('Draft true - showing all posts (drafts and published)');
+      filter.draft = true;
+      console.log('Draft true - filtering only draft posts');
+    } else {
+      // draft es undefined - no filtrar por draft, mostrar todos
+      console.log('Draft undefined - showing all posts (drafts and published)');
     }
 
     if (category) {

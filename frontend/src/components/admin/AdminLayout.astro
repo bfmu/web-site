@@ -1,17 +1,20 @@
 ---
 import Layout from '@layouts/Layout.astro';
-import { getUser, logout } from '../../lib/auth';
+import AdminThemeSwitch from '@components/admin/AdminThemeSwitch.svelte';
+import { getUser } from '../../lib/auth';
 
 interface Props {
   title?: string;
 }
 
 const { title = 'Admin' } = Astro.props;
-const user = getUser();
 
-// Si no hay usuario, redirigir (esto se maneja mejor en middleware, pero por si acaso)
-if (!user) {
-  return Astro.redirect('/admin/login');
+// En SSR, no podemos acceder a localStorage, así que getUser() retornará null
+// No hacer redirect aquí, el middleware y el cliente se encargan de la protección
+// Solo obtener el usuario si está disponible (en el cliente)
+let user = null;
+if (typeof window !== 'undefined') {
+  user = getUser();
 }
 ---
 
@@ -81,8 +84,13 @@ if (!user) {
           </a>
 
           <a
-            href="/admin/posts/new"
+            href="/admin/profile"
             class="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            class:list={[
+              {
+                'bg-gray-100 dark:bg-gray-700': Astro.url.pathname === '/admin/profile',
+              },
+            ]}
           >
             <svg
               class="h-5 w-5"
@@ -94,29 +102,24 @@ if (!user) {
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M12 4v16m8-8H4"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
               />
             </svg>
-            <span>Nuevo Post</span>
+            <span>Mi Perfil</span>
           </a>
+          
         </nav>
 
         <!-- User section -->
         <div class="border-t border-gray-200 p-4 dark:border-gray-700">
-          <div class="flex items-center gap-3">
-            {user.avatar && (
-              <img
-                src={user.avatar}
-                alt={user.name}
-                class="h-8 w-8 rounded-full"
-              />
-            )}
+          <div id="user-info" class="flex items-center gap-3">
+            <div class="h-8 w-8 rounded-full bg-gray-300 dark:bg-gray-600"></div>
             <div class="flex-1 min-w-0">
               <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
-                {user.name}
+                Cargando...
               </p>
               <p class="truncate text-xs text-gray-500 dark:text-gray-400">
-                {user.email}
+                ...
               </p>
             </div>
           </div>
@@ -140,7 +143,7 @@ if (!user) {
     <!-- Main content -->
     <div class="lg:pl-64">
       <!-- Top bar -->
-      <header class="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 lg:px-6">
+      <header class="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 lg:px-6 overflow-visible">
         <button
           id="sidebar-toggle"
           class="lg:hidden"
@@ -167,16 +170,48 @@ if (!user) {
           </h2>
         </div>
 
-        <a
-          href="/"
-          class="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-        >
-          Ver Sitio
-        </a>
+        <div class="flex items-center gap-2 overflow-visible">
+          <div class="flex items-center">
+            <AdminThemeSwitch client:load></AdminThemeSwitch>
+          </div>
+          <a
+            id="view-site-link"
+            href="/admin/view-site"
+            class="hidden rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 flex items-center h-11"
+            title="Ver sitio dentro del dashboard"
+          >
+            Ver Sitio
+          </a>
+          <a
+            id="go-to-site-link"
+            href="/"
+            class="hidden rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 flex items-center gap-1.5 h-11"
+            title="Ir al sitio principal"
+          >
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+              />
+            </svg>
+            Ir al Sitio
+          </a>
+        </div>
       </header>
 
       <!-- Page content -->
-      <main class="p-4 lg:p-6">
+      <main class="p-4 lg:p-6" class:list={[
+        {
+          'p-0': Astro.url.pathname === '/admin/view-site',
+        },
+      ]}>
         <slot />
       </main>
     </div>
@@ -184,7 +219,71 @@ if (!user) {
 </Layout>
 
 <script>
-  import { logout } from '../../lib/auth';
+  import { logout, getUser, isAuthenticated, isAdmin } from '../../lib/auth';
+
+  // Verificar autenticación en el cliente y redirigir si es necesario
+  if (!isAuthenticated()) {
+    window.location.href = '/admin/login';
+  }
+
+  // Verificar que el usuario tenga permisos (solo admin y editor pueden acceder)
+  const currentUser = getUser();
+  if (currentUser && !isAdmin() && currentUser.role !== 'editor') {
+    // Usuarios normales no pueden acceder al admin
+    alert('No tienes permisos para acceder al panel de administración.');
+    window.location.href = '/';
+  }
+
+  // Mostrar "Ver Sitio" e "Ir al Sitio" solo para administradores (solo en el header)
+  const viewSiteLink = document.getElementById('view-site-link');
+  const goToSiteLink = document.getElementById('go-to-site-link');
+  
+  if (currentUser && isAdmin()) {
+    if (viewSiteLink) {
+      viewSiteLink.classList.remove('hidden');
+    }
+    if (goToSiteLink) {
+      goToSiteLink.classList.remove('hidden');
+    }
+  }
+
+  // Cargar información del usuario en el cliente
+  const user = getUser();
+  const userInfo = document.getElementById('user-info');
+  if (user && userInfo) {
+    // Construir URL completa del avatar
+    function getAvatarUrl(avatar: string | undefined): string {
+      if (!avatar || avatar === '/default-avatar.svg') {
+        return '/default-avatar.svg';
+      }
+      if (avatar.startsWith('http')) {
+        return avatar;
+      }
+      if (avatar.startsWith('/uploads/')) {
+        const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000/';
+        return `${apiUrl.replace(/\/$/, '')}${avatar}`;
+      }
+      return avatar;
+    }
+
+    const avatarUrl = getAvatarUrl(user.avatar);
+    userInfo.innerHTML = `
+      <img 
+        src="${avatarUrl}" 
+        alt="${user.name}" 
+        class="h-8 w-8 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+        onerror="this.src='/default-avatar.svg'"
+      />
+      <div class="flex-1 min-w-0">
+        <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
+          ${user.name}
+        </p>
+        <p class="truncate text-xs text-gray-500 dark:text-gray-400">
+          ${user.email}
+        </p>
+      </div>
+    `;
+  }
 
   // Toggle sidebar en mobile
   const sidebar = document.getElementById('admin-sidebar');

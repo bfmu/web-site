@@ -7,7 +7,7 @@ import { i18n } from "@i18n/translation";
 import I18nKey from "@i18n/i18nKey";
 
 // Puedes poner aquí tus filtros si quieres
-const params = { category: Astro.params.category as string, page: 1 };
+const params = { category: Astro.params.category as string, page: 1, draft: false };
 const res = await fetchPosts(params);
 const initialPosts = res.posts || res;
 const initialPagination = res.pagination;
@@ -20,6 +20,10 @@ const fetchUrlBase = apiUrl.endsWith("/")
 <MainGridLayout
   title={i18n(I18nKey.archive)}
   description={i18n(I18nKey.archive)}
+  showProfile={false}
+  showCategories={true}
+  showTags={true}
+  showArchiveLink={true}
 >
   <!-- <ArchivePanel categories={[category]} /> -->
   <PostsArchive

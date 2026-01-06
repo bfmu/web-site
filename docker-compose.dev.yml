@@ -1,0 +1,92 @@
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: website-mongodb-dev
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: blog
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - website-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Backend (NestJS)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile-dev
+    container_name: website-backend-dev
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/uploads:/app/uploads
+      - ./backend/package.json:/app/package.json
+      - ./backend/package-lock.json:/app/package-lock.json
+      - ./backend/tsconfig.json:/app/tsconfig.json
+      - ./backend/nest-cli.json:/app/nest-cli.json
+      - /app/node_modules
+    env_file:
+      - ./backend/.env
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://admin:admin123@mongodb:27017/blog?authSource=admin
+      - PORT=4000
+    networks:
+      - website-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command: npm run start:dev
+
+  # Frontend (Astro)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile-dev
+    container_name: website-frontend-dev
+    ports:
+      - "4321:4321"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/package.json:/app/package.json
+      - ./frontend/package-lock.json:/app/package-lock.json
+      - ./frontend/astro.config.mjs:/app/astro.config.mjs
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+      - /app/node_modules
+    env_file:
+      - ./frontend/.env
+    environment:
+      - NODE_ENV=development
+      - PUBLIC_API_URL=http://localhost:4000/
+      - PUBLIC_API_URL_DOCKER=http://backend:4000/
+      - PUBLIC_BASE_URL=http://localhost:4321/
+    networks:
+      - website-network
+    depends_on:
+      - backend
+    command: pnpm run dev
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+
+networks:
+  website-network:
+    driver: bridge
+

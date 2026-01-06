@@ -1,11 +1,8 @@
 ---
 import Layout from '@layouts/Layout.astro';
-import { isAuthenticated } from '../../lib/auth';
 
-// Si ya está autenticado, redirigir al dashboard
-if (isAuthenticated()) {
-  return Astro.redirect('/admin');
-}
+// No verificar autenticación en SSR (localStorage no está disponible)
+// La redirección si ya está autenticado se manejará en el cliente (ver script al final)
 ---
 
 <Layout title="Admin Login">
@@ -132,7 +129,12 @@ if (isAuthenticated()) {
 </Layout>
 
 <script>
-  import { login, loginWithGoogle, loginWithGithub, handleOAuthCallback } from '../../lib/auth';
+  import { login, loginWithGoogle, loginWithGithub, handleOAuthCallback, isAuthenticated } from '../../lib/auth';
+
+  // Si ya está autenticado, redirigir al dashboard (solo en el cliente)
+  if (isAuthenticated()) {
+    window.location.href = '/admin';
+  }
 
   const form = document.getElementById('login-form') as HTMLFormElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;

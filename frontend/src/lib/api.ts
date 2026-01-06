@@ -13,13 +13,24 @@ export interface ApiError {
 
 /**
  * Obtener URL base de la API
+ * En SSR (servidor), usar el nombre del servicio Docker 'backend'
+ * En el cliente (navegador), usar localhost
  */
 function getApiBaseUrl(): string {
-  const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:82/';
-  return baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  // Si estamos en el servidor (SSR), usar el nombre del servicio Docker
+  if (import.meta.env.SSR) {
+    // En Docker, usar el nombre del servicio
+    const dockerApiUrl = import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:4000/';
+    const baseUrl = dockerApiUrl.endsWith('/') ? dockerApiUrl : `${dockerApiUrl}/`;
+    return `${baseUrl}api`;
+  }
+  // En el cliente, usar la URL pública (localhost desde el navegador)
+  const publicApiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000/';
+  const baseUrl = publicApiUrl.endsWith('/') ? publicApiUrl : `${publicApiUrl}/`;
+  return `${baseUrl}api`;
 }
 
-const API_BASE = `${getApiBaseUrl()}api`;
+const API_BASE = getApiBaseUrl();
 
 /**
  * Opciones para fetch con autenticación

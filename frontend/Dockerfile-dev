@@ -3,12 +3,14 @@ FROM node:20.18.0
 # Set the working directory
 WORKDIR /app
 
+# Instalar pnpm globalmente
+RUN npm install -g pnpm@latest
+
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
-RUN npm install -g pnpm@latest-10 --y
+RUN pnpm install
 
 # Copy the rest of the application code
 COPY . .
@@ -17,4 +19,4 @@ COPY . .
 EXPOSE 4321
 
 # Command to run the application
-CMD ["pnpm", "run", "dev"]
+CMD ["pnpm", "run", "dev", "--host", "0.0.0.0"]

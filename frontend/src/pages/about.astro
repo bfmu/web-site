@@ -6,7 +6,7 @@ import I18nKey from '../i18n/i18nKey'
 import Markdown from '@components/misc/Markdown.astro'
 import aboutMd from '@/content/pages/about.md?raw'
 ---
-<MainGridLayout title={i18n(I18nKey.about)} description={i18n(I18nKey.about)}>
+<MainGridLayout title={i18n(I18nKey.about)} description={i18n(I18nKey.about)} showProfile={true} showCategories={false} showTags={false}>
     <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
         <div class="card-base z-10 px-9 py-6 relative w-full ">
             <Markdown class="mt-2" content={aboutMd} />
