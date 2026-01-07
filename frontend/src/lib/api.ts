@@ -69,9 +69,9 @@ export async function apiFetch(
     : `${API_BASE}/${endpoint.replace(/^\//, '')}`;
 
   // Headers por defecto
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...fetchOptions.headers,
+    ...(fetchOptions.headers as Record<string, string> || {}),
   };
 
   // Agregar token si es necesario
@@ -112,10 +112,14 @@ export async function apiFetch(
           setTokens(tokens);
 
           // Reintentar petición original con nuevo token
-          headers['Authorization'] = `Bearer ${tokens.accessToken}`;
+          const retryHeaders: Record<string, string> = {
+            'Content-Type': 'application/json',
+            ...(fetchOptions.headers as Record<string, string> || {}),
+            'Authorization': `Bearer ${tokens.accessToken}`,
+          };
           response = await fetch(url, {
             ...fetchOptions,
-            headers,
+            headers: retryHeaders,
           });
         } else {
           // Refresh falló, limpiar tokens
@@ -258,7 +262,7 @@ export async function apiUpload(
     : `${API_BASE}/${endpoint.replace(/^\//, '')}`;
 
   const token = getAccessToken();
-  const headers: HeadersInit = {};
+  const headers: Record<string, string> = {};
   
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;

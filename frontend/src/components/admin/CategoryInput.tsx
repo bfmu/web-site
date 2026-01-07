@@ -26,7 +26,18 @@ export function CategoryInput({ value = '', onChange, label = 'Categoría' }: Ca
   const loadCategories = async () => {
     try {
       const cats = await getCategories();
-      setCategories(Array.isArray(cats) ? cats : cats.map((c: any) => c.name));
+      if (Array.isArray(cats)) {
+        // Si es array de strings, usarlo directamente
+        const stringArray = cats as string[];
+        if (stringArray.length > 0 && typeof stringArray[0] === 'string') {
+          setCategories(stringArray);
+        } else {
+          // Si es array de objetos, extraer los nombres
+          setCategories((cats as Array<{ name: string; count: number }>).map((c) => c.name));
+        }
+      } else {
+        setCategories([]);
+      }
     } catch (error) {
       console.error('Error loading categories:', error);
     }
