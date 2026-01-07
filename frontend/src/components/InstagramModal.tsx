@@ -81,12 +81,12 @@ export default function InstagramModal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-4"
       onClick={onClose}
     >
-      {/* Modal Container */}
+      {/* Modal Container - Estilo Instagram Web */}
       <div
-        className="relative w-full h-full bg-white dark:bg-gray-900 overflow-hidden flex flex-col md:flex-row"
+        className="relative w-full max-w-5xl h-[90vh] bg-white dark:bg-gray-900 rounded-lg overflow-hidden flex flex-col md:flex-row shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -110,8 +110,8 @@ export default function InstagramModal({
           </svg>
         </button>
 
-        {/* Image Section (Left) */}
-        <div className="relative flex-1 bg-gray-900 dark:bg-black flex items-center justify-center min-h-[50vh] md:min-h-0">
+        {/* Image Section (Left) - Estilo Instagram */}
+        <div className="relative flex-1 bg-black flex items-center justify-center min-h-[50vh] md:min-h-0 h-full">
           {!imageLoaded && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
@@ -183,7 +183,7 @@ export default function InstagramModal({
         </div>
 
         {/* Side Panel (Right) - Estilo Instagram */}
-        <div className="w-full md:w-80 flex flex-col bg-white dark:bg-gray-900 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-800">
+        <div className="w-full md:w-96 flex flex-col bg-white dark:bg-gray-900 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-800 h-full overflow-hidden">
           {/* Header */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <h2 className="font-semibold text-gray-900 dark:text-white text-lg">
@@ -194,8 +194,8 @@ export default function InstagramModal({
             </p>
           </div>
 
-          {/* Image Info */}
-          <div className="flex-1 overflow-y-auto p-4">
+          {/* Image Info - Scrollable */}
+          <div className="flex-1 overflow-y-auto p-4 min-h-0">
             {currentImage.description && (
               <div className="mb-4">
                 <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
