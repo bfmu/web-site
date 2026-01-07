@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { uploadImage } from '../../lib/admin-api';
+import { ImageLibraryModal } from './ImageLibraryModal';
 
 interface ImageUploadProps {
   currentImage?: string;
@@ -11,6 +12,7 @@ export function ImageUpload({ currentImage, onUploadComplete, label = 'Imagen de
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentImage || null);
   const [dragActive, setDragActive] = useState(false);
+  const [showLibraryModal, setShowLibraryModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
@@ -104,14 +106,24 @@ export function ImageUpload({ currentImage, onUploadComplete, label = 'Imagen de
                 <div className="text-white">Subiendo...</div>
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="mt-2 w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
-            >
-              Cambiar imagen
-            </button>
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowLibraryModal(true)}
+                disabled={uploading}
+                className="flex-1 rounded-md bg-gray-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
+              >
+                Seleccionar de librería
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex-1 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+              >
+                Cambiar imagen
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -140,6 +152,14 @@ export function ImageUpload({ currentImage, onUploadComplete, label = 'Imagen de
               />
             </svg>
             <div className="mt-4 flex text-sm leading-6 text-gray-600 dark:text-gray-400">
+              <button
+                type="button"
+                onClick={() => setShowLibraryModal(true)}
+                className="rounded-md bg-gray-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+              >
+                Seleccionar de librería
+              </button>
+              <span className="mx-2 text-gray-400">o</span>
               <label
                 htmlFor="file-upload"
                 className="relative cursor-pointer rounded-md font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500 dark:text-indigo-400"
@@ -163,6 +183,18 @@ export function ImageUpload({ currentImage, onUploadComplete, label = 'Imagen de
           </div>
         )}
       </div>
+
+      {/* Image Library Modal */}
+      <ImageLibraryModal
+        isOpen={showLibraryModal}
+        onClose={() => setShowLibraryModal(false)}
+        onSelect={(url) => {
+          setPreview(url);
+          onUploadComplete(url);
+          setShowLibraryModal(false);
+        }}
+        allowUpload={true}
+      />
     </div>
   );
 }

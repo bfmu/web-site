@@ -1,0 +1,9 @@
+---
+import AdminLayout from '@components/admin/AdminLayout.astro';
+import AlbumManager from '../../components/admin/AlbumManager.tsx';
+---
+
+<AdminLayout title="Álbumes">
+  <AlbumManager client:only="react" />
+</AdminLayout>
+

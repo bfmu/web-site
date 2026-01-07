@@ -1,0 +1,67 @@
+---
+import { url } from '../utils/url-utils'
+
+interface Props {
+  album: {
+    _id: string;
+    slug: string;
+    title: string;
+    description?: string;
+    coverImage?: string;
+    images?: any[];
+    viewCount?: number;
+    publishedAt?: string;
+  };
+}
+
+const { album } = Astro.props;
+
+const imageCount = Array.isArray(album.images) ? album.images.length : 0;
+const coverUrl = album.coverImage || (album.images && album.images.length > 0 && typeof album.images[0] !== 'string' ? album.images[0].url : null) || '/default-avatar.svg';
+
+// Construir URL completa de la imagen
+function getImageUrl(imgUrl: string | undefined): string {
+  if (!imgUrl) return '/default-avatar.svg';
+  if (imgUrl.startsWith('http')) return imgUrl;
+  const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+  return `${baseUrl.replace(/\/$/, '')}${imgUrl}`;
+}
+
+const fullCoverUrl = getImageUrl(coverUrl);
+const albumUrl = url(`/gallery/${album.slug}`);
+---
+
+<a href={albumUrl} class="group block relative aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 hover:shadow-xl transition-all duration-300">
+    <img
+        src={fullCoverUrl}
+        alt={album.title}
+        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+        loading="lazy"
+        onerror="this.src='/default-avatar.svg'"
+    />
+    <!-- Overlay con información -->
+    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div class="absolute bottom-0 left-0 right-0 p-4 text-white">
+            <h3 class="text-lg font-semibold mb-1">
+                {album.title}
+            </h3>
+            {album.description && (
+                <p class="text-sm text-white/90 line-clamp-2 mb-2">
+                    {album.description}
+                </p>
+            )}
+            <div class="flex items-center gap-3 text-xs text-white/80">
+                <span>{imageCount} imagen{imageCount !== 1 ? 'es' : ''}</span>
+                {album.publishedAt && (
+                    <span>
+                        {new Date(album.publishedAt).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'short'
+                        })}
+                    </span>
+                )}
+            </div>
+        </div>
+    </div>
+</a>
+

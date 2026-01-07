@@ -4,6 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPatch, apiDelete, apiUpload, ApiException } from './api';
+import { getAccessToken } from './auth';
 
 // Tipos
 export interface BlogPost {
@@ -299,5 +300,312 @@ export async function updateProfile(data: { name?: string; avatar?: string }): P
  */
 export async function uploadAvatar(file: File): Promise<{ url: string; filename: string }> {
   return apiUpload('auth/upload-avatar', file);
+}
+
+// ==================== MEDIA API ====================
+
+export interface MediaFile {
+  _id: string;
+  filename: string;
+  originalName: string;
+  path: string;
+  url: string;
+  mimeType: string;
+  size: number;
+  width?: number;
+  height?: number;
+  type: string;
+  isPublic: boolean;
+  albumId?: string;
+  alt?: string;
+  description?: string;
+  order: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MediaQuery {
+  type?: string;
+  albumId?: string;
+  isPublic?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface MediaResponse {
+  media: MediaFile[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+export interface MediaUsage {
+  inUse: boolean;
+  usedInPosts: string[];
+  usedInAlbums: string[];
+}
+
+/**
+ * Subir archivo y crear registro de media
+ */
+export async function uploadMedia(
+  file: File,
+  metadata?: { isPublic?: boolean; alt?: string; description?: string; albumId?: string }
+): Promise<MediaFile> {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (metadata) {
+    if (metadata.isPublic !== undefined) {
+      formData.append('isPublic', metadata.isPublic.toString());
+    }
+    if (metadata.alt) {
+      formData.append('alt', metadata.alt);
+    }
+    if (metadata.description) {
+      formData.append('description', metadata.description);
+    }
+    if (metadata.albumId) {
+      formData.append('albumId', metadata.albumId);
+    }
+  }
+  
+  // Usar la misma lógica que apiUpload pero con campos adicionales
+  const endpoint = 'media/upload';
+  const url = endpoint.startsWith('http')
+    ? endpoint
+    : `${getApiBaseUrl()}/${endpoint.replace(/^\//, '')}`;
+
+  const token = getAccessToken();
+  const headers: Record<string, string> = {};
+  
+  // NO establecer Content-Type para FormData, el navegador lo hace automáticamente
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Error al subir archivo' }));
+    throw new ApiException(
+      error.message || `Error ${response.status}`,
+      response.status,
+      error
+    );
+  }
+
+  const result = await response.json();
+  
+  // Construir URL completa
+  const apiBase = typeof window !== 'undefined' 
+    ? (import.meta.env.PUBLIC_API_URL || 'http://localhost:4000')
+    : (import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:4000');
+  const cleanBaseUrl = apiBase.replace(/\/$/, '');
+  const imageUrl = result.url.startsWith('http') 
+    ? result.url 
+    : `${cleanBaseUrl}${result.url}`;
+  
+  return {
+    ...result,
+    url: imageUrl,
+  } as MediaFile;
+}
+
+// Helper para obtener la URL base de la API (similar a api.ts)
+function getApiBaseUrl(): string {
+  if (import.meta.env.SSR) {
+    const dockerApiUrl = import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:4000/';
+    const baseUrl = dockerApiUrl.endsWith('/') ? dockerApiUrl : `${dockerApiUrl}/`;
+    return `${baseUrl}api`;
+  }
+  const publicApiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000/';
+  const baseUrl = publicApiUrl.endsWith('/') ? publicApiUrl : `${publicApiUrl}/`;
+  return `${baseUrl}api`;
+}
+
+/**
+ * Listar medios
+ */
+export async function getMediaList(query: MediaQuery = {}): Promise<MediaResponse> {
+  const params = new URLSearchParams();
+  
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      params.append(key, value.toString());
+    }
+  });
+
+  const queryString = params.toString();
+  const endpoint = `media${queryString ? `?${queryString}` : ''}`;
+  
+  return apiGet<MediaResponse>(endpoint);
+}
+
+/**
+ * Obtener media por ID
+ */
+export async function getMedia(id: string): Promise<MediaFile> {
+  return apiGet<MediaFile>(`media/${id}`);
+}
+
+/**
+ * Actualizar metadata del media
+ */
+export async function updateMedia(id: string, data: Partial<MediaFile>): Promise<MediaFile> {
+  return apiPatch<MediaFile>(`media/${id}`, data);
+}
+
+/**
+ * Eliminar media
+ */
+export async function deleteMedia(id: string): Promise<void> {
+  return apiDelete<void>(`media/${id}`);
+}
+
+/**
+ * Renombrar archivo del media
+ */
+export async function renameMedia(id: string, filename: string): Promise<MediaFile> {
+  return apiPatch<MediaFile>(`media/${id}/rename`, { filename });
+}
+
+/**
+ * Verificar uso del media
+ */
+export async function checkMediaUsage(id: string): Promise<MediaUsage> {
+  return apiGet<MediaUsage>(`media/${id}/usage`);
+}
+
+/**
+ * Mover media a álbum
+ */
+export async function moveMediaToAlbum(mediaId: string, albumId: string): Promise<MediaFile> {
+  return apiPost<MediaFile>(`media/${mediaId}/move-to-album`, { albumId });
+}
+
+// ==================== ALBUM API ====================
+
+export interface Album {
+  _id: string;
+  slug: string;
+  title: string;
+  description?: string;
+  coverImage?: string;
+  images: MediaFile[] | string[];
+  isPublic: boolean;
+  viewCount: number;
+  publishedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateAlbumRequest {
+  slug: string;
+  title: string;
+  description?: string;
+  coverImage?: string;
+  images?: string[];
+  isPublic?: boolean;
+  publishedAt?: string;
+}
+
+export interface UpdateAlbumRequest extends Partial<CreateAlbumRequest> {}
+
+export interface AlbumsResponse {
+  albums: Album[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+export interface AlbumQuery {
+  isPublic?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * Crear álbum
+ */
+export async function createAlbum(album: CreateAlbumRequest): Promise<Album> {
+  return apiPost<Album>('albums', album);
+}
+
+/**
+ * Listar álbumes
+ */
+export async function getAlbums(query: AlbumQuery = {}): Promise<AlbumsResponse> {
+  const params = new URLSearchParams();
+  
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      params.append(key, value.toString());
+    }
+  });
+
+  const queryString = params.toString();
+  const endpoint = `albums${queryString ? `?${queryString}` : ''}`;
+  
+  return apiGet<AlbumsResponse>(endpoint);
+}
+
+/**
+ * Obtener álbum por slug
+ */
+export async function getAlbum(slug: string): Promise<Album> {
+  return apiGet<Album>(`albums/${slug}`);
+}
+
+/**
+ * Actualizar álbum
+ */
+export async function updateAlbum(slug: string, album: UpdateAlbumRequest): Promise<Album> {
+  return apiPatch<Album>(`albums/${slug}`, album);
+}
+
+/**
+ * Eliminar álbum
+ */
+export async function deleteAlbum(slug: string): Promise<void> {
+  return apiDelete<void>(`albums/${slug}`);
+}
+
+/**
+ * Agregar imagen al álbum
+ */
+export async function addImageToAlbum(slug: string, mediaId: string): Promise<Album> {
+  return apiPost<Album>(`albums/${slug}/images`, { mediaId });
+}
+
+/**
+ * Remover imagen del álbum
+ */
+export async function removeImageFromAlbum(slug: string, mediaId: string): Promise<Album> {
+  return apiDelete<Album>(`albums/${slug}/images/${mediaId}`);
+}
+
+/**
+ * Reordenar imágenes del álbum
+ */
+export async function reorderAlbumImages(slug: string, imageIds: string[]): Promise<Album> {
+  return apiPatch<Album>(`albums/${slug}/reorder`, { imageIds });
+}
+
+/**
+ * Establecer portada del álbum
+ */
+export async function setAlbumCover(slug: string, mediaId: string): Promise<Album> {
+  return apiPatch<Album>(`albums/${slug}/cover`, { mediaId });
 }
 

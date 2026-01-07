@@ -73,7 +73,7 @@ export const siteConfig: SiteConfig = {
 export const navBarConfig: NavBarConfig = {
   links: [
     LinkPreset.Home,
-    // LinkPreset.Gallery,
+    LinkPreset.Gallery,
     LinkPreset.Music,
     LinkPreset.Blog,
     // LinkPreset.Archive, // Removido - ahora está en el sidebar de blog

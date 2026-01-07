@@ -1,0 +1,96 @@
+---
+import MainGridLayout from '@layouts/MainGridLayout.astro'
+import { fetchPublicAlbum } from '../../utils/api-blog'
+import AlbumGrid from '../../components/AlbumGrid.tsx'
+import Breadcrumb from '../../components/Breadcrumb.astro'
+import { i18n } from '@i18n/translation'
+import I18nKey from '@i18n/i18nKey'
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return new Response(undefined, { status: 404 });
+}
+
+let album = null;
+try {
+  album = await fetchPublicAlbum(slug);
+} catch (error) {
+  console.error('Error loading album:', error);
+  return new Response(undefined, { status: 404 });
+}
+
+if (!album) {
+  return new Response(undefined, { status: 404 });
+}
+
+// Construir URLs completas de imágenes
+const images = Array.isArray(album.images) ? album.images : [];
+const processedImages = images.map((img: any) => {
+  const image = typeof img === 'string' ? null : img;
+  if (!image) return null;
+  
+  let imageUrl = image.url;
+  if (!imageUrl.startsWith('http')) {
+    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+    imageUrl = `${baseUrl.replace(/\/$/, '')}${image.url}`;
+  }
+  
+  return {
+    id: image._id || image.id,
+    url: imageUrl,
+    alt: image.alt || image.originalName || album.title,
+    description: image.description,
+    width: image.width,
+    height: image.height,
+  };
+}).filter(Boolean);
+---
+
+<MainGridLayout title={album.title} description={album.description} showProfile={false} showCategories={false} showTags={false} hideSidebar={true}>
+    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative">
+        <div class="card-base z-10 px-6 md:px-9 py-6 relative w-full">
+            <!-- Breadcrumb -->
+            <Breadcrumb 
+                items={[
+                    { label: i18n(I18nKey.gallery), href: '/gallery/' },
+                    { label: album.title }
+                ]}
+            />
+
+            <!-- Header -->
+            <div class="mb-6">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+                    {album.title}
+                </h1>
+                {album.description && (
+                    <p class="text-lg text-gray-600 dark:text-gray-400 mb-3">
+                        {album.description}
+                    </p>
+                )}
+                <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-500">
+                    <span>{processedImages.length} imagen{processedImages.length !== 1 ? 'es' : ''}</span>
+                    {album.publishedAt && (
+                        <span>
+                            {new Date(album.publishedAt).toLocaleDateString('es-ES', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            })}
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            <!-- Grid de imágenes estilo bento -->
+            {processedImages.length > 0 ? (
+                <AlbumGrid client:only="react" images={processedImages} albumTitle={album.title} />
+            ) : (
+                <div class="text-center text-gray-500 dark:text-gray-400 py-8">
+                    Este álbum no tiene imágenes aún.
+                </div>
+            )}
+        </div>
+    </div>
+</MainGridLayout>
+

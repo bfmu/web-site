@@ -86,3 +86,81 @@ export async function fetchTags(params: Record<string, any> = {}) {
   return res.json();
 }
 
+// ==================== GALLERY API ====================
+
+const GALLERY_API_URL = buildUrl(BASE_API_URL, 'gallery');
+
+export interface GalleryAlbum {
+  _id: string;
+  slug: string;
+  title: string;
+  description?: string;
+  coverImage?: string;
+  images: GalleryImage[] | string[];
+  isPublic: boolean;
+  viewCount: number;
+  publishedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface GalleryImage {
+  _id: string;
+  filename: string;
+  originalName: string;
+  path: string;
+  url: string;
+  mimeType: string;
+  size: number;
+  width?: number;
+  height?: number;
+  type: string;
+  isPublic: boolean;
+  alt?: string;
+  description?: string;
+  order: number;
+}
+
+export interface AlbumsResponse {
+  albums: GalleryAlbum[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+/**
+ * Obtener lista de álbumes públicos
+ */
+export async function fetchPublicAlbums(): Promise<AlbumsResponse> {
+  const url = buildUrl(GALLERY_API_URL, 'albums');
+  console.debug(`[fetchPublicAlbums] GET: ${url}`);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Error al obtener álbumes');
+  return res.json();
+}
+
+/**
+ * Obtener álbum público por slug
+ */
+export async function fetchPublicAlbum(slug: string): Promise<GalleryAlbum> {
+  const url = buildUrl(GALLERY_API_URL, 'albums', slug);
+  console.debug(`[fetchPublicAlbum] GET: ${url}`);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Álbum no encontrado');
+  return res.json();
+}
+
+/**
+ * Obtener imagen pública por ID
+ */
+export async function fetchPublicImage(id: string): Promise<GalleryImage> {
+  const url = buildUrl(GALLERY_API_URL, 'images', id);
+  console.debug(`[fetchPublicImage] GET: ${url}`);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Imagen no encontrada');
+  return res.json();
+}
+

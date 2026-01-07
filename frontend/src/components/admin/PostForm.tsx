@@ -34,12 +34,25 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
   );
   const [slugStatus, setSlugStatus] = useState('');
   const [loading, setLoading] = useState(false);
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [lastTitleForSlug, setLastTitleForSlug] = useState(post?.title || '');
 
+  // Generar slug automáticamente cuando cambia el título
   useEffect(() => {
-    if (title && !slug) {
-      setSlug(generateSlug(title));
+    if (title && !slugManuallyEdited) {
+      // Si el slug está vacío o coincide con el slug del título anterior, actualizarlo
+      const newSlug = generateSlug(title);
+      if (!slug || slug === generateSlug(lastTitleForSlug)) {
+        setSlug(newSlug);
+      }
+      setLastTitleForSlug(title);
+    } else if (!title) {
+      // Si se borra el título, limpiar también el slug
+      setSlug('');
+      setLastTitleForSlug('');
     }
-  }, [title, slug]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title]);
 
   const handleValidateSlug = async () => {
     if (!slug.trim()) {
@@ -147,16 +160,22 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
               type="text"
               id="slug"
               value={slug}
-              onChange={(e) => setSlug(e.target.value)}
+              onChange={(e) => {
+                setSlug(e.target.value);
+                setSlugManuallyEdited(true);
+              }}
               required
               className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
               placeholder="url-del-post"
             />
             <button
               type="button"
-              onClick={handleGenerateSlug}
+              onClick={() => {
+                setSlug(generateSlug(title));
+                setSlugManuallyEdited(false);
+              }}
               className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              title="Generar desde título"
+              title="Regenerar desde título"
             >
               🔄
             </button>

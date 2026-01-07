@@ -6,7 +6,8 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { ImageLibraryModal } from './ImageLibraryModal';
 
 interface PostEditorProps {
   content: string;
@@ -15,6 +16,8 @@ interface PostEditorProps {
 }
 
 export function PostEditor({ content, onChange, placeholder = 'Escribe tu contenido aquí...' }: PostEditorProps) {
+  const [showImageModal, setShowImageModal] = useState(false);
+  
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -78,10 +81,11 @@ export function PostEditor({ content, onChange, placeholder = 'Escribe tu conten
   };
   const unsetLink = () => editor.chain().focus().unsetLink().run();
   const insertImage = () => {
-    const url = window.prompt('URL de la imagen:');
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
-    }
+    setShowImageModal(true);
+  };
+  
+  const handleImageSelect = (url: string) => {
+    editor.chain().focus().setImage({ src: url }).run();
   };
 
   return (
@@ -258,6 +262,14 @@ export function PostEditor({ content, onChange, placeholder = 'Escribe tu conten
       <div className="bg-white dark:bg-gray-900">
         <EditorContent editor={editor} />
       </div>
+
+      {/* Image Library Modal */}
+      <ImageLibraryModal
+        isOpen={showImageModal}
+        onClose={() => setShowImageModal(false)}
+        onSelect={handleImageSelect}
+        allowUpload={true}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { SpotifyModule } from './spotify/spotify.module';
 import { ConfigModule } from '@nestjs/config';
 import { BlogModule } from './blog/blog.module';
 import { AuthModule } from './auth/auth.module';
+import { MediaModule } from './media/media.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AuthModule } from './auth/auth.module';
     SpotifyModule,
     BlogModule,
     AuthModule,
+    MediaModule,
   ],
   controllers: [],
   providers: [],
