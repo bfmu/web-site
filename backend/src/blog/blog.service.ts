@@ -154,12 +154,17 @@ export class BlogService {
   }
 
   async update(slug: string, updatePostDto: UpdatePostDto): Promise<Post> {
-    const updateData = { ...updatePostDto };
+    const updateData: any = { ...updatePostDto };
 
     // Convertir fecha si se proporciona
     if (updatePostDto.published) {
       // Aceptar string o Date, pero no forzar el tipo
       updateData.published = updatePostDto.published;
+    }
+
+    // Si image es string vacío, establecerlo explícitamente para eliminar la imagen
+    if (updatePostDto.image === '') {
+      updateData.image = '';
     }
 
     // Si no envían readingTime pero cambió el contenido, recalcular

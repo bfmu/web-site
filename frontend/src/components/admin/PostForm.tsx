@@ -26,6 +26,7 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
   const [category, setCategory] = useState(post?.category || '');
   const [tags, setTags] = useState(post?.tags || []);
   const [language, setLanguage] = useState(post?.language || 'es');
+  const [draft, setDraft] = useState(post?.draft ?? true);
   const [published, setPublished] = useState(
     post?.published
       ? new Date(post.published).toISOString().slice(0, 16)
@@ -69,7 +70,7 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
     setSlug(generateSlug(title));
   };
 
-  const handleSubmit = async (isDraft: boolean) => {
+  const handleSubmit = async () => {
     if (!title || !slug || !content) {
       alert('Por favor completa todos los campos requeridos');
       return;
@@ -80,15 +81,16 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
       const readingTime = calculateReadingTime(content);
       
       // Limpiar datos antes de enviar
+      // Si image es string vacío, enviarlo explícitamente para eliminar la imagen
       const postData = {
         title: title.trim(),
         slug: slug.trim(),
         content: content.trim(),
         description: description?.trim() || undefined,
-        image: image?.trim() || undefined,
+        image: image === '' ? '' : (image?.trim() || undefined),
         tags: tags && tags.length > 0 ? tags : undefined,
         category: category?.trim() || undefined,
-        draft: isDraft,
+        draft: draft,
         published: new Date(published).toISOString(),
         language: language || 'es',
         readingTime,
@@ -111,7 +113,7 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
       console.error('Error al crear/actualizar post:', error);
       const errorMessage = error?.message || error?.data?.message || error?.statusText || 'Error desconocido';
       const errorDetails = error?.data ? JSON.stringify(error.data, null, 2) : '';
-      alert(`Error al ${isDraft ? 'guardar' : 'publicar'} el post: ${errorMessage}${errorDetails ? '\n\nDetalles: ' + errorDetails : ''}`);
+      alert(`Error al ${draft ? 'guardar' : 'publicar'} el post: ${errorMessage}${errorDetails ? '\n\nDetalles: ' + errorDetails : ''}`);
     } finally {
       setLoading(false);
     }
@@ -205,8 +207,34 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
         <PostEditor content={content} onChange={setContent} />
       </div>
 
-      {/* Idioma y Fecha */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* Estado del post, Idioma y Fecha */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Estado del post
+          </label>
+          <div className="flex items-center">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={!draft}
+              onClick={() => setDraft(!draft)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                !draft ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  !draft ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+            <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+              {draft ? 'Borrador' : 'Publicado'}
+            </span>
+          </div>
+        </div>
+
         <div>
           <label htmlFor="language" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Idioma
@@ -237,23 +265,15 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
         </div>
       </div>
 
-      {/* Botones de acción */}
+      {/* Botón de acción */}
       <div className="flex items-center justify-end gap-4 border-t border-gray-200 pt-6 dark:border-gray-700">
         <button
           type="button"
-          onClick={() => handleSubmit(true)}
+          onClick={handleSubmit}
           disabled={loading}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="rounded-md bg-indigo-600 px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
         >
-          Guardar Borrador
-        </button>
-        <button
-          type="button"
-          onClick={() => handleSubmit(false)}
-          disabled={loading}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
-        >
-          {loading ? 'Guardando...' : post ? 'Actualizar' : 'Publicar'}
+          {loading ? 'Guardando...' : post ? 'Actualizar' : draft ? 'Guardar Borrador' : 'Publicar'}
         </button>
       </div>
     </form>
