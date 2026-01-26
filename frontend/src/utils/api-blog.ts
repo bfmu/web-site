@@ -15,11 +15,11 @@ function getApiBaseUrl(): string {
   // Si estamos en el servidor (SSR), usar el nombre del servicio Docker
   if (import.meta.env.SSR) {
     // En Docker, usar el nombre del servicio
-    const dockerApiUrl = import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:4000/';
+    const dockerApiUrl = import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:3000/';
     return dockerApiUrl.endsWith('/') ? dockerApiUrl : `${dockerApiUrl}/`;
   }
   // En el cliente, usar la URL pública (localhost desde el navegador)
-  const publicApiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000/';
+  const publicApiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/';
   return publicApiUrl.endsWith('/') ? publicApiUrl : `${publicApiUrl}/`;
 }
 

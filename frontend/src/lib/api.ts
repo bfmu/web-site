@@ -17,20 +17,21 @@ export interface ApiError {
  * En el cliente (navegador), usar localhost
  */
 function getApiBaseUrl(): string {
-  // Si estamos en el servidor (SSR), usar el nombre del servicio Docker
-  if (import.meta.env.SSR) {
-    // En Docker, usar el nombre del servicio
-    const dockerApiUrl = import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:4000/';
+  // Verificar si estamos en el navegador
+  const isClient = typeof window !== 'undefined';
+  
+  if (!isClient) {
+    // En el servidor (SSR), usar el nombre del servicio Docker
+    const dockerApiUrl = import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:3000/';
     const baseUrl = dockerApiUrl.endsWith('/') ? dockerApiUrl : `${dockerApiUrl}/`;
     return `${baseUrl}api`;
   }
+  
   // En el cliente, usar la URL pública (localhost desde el navegador)
-  const publicApiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000/';
+  const publicApiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/';
   const baseUrl = publicApiUrl.endsWith('/') ? publicApiUrl : `${publicApiUrl}/`;
   return `${baseUrl}api`;
 }
-
-const API_BASE = getApiBaseUrl();
 
 /**
  * Opciones para fetch con autenticación
@@ -63,10 +64,13 @@ export async function apiFetch(
 ): Promise<Response> {
   const { requireAuth = true, skipRefresh = false, ...fetchOptions } = options;
 
-  // Construir URL
+  // Construir URL dinámicamente
+  const apiBase = getApiBaseUrl();
   const url = endpoint.startsWith('http') 
     ? endpoint 
-    : `${API_BASE}/${endpoint.replace(/^\//, '')}`;
+    : `${apiBase}/${endpoint.replace(/^\//, '')}`;
+
+  console.log(`[apiFetch] URL: ${url}, requireAuth: ${requireAuth}`);
 
   // Headers por defecto
   const headers: Record<string, string> = {
@@ -77,16 +81,19 @@ export async function apiFetch(
   // Agregar token si es necesario
   if (requireAuth) {
     const token = getAccessToken();
+    console.log(`[apiFetch] Token exists: ${!!token}`);
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
   }
 
   // Realizar petición
+  console.log(`[apiFetch] Making request...`);
   let response = await fetch(url, {
     ...fetchOptions,
     headers,
   });
+  console.log(`[apiFetch] Response received: ${response.status}`);
 
   // Si es 401 y requiere auth, intentar refresh
   if (response.status === 401 && requireAuth && !skipRefresh) {
@@ -96,7 +103,8 @@ export async function apiFetch(
 
       if (refreshTokenValue && user?._id) {
         // Intentar refresh
-        const refreshResponse = await fetch(`${API_BASE}/auth/refresh`, {
+        const apiBase = getApiBaseUrl();
+        const refreshResponse = await fetch(`${apiBase}/auth/refresh`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -146,10 +154,13 @@ export async function apiFetch(
  * GET request
  */
 export async function apiGet<T = any>(endpoint: string, options?: FetchOptions): Promise<T> {
+  console.log(`[apiGet] Fetching: ${endpoint}`);
   const response = await apiFetch(endpoint, { ...options, method: 'GET' });
+  console.log(`[apiGet] Response status: ${response.status}`);
   
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Error en la petición' }));
+    console.error(`[apiGet] Error:`, error);
     throw new ApiException(
       error.message || `Error ${response.status}`,
       response.status,
@@ -157,7 +168,9 @@ export async function apiGet<T = any>(endpoint: string, options?: FetchOptions):
     );
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log(`[apiGet] Success:`, data);
+  return data;
 }
 
 /**
@@ -189,6 +202,41 @@ export async function apiPost<T = any>(
   }
 
   return response.json();
+}
+
+/**
+ * PUT request
+ */
+export async function apiPut<T = any>(
+  endpoint: string,
+  data?: any,
+  options?: FetchOptions
+): Promise<T> {
+  console.log(`[apiPut] Endpoint: ${endpoint}`, data);
+  const response = await apiFetch(endpoint, {
+    ...options,
+    method: 'PUT',
+    body: data ? JSON.stringify(data) : undefined,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Error en la petición' }));
+    console.error(`[apiPut] Error:`, error);
+    throw new ApiException(
+      error.message || `Error ${response.status}`,
+      response.status,
+      error
+    );
+  }
+
+  // Si la respuesta está vacía (204), retornar void
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const result = await response.json();
+  console.log(`[apiPut] Success:`, result);
+  return result;
 }
 
 /**
@@ -257,9 +305,10 @@ export async function apiUpload(
   const formData = new FormData();
   formData.append('file', file);
 
+  const apiBase = getApiBaseUrl();
   const url = endpoint.startsWith('http')
     ? endpoint
-    : `${API_BASE}/${endpoint.replace(/^\//, '')}`;
+    : `${apiBase}/${endpoint.replace(/^\//, '')}`;
 
   const token = getAccessToken();
   const headers: Record<string, string> = {};

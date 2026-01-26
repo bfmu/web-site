@@ -19,6 +19,8 @@ export default function AlbumManager() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showManageModal, setShowManageModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [albumToDelete, setAlbumToDelete] = useState<string | null>(null);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [albumForm, setAlbumForm] = useState({
     slug: '',
@@ -106,18 +108,24 @@ export default function AlbumManager() {
     }
   };
 
-  const handleDelete = async (slug: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este álbum?')) {
-      return;
-    }
+  const handleDelete = (slug: string) => {
+    setAlbumToDelete(slug);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!albumToDelete) return;
 
     try {
-      await deleteAlbum(slug);
+      await deleteAlbum(albumToDelete);
       setMessage({ type: 'success', text: 'Álbum eliminado correctamente' });
       loadAlbums();
     } catch (error: any) {
       console.error('Error deleting album:', error);
       setMessage({ type: 'error', text: error.message || 'Error al eliminar álbum' });
+    } finally {
+      setShowDeleteModal(false);
+      setAlbumToDelete(null);
     }
   };
 
@@ -169,7 +177,7 @@ export default function AlbumManager() {
 
   const getImageUrl = (url: string): string => {
     if (url.startsWith('http')) return url;
-    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
     return `${baseUrl.replace(/\/$/, '')}${url}`;
   };
 
@@ -565,6 +573,46 @@ export default function AlbumManager() {
                     </div>
                   ))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación de Eliminación */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Confirmar Eliminación
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  ¿Estás seguro de que quieres eliminar este álbum? Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-6">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setAlbumToDelete(null);
+                }}
+                className="px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 transition-colors font-medium"
+              >
+                Eliminar
+              </button>
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { BlogModule } from './blog/blog.module';
 import { AuthModule } from './auth/auth.module';
 import { MediaModule } from './media/media.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { MediaModule } from './media/media.module';
     BlogModule,
     AuthModule,
     MediaModule,
+    SettingsModule,
   ],
   controllers: [],
   providers: [],

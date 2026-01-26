@@ -66,10 +66,15 @@ export class AuthService {
   ): Promise<{ user: Partial<User>; tokens: any }> {
     const { email, password } = loginDto;
 
-    // Buscar usuario
-    const user = await this.userModel.findOne({ email, provider: 'local' });
+    // Buscar usuario por email (sin importar provider)
+    const user = await this.userModel.findOne({ email });
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');
+    }
+
+    // Verificar que el usuario tenga contraseña (no solo OAuth)
+    if (!user.password) {
+      throw new UnauthorizedException('Esta cuenta solo puede usar autenticación OAuth (Google/GitHub)');
     }
 
     // Verificar si el usuario está activo
@@ -98,21 +103,62 @@ export class AuthService {
     const { id, emails, displayName, photos } = profile;
     const email = emails[0].value;
 
-    let user = await this.userModel.findOne({
-      $or: [
-        { email, provider: 'google' },
-        { providerId: id, provider: 'google' },
-      ],
-    });
+    // Buscar usuario por email (sin importar el provider)
+    let user = await this.userModel.findOne({ email });
 
-    if (!user) {
+    if (user) {
+      // Usuario existe, actualizar datos de OAuth sin eliminar password
+      console.log(`🔗 Vinculando cuenta Google a usuario existente: ${email} (provider: ${user.provider})`);
+      
+      // Actualizar información solo si no tiene providerId de Google
+      if (user.providerId !== id || user.provider !== 'google') {
+        const avatarUrl = photos?.[0]?.value;
+        
+        // Solo actualizar avatar si OAuth trae uno Y el usuario no tiene uno
+        if (avatarUrl && (!user.avatar || user.avatar === '/default-avatar.svg')) {
+          user.avatar = avatarUrl;
+        }
+        
+        // Actualizar nombre solo si OAuth trae uno mejor
+        if (displayName && displayName.trim()) {
+          user.name = displayName;
+        }
+        
+        // Guardar providerId pero MANTENER provider original y password
+        // Esto permite login con ambos métodos
+        if (!user.providerId) {
+          user.providerId = id;
+          console.log(`✅ OAuth vinculado. Usuario puede usar email/password O Google`);
+        }
+        
+        await user.save();
+      }
+    } else {
+      // Usuario no existe, crear nuevo con OAuth
+      const userCount = await this.userModel.countDocuments();
+      const isFirstUser = userCount === 0;
+      const avatarUrl = photos?.[0]?.value || null;
+
       user = await this.userModel.create({
         email,
         name: displayName,
-        avatar: photos[0]?.value,
+        avatar: avatarUrl,
         provider: 'google',
         providerId: id,
+        role: isFirstUser ? 'admin' : 'user',
+        isActive: true,
       });
+
+      if (isFirstUser) {
+        console.log(`🎉 Primer admin creado via Google OAuth: ${email}`);
+      }
+
+      console.log(`📸 Google user created with avatar: ${avatarUrl || 'none'}`);
+    }
+
+    // Verificar si el usuario está activo
+    if (!user.isActive) {
+      throw new UnauthorizedException('Usuario desactivado. Contacta al administrador.');
     }
 
     const tokens = await this.generateTokens(user);
@@ -124,28 +170,70 @@ export class AuthService {
   async githubLogin(
     profile: any,
   ): Promise<{ user: Partial<User>; tokens: any }> {
-    const { id, emails, displayName, photos } = profile;
+    const { id, emails, displayName, photos, _json } = profile;
     const email = emails?.[0]?.value;
 
     if (!email) {
       throw new UnauthorizedException('Email no disponible desde GitHub');
     }
 
-    let user = await this.userModel.findOne({
-      $or: [
-        { email, provider: 'github' },
-        { providerId: id.toString(), provider: 'github' },
-      ],
-    });
+    // Buscar usuario por email (sin importar el provider)
+    let user = await this.userModel.findOne({ email });
 
-    if (!user) {
+    if (user) {
+      // Usuario existe, actualizar datos de OAuth sin eliminar password
+      console.log(`🔗 Vinculando cuenta GitHub a usuario existente: ${email} (provider: ${user.provider})`);
+      
+      // Actualizar información solo si no tiene providerId de GitHub
+      if (user.providerId !== id.toString() || user.provider !== 'github') {
+        const avatarUrl = photos?.[0]?.value || _json?.avatar_url;
+        
+        // Solo actualizar avatar si OAuth trae uno Y el usuario no tiene uno
+        if (avatarUrl && (!user.avatar || user.avatar === '/default-avatar.svg')) {
+          user.avatar = avatarUrl;
+        }
+        
+        // Actualizar nombre solo si OAuth trae uno mejor
+        const newName = displayName || _json?.name;
+        if (newName && newName.trim()) {
+          user.name = newName;
+        }
+        
+        // Guardar providerId pero MANTENER provider original y password
+        // Esto permite login con ambos métodos
+        if (!user.providerId) {
+          user.providerId = id.toString();
+          console.log(`✅ OAuth vinculado. Usuario puede usar email/password O GitHub`);
+        }
+        
+        await user.save();
+      }
+    } else {
+      // Usuario no existe, crear nuevo con OAuth
+      const userCount = await this.userModel.countDocuments();
+      const isFirstUser = userCount === 0;
+      const avatarUrl = photos?.[0]?.value || _json?.avatar_url || null;
+
       user = await this.userModel.create({
         email,
-        name: displayName || `GitHub User ${id}`,
-        avatar: photos?.[0]?.value,
+        name: displayName || _json?.name || `GitHub User ${id}`,
+        avatar: avatarUrl,
         provider: 'github',
         providerId: id.toString(),
+        role: isFirstUser ? 'admin' : 'user',
+        isActive: true,
       });
+
+      if (isFirstUser) {
+        console.log(`🎉 Primer admin creado via GitHub OAuth: ${email}`);
+      }
+
+      console.log(`📸 GitHub user created with avatar: ${avatarUrl || 'none'}`);
+    }
+
+    // Verificar si el usuario está activo
+    if (!user.isActive) {
+      throw new UnauthorizedException('Usuario desactivado. Contacta al administrador.');
     }
 
     const tokens = await this.generateTokens(user);
@@ -331,8 +419,8 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.userModel.findOne({ email, provider: 'local' });
-    if (user && (await bcrypt.compare(password, user.password))) {
+    const user = await this.userModel.findOne({ email });
+    if (user && user.password && (await bcrypt.compare(password, user.password))) {
       const { password, ...result } = user.toObject();
       return result;
     }
@@ -362,5 +450,43 @@ export class AuthService {
 
     await user.save();
     return this.sanitizeUser(user);
+  }
+
+  // Cambiar/establecer contraseña
+  async changePassword(
+    userId: string,
+    currentPassword: string | undefined,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Si el usuario ya tiene contraseña, verificar la actual
+    if (user.password) {
+      if (!currentPassword) {
+        throw new UnauthorizedException('Debes proporcionar tu contraseña actual');
+      }
+      
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Contraseña actual incorrecta');
+      }
+    }
+
+    // Hash de la nueva contraseña
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    user.password = hashedPassword;
+
+    // Si el provider era solo OAuth, actualizarlo a 'local' para permitir login con password
+    if (user.provider === 'google' || user.provider === 'github') {
+      user.provider = 'local';
+      console.log(`🔑 Usuario ${user.email} estableció contraseña. Ahora puede usar email/password además de OAuth`);
+    }
+
+    await user.save();
+
+    return { message: 'Contraseña actualizada exitosamente' };
   }
 }

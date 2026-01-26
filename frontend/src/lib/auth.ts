@@ -34,7 +34,7 @@ const USER_KEY = 'user';
 
 // Obtener URL base de la API
 function getApiBaseUrl(): string {
-  const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:82/';
+  const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/';
   return baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
 }
 
@@ -283,9 +283,25 @@ export async function initializeAuth(): Promise<User | null> {
 }
 
 /**
+ * Guardar URL actual como returnUrl para redirección después del login
+ */
+function saveReturnUrl(): void {
+  if (!isClient()) return;
+  
+  // Obtener la URL actual sin incluir páginas de auth
+  const currentUrl = window.location.pathname;
+  
+  // No guardar si ya estamos en páginas de auth
+  if (!currentUrl.includes('/admin/login') && !currentUrl.includes('/auth/')) {
+    sessionStorage.setItem('returnUrl', currentUrl);
+  }
+}
+
+/**
  * Login con Google (redirige a OAuth)
  */
 export function loginWithGoogle(): void {
+  saveReturnUrl();
   window.location.href = `${API_BASE}/google`;
 }
 
@@ -293,6 +309,7 @@ export function loginWithGoogle(): void {
  * Login con GitHub (redirige a OAuth)
  */
 export function loginWithGithub(): void {
+  saveReturnUrl();
   window.location.href = `${API_BASE}/github`;
 }
 

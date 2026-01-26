@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getUser, setUser } from '../../lib/auth';
-import { getProfile, updateProfile, uploadAvatar } from '../../lib/admin-api';
+import { getProfile, updateProfile, uploadAvatar, changePassword } from '../../lib/admin-api';
 import { apiGet } from '../../lib/api';
 
 export function ProfileEditor() {
@@ -11,6 +11,13 @@ export function ProfileEditor() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  // Password change states
+  const [loadingPassword, setLoadingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -119,7 +126,7 @@ export function ProfileEditor() {
     if (url.startsWith('http')) return url;
     if (url.startsWith('/uploads/')) {
       // Construir URL completa del backend
-      const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000/';
+      const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/';
       return `${apiUrl.replace(/\/$/, '')}${url}`;
     }
     if (url.startsWith('/')) {
@@ -127,6 +134,46 @@ export function ProfileEditor() {
       return url;
     }
     return url;
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoadingPassword(true);
+    setPasswordMessage(null);
+
+    // Validar que las contraseñas coincidan
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage({ type: 'error', text: 'Las contraseñas no coinciden' });
+      setLoadingPassword(false);
+      return;
+    }
+
+    // Validar longitud mínima
+    if (newPassword.length < 6) {
+      setPasswordMessage({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres' });
+      setLoadingPassword(false);
+      return;
+    }
+
+    try {
+      await changePassword({
+        currentPassword: currentPassword || undefined,
+        newPassword,
+      });
+
+      setPasswordMessage({ type: 'success', text: 'Contraseña actualizada correctamente' });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      console.error('Error al cambiar contraseña:', error);
+      setPasswordMessage({
+        type: 'error',
+        text: error?.message || 'Error al cambiar la contraseña',
+      });
+    } finally {
+      setLoadingPassword(false);
+    }
   };
 
   if (!user) {
@@ -261,6 +308,103 @@ export function ProfileEditor() {
               className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
             >
               {loading ? 'Guardando...' : 'Guardar Cambios'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Sección de cambiar contraseña */}
+      <div className="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 p-6 mt-6">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Cambiar Contraseña
+        </h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+          {user.provider === 'local' && user.password 
+            ? 'Actualiza tu contraseña actual' 
+            : 'Establece una contraseña para poder iniciar sesión con email/password además de OAuth'}
+        </p>
+
+        {passwordMessage && (
+          <div
+            className={`mb-4 rounded-md p-4 ${
+              passwordMessage.type === 'success'
+                ? 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+            }`}
+          >
+            {passwordMessage.text}
+          </div>
+        )}
+
+        <form onSubmit={handlePasswordChange} className="space-y-4">
+          {/* Contraseña actual (solo si ya tiene contraseña) */}
+          {user.provider === 'local' && (
+            <div>
+              <label
+                htmlFor="currentPassword"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                Contraseña Actual
+              </label>
+              <input
+                type="password"
+                id="currentPassword"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500"
+                placeholder="Tu contraseña actual"
+              />
+            </div>
+          )}
+
+          {/* Nueva contraseña */}
+          <div>
+            <label
+              htmlFor="newPassword"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Nueva Contraseña
+            </label>
+            <input
+              type="password"
+              id="newPassword"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              minLength={6}
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500"
+              placeholder="Mínimo 6 caracteres"
+            />
+          </div>
+
+          {/* Confirmar nueva contraseña */}
+          <div>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Confirmar Nueva Contraseña
+            </label>
+            <input
+              type="password"
+              id="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={6}
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500"
+              placeholder="Repite la nueva contraseña"
+            />
+          </div>
+
+          {/* Botón */}
+          <div className="flex items-center justify-end border-t border-gray-200 pt-4 dark:border-gray-700">
+            <button
+              type="submit"
+              disabled={loadingPassword}
+              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {loadingPassword ? 'Actualizando...' : 'Cambiar Contraseña'}
             </button>
           </div>
         </form>

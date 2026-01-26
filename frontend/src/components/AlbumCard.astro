@@ -23,7 +23,7 @@ const coverUrl = album.coverImage || (album.images && album.images.length > 0 &&
 function getImageUrl(imgUrl: string | undefined): string {
   if (!imgUrl) return '/default-avatar.svg';
   if (imgUrl.startsWith('http')) return imgUrl;
-  const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
   return `${baseUrl.replace(/\/$/, '')}${imgUrl}`;
 }
 

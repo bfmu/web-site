@@ -48,7 +48,7 @@ if [ ! -f "frontend/.env" ]; then
     echo -e "${YELLOW}⚠️  frontend/.env no existe${NC}"
     echo "Creando..."
     cat > frontend/.env << EOF
-PUBLIC_API_URL=http://localhost:4000/
+PUBLIC_API_URL=http://localhost:3000/
 PUBLIC_BASE_URL=http://localhost:4321/
 EOF
     echo -e "${GREEN}✓ frontend/.env creado${NC}"
@@ -78,8 +78,8 @@ echo -e "${GREEN}✅ Servicios iniciados!${NC}"
 echo ""
 echo "📍 URLs disponibles:"
 echo "   Frontend:    http://localhost:4321"
-echo "   Backend API: http://localhost:4000"
-echo "   Swagger:     http://localhost:4000/api/docs"
+echo "   Backend API: http://localhost:3000"
+echo "   Swagger:     http://localhost:3000/api/docs"
 echo "   Admin:       http://localhost:4321/admin/login"
 echo ""
 echo "📋 Comandos útiles:"

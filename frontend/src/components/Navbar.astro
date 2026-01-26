@@ -56,7 +56,7 @@ let links: NavBarLink[] = navBarConfig.links.map(
             )}
             <LightDarkSwitch client:load></LightDarkSwitch>
                 <!-- Admin/Login Button with Dropdown -->
-                <div id="admin-user-menu" class="relative hidden" role="menu" tabindex="-1">
+                <div id="admin-user-menu" class="relative hidden flex-shrink-0" role="menu" tabindex="-1">
                 <button 
                     id="admin-user-btn" 
                     aria-label="Menú de usuario" 
@@ -72,7 +72,7 @@ let links: NavBarLink[] = navBarConfig.links.map(
                     />
                 </button>
                 <!-- Dropdown Menu -->
-                <div id="admin-user-dropdown" class="absolute right-0 top-12 mt-2 w-48 card-base float-panel float-panel-closed z-50">
+                <div id="admin-user-dropdown" class="absolute right-0 top-12 mt-2 w-48 card-base float-panel float-panel-closed" style="z-index: 9999;">
                     <div class="p-2">
                         <a 
                             href="/admin/profile" 
@@ -82,13 +82,14 @@ let links: NavBarLink[] = navBarConfig.links.map(
                             <span class="text-sm">Mi Perfil</span>
                         </a>
                         <a 
+                            id="admin-dashboard-link"
                             href="/admin" 
                             class="flex items-center gap-3 px-3 py-2 rounded-lg btn-plain scale-animation transition whitespace-nowrap h-9 font-medium active:scale-95 mb-0.5"
                         >
                             <Icon name="material-symbols:dashboard" class="text-[1.25rem]"></Icon>
                             <span class="text-sm">Dashboard</span>
                         </a>
-                        <hr class="my-2 border-[var(--line-divider)]" />
+                        <hr id="admin-dashboard-divider" class="my-2 border-[var(--line-divider)]" />
                         <button 
                             id="logout-menu-btn"
                             class="w-full flex items-center gap-3 px-3 py-2 rounded-lg btn-plain scale-animation transition whitespace-nowrap h-9 font-medium active:scale-95 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -104,7 +105,7 @@ let links: NavBarLink[] = navBarConfig.links.map(
                 id="admin-login-btn" 
                 href="/admin/login" 
                 aria-label="Admin Login" 
-                class="btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90 flex items-center justify-center"
+                class="btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90 flex items-center justify-center flex-shrink-0"
                 title="Iniciar sesión"
             >
                 <Icon id="admin-login-icon" name="material-symbols:login" class="text-[1.25rem]"></Icon>
@@ -117,6 +118,43 @@ let links: NavBarLink[] = navBarConfig.links.map(
         <DisplaySettings client:only="svelte">
             <Icon slot="restore-icon" name="fa6-solid:arrow-rotate-left" class="text-[0.875rem]"></Icon>
         </DisplaySettings>
+    </div>
+</div>
+
+<!-- Logout Confirmation Modal -->
+<div
+    id="navbar-logout-modal"
+    class="fixed inset-0 hidden items-center justify-center bg-black/50 p-4"
+    style="z-index: 10000;"
+>
+    <div class="bg-[var(--card-bg)] rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in border border-[var(--line-divider)]">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+                <Icon name="material-symbols:warning-rounded" class="text-[1.5rem] text-amber-600 dark:text-amber-400"></Icon>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold" style="color: var(--primary);">
+                    Cerrar Sesión
+                </h3>
+                <p class="text-sm opacity-70 mt-1" style="color: var(--primary);">
+                    ¿Estás seguro de que quieres cerrar sesión?
+                </p>
+            </div>
+        </div>
+        <div class="flex gap-3 justify-end mt-6">
+            <button
+                id="navbar-logout-cancel-btn"
+                class="px-4 py-2 rounded-lg transition-colors font-medium btn-plain"
+            >
+                Cancelar
+            </button>
+            <button
+                id="navbar-logout-confirm-btn"
+                class="px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 transition-colors font-medium"
+            >
+                Cerrar Sesión
+            </button>
+        </div>
     </div>
 </div>
 
@@ -163,6 +201,18 @@ function loadButtonScript() {
 
 loadButtonScript();
 
+// Guardar URL actual cuando se hace click en login
+const adminLoginBtn = document.getElementById('admin-login-btn') as HTMLAnchorElement;
+if (adminLoginBtn) {
+    adminLoginBtn.addEventListener('click', (e) => {
+        // Guardar URL actual para redirigir después del login
+        const currentUrl = window.location.pathname;
+        if (!currentUrl.includes('/admin/login') && !currentUrl.includes('/auth/')) {
+            sessionStorage.setItem('returnUrl', currentUrl);
+        }
+    });
+}
+
 // Actualizar botón de admin/login según estado de autenticación
 function updateAdminButton() {
     const adminBtn = document.getElementById('admin-login-btn') as HTMLAnchorElement;
@@ -182,6 +232,17 @@ function updateAdminButton() {
             // Mostrar menú de usuario y ocultar botón de login
             if (adminBtn) adminBtn.classList.add('hidden');
             if (userMenu) userMenu.classList.remove('hidden');
+            
+            // Ocultar Dashboard si no es admin
+            const dashboardLink = document.getElementById('admin-dashboard-link');
+            const dashboardDivider = document.getElementById('admin-dashboard-divider');
+            if (user.role !== 'admin') {
+                if (dashboardLink) dashboardLink.style.display = 'none';
+                if (dashboardDivider) dashboardDivider.style.display = 'none';
+            } else {
+                if (dashboardLink) dashboardLink.style.display = '';
+                if (dashboardDivider) dashboardDivider.style.display = '';
+            }
             
             // Actualizar avatar
             if (userAvatar) {
@@ -323,25 +384,80 @@ function setupUserMenu() {
     
     document.addEventListener('click', handleClickOutside);
 
-    // Manejar logout
+    // Manejar logout - Abrir modal de confirmación
+    const navbarLogoutModal = document.getElementById('navbar-logout-modal');
+    const navbarLogoutConfirmBtn = document.getElementById('navbar-logout-confirm-btn');
+    const navbarLogoutCancelBtn = document.getElementById('navbar-logout-cancel-btn');
+
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', async (e) => {
+        logoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            try {
-                const { logout } = await import('../lib/auth');
-                await logout();
-                window.location.href = '/';
-            } catch (error) {
-                console.error('Error al cerrar sesión:', error);
-                // Limpiar localStorage de todas formas
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('refreshToken');
-                localStorage.removeItem('user');
-                window.location.href = '/';
+            
+            // Abrir modal
+            if (navbarLogoutModal) {
+                navbarLogoutModal.classList.remove('hidden');
+                navbarLogoutModal.classList.add('flex');
             }
         });
     }
+
+    // Cancelar logout
+    navbarLogoutCancelBtn?.addEventListener('click', () => {
+        if (navbarLogoutModal) {
+            navbarLogoutModal.classList.add('hidden');
+            navbarLogoutModal.classList.remove('flex');
+        }
+    });
+
+    // Confirmar logout
+    navbarLogoutConfirmBtn?.addEventListener('click', async () => {
+        // Cerrar modal
+        if (navbarLogoutModal) {
+            navbarLogoutModal.classList.add('hidden');
+            navbarLogoutModal.classList.remove('flex');
+        }
+
+        try {
+            // Mostrar notificación de procesamiento
+            const { showInfo } = await import('../lib/notifications');
+            showInfo('Cerrando sesión...');
+            
+            const { logout } = await import('../lib/auth');
+            await logout();
+            
+            // Limpiar y redirigir
+            window.location.href = '/';
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+            
+            // Mostrar error pero limpiar de todas formas
+            try {
+                const { showError } = await import('../lib/notifications');
+                showError('Error al cerrar sesión, pero se limpió la sesión local');
+            } catch {
+                // Si no se puede cargar las notificaciones, solo limpiar
+            }
+            
+            // Limpiar localStorage de todas formas
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+            
+            // Redirigir después de un breve delay para que se vea la notificación
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1500);
+        }
+    });
+
+    // Cerrar modal al hacer click fuera de él
+    navbarLogoutModal?.addEventListener('click', (e) => {
+        if (e.target === navbarLogoutModal) {
+            navbarLogoutModal.classList.add('hidden');
+            navbarLogoutModal.classList.remove('flex');
+        }
+    });
 }
 
 // Detectar si estamos en un iframe y ocultar el enlace "Ver Sitio" del admin

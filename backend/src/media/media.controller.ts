@@ -81,7 +81,7 @@ export class MediaController {
 
     // Construir URLs
     const relativePath = `/uploads/images/${fileName}`;
-    const apiUrl = process.env.API_URL || 'http://localhost:4000';
+    const apiUrl = process.env.API_URL || 'http://localhost:3000';
     const fullUrl = `${apiUrl}${relativePath}`;
 
     // Extraer metadata del body (puede venir como objeto o como string desde FormData)

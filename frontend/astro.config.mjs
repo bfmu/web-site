@@ -43,6 +43,10 @@ export default defineConfig({
   adapter: node({ mode: "standalone" }),
   base: "/",
   trailingSlash: "ignore",
+  server: {
+    host: true, // Escuchar en todas las interfaces (0.0.0.0)
+    port: 4321,
+  },
   integrations: [
     tailwind(),
     swup({

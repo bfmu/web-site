@@ -140,7 +140,7 @@ export default function MediaLibrary() {
 
   const getImageUrl = (media: MediaFile): string => {
     if (media.url.startsWith('http')) return media.url;
-    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
     return `${baseUrl.replace(/\/$/, '')}${media.url}`;
   };
 

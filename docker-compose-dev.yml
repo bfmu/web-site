@@ -1,18 +1,40 @@
 #how to execute this file: docker-compose -f docker-compose-dev.yml up -d
 services:
+  mongodb:
+    image: mongo:7.0
+    container_name: website-mongodb-dev
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin123
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - default
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile-dev
     container_name: website_backend_dev
     ports:
-      - "8080:8080"
+      - "3000:3000"
     volumes:
       - ./backend/src:/app/src
     env_file:
       - ./backend/.env
     networks:
       - default
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   frontend:
     build:
@@ -27,6 +49,12 @@ services:
       - ./frontend/src:/app/src
     networks:
       - default
+    depends_on:
+      - backend
+
+volumes:
+  mongodb_data:
+    driver: local
 
 networks:
   default:

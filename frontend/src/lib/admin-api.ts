@@ -302,6 +302,13 @@ export async function uploadAvatar(file: File): Promise<{ url: string; filename:
   return apiUpload('auth/upload-avatar', file);
 }
 
+export async function changePassword(data: {
+  currentPassword?: string;
+  newPassword: string;
+}): Promise<{ message: string }> {
+  return apiPost('auth/change-password', data);
+}
+
 // ==================== MEDIA API ====================
 
 export interface MediaFile {
@@ -406,8 +413,8 @@ export async function uploadMedia(
   
   // Construir URL completa
   const apiBase = typeof window !== 'undefined' 
-    ? (import.meta.env.PUBLIC_API_URL || 'http://localhost:4000')
-    : (import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:4000');
+    ? (import.meta.env.PUBLIC_API_URL || 'http://localhost:3000')
+    : (import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:3000');
   const cleanBaseUrl = apiBase.replace(/\/$/, '');
   const imageUrl = result.url.startsWith('http') 
     ? result.url 
@@ -422,11 +429,11 @@ export async function uploadMedia(
 // Helper para obtener la URL base de la API (similar a api.ts)
 function getApiBaseUrl(): string {
   if (import.meta.env.SSR) {
-    const dockerApiUrl = import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:4000/';
+    const dockerApiUrl = import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:3000/';
     const baseUrl = dockerApiUrl.endsWith('/') ? dockerApiUrl : `${dockerApiUrl}/`;
     return `${baseUrl}api`;
   }
-  const publicApiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000/';
+  const publicApiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/';
   const baseUrl = publicApiUrl.endsWith('/') ? publicApiUrl : `${publicApiUrl}/`;
   return `${baseUrl}api`;
 }

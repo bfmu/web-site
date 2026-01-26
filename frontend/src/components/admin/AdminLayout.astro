@@ -1,6 +1,7 @@
 ---
 import Layout from '@layouts/Layout.astro';
 import AdminThemeSwitch from '@components/admin/AdminThemeSwitch.svelte';
+import NotificationProvider from '@components/NotificationProvider.astro';
 import { getUser } from '../../lib/auth';
 
 interface Props {
@@ -19,6 +20,8 @@ if (typeof window !== 'undefined') {
 ---
 
 <Layout title={title}>
+  <NotificationProvider />
+  
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- Sidebar -->
     <aside
@@ -34,9 +37,31 @@ if (typeof window !== 'undefined') {
         <!-- Navigation -->
         <nav class="flex-1 space-y-1 px-3 py-4">
           <a
-            href="/admin"
+            href="/"
             class="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            title="Ir a la página principal"
+          >
+            <svg
+              class="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+              />
+            </svg>
+            <span>Página Principal</span>
+          </a>
+
+          <a
+            href="/admin"
+            data-admin-only="true"
             class:list={[
+              "hidden admin-link flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700",
               {
                 'bg-gray-100 dark:bg-gray-700': Astro.url.pathname === '/admin',
               },
@@ -60,8 +85,9 @@ if (typeof window !== 'undefined') {
 
           <a
             href="/admin/posts"
-            class="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            data-admin-only="true"
             class:list={[
+              "hidden admin-link flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700",
               {
                 'bg-gray-100 dark:bg-gray-700': Astro.url.pathname.startsWith('/admin/posts'),
               },
@@ -85,8 +111,9 @@ if (typeof window !== 'undefined') {
 
           <a
             href="/admin/media"
-            class="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            data-admin-only="true"
             class:list={[
+              "hidden admin-link flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700",
               {
                 'bg-gray-100 dark:bg-gray-700': Astro.url.pathname.startsWith('/admin/media'),
               },
@@ -110,8 +137,9 @@ if (typeof window !== 'undefined') {
 
           <a
             href="/admin/albums"
-            class="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            data-admin-only="true"
             class:list={[
+              "hidden admin-link flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700",
               {
                 'bg-gray-100 dark:bg-gray-700': Astro.url.pathname.startsWith('/admin/albums'),
               },
@@ -157,6 +185,41 @@ if (typeof window !== 'undefined') {
             </svg>
             <span>Mi Perfil</span>
           </a>
+
+          <!-- Separador visual -->
+          <div class="my-2 border-t border-gray-200 dark:border-gray-700"></div>
+
+          <a
+            href="/admin/services"
+            id="services-link"
+            class="hidden flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            class:list={[
+              {
+                'bg-gray-100 dark:bg-gray-700': Astro.url.pathname.startsWith('/admin/services'),
+              },
+            ]}
+          >
+            <svg
+              class="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            <span>Servicios</span>
+          </a>
           
         </nav>
 
@@ -189,6 +252,44 @@ if (typeof window !== 'undefined') {
       class="fixed inset-0 z-30 bg-gray-900/50 opacity-0 transition-opacity lg:hidden"
       style="pointer-events: none;"
     ></div>
+
+    <!-- Logout Confirmation Modal -->
+    <div
+      id="logout-modal"
+      class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4"
+    >
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="flex-shrink-0 w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+            <svg class="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              Cerrar Sesión
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              ¿Estás seguro de que quieres cerrar sesión?
+            </p>
+          </div>
+        </div>
+        <div class="flex gap-3 justify-end mt-6">
+          <button
+            id="logout-cancel-btn"
+            class="px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+          >
+            Cancelar
+          </button>
+          <button
+            id="logout-confirm-btn"
+            class="px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 transition-colors font-medium"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Main content -->
     <div class="lg:pl-64">
@@ -276,24 +377,49 @@ if (typeof window !== 'undefined') {
     window.location.href = '/admin/login';
   }
 
-  // Verificar que el usuario tenga permisos (solo admin y editor pueden acceder)
+  // Obtener usuario actual
   const currentUser = getUser();
-  if (currentUser && !isAdmin() && currentUser.role !== 'editor') {
-    // Usuarios normales no pueden acceder al admin
-    alert('No tienes permisos para acceder al panel de administración.');
-    window.location.href = '/';
+  const userIsAdmin = currentUser && isAdmin();
+  const userIsEditor = currentUser && currentUser.role === 'editor';
+  const hasAdminAccess = userIsAdmin || userIsEditor;
+
+  // Mostrar elementos admin-only si el usuario tiene acceso
+  if (hasAdminAccess) {
+    // Mostrar todos los elementos con data-admin-only
+    const adminElements = document.querySelectorAll('[data-admin-only="true"]');
+    adminElements.forEach((element) => {
+      element.classList.remove('hidden');
+    });
+  }
+
+  // Si el usuario NO es admin ni editor, solo puede ver su perfil
+  if (currentUser && !hasAdminAccess) {
+    const currentPath = window.location.pathname;
+    
+    // Si no está en la página de perfil, redirigir allí
+    if (currentPath !== '/admin/profile') {
+      // Importar y usar notificación
+      import('../../lib/notifications').then(({ showWarning }) => {
+        showWarning('No tienes permisos para acceder al panel de administración.');
+      });
+      window.location.href = '/admin/profile';
+    }
   }
 
   // Mostrar "Ver Sitio" e "Ir al Sitio" solo para administradores (solo en el header)
   const viewSiteLink = document.getElementById('view-site-link');
   const goToSiteLink = document.getElementById('go-to-site-link');
+  const servicesLink = document.getElementById('services-link');
   
-  if (currentUser && isAdmin()) {
+  if (userIsAdmin) {
     if (viewSiteLink) {
       viewSiteLink.classList.remove('hidden');
     }
     if (goToSiteLink) {
       goToSiteLink.classList.remove('hidden');
+    }
+    if (servicesLink) {
+      servicesLink.classList.remove('hidden');
     }
   }
 
@@ -310,7 +436,7 @@ if (typeof window !== 'undefined') {
         return avatar;
       }
       if (avatar.startsWith('/uploads/')) {
-        const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000/';
+        const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/';
         return `${apiUrl.replace(/\/$/, '')}${avatar}`;
       }
       return avatar;
@@ -362,12 +488,64 @@ if (typeof window !== 'undefined') {
 
   overlay?.addEventListener('click', closeSidebar);
 
-  // Logout
+  // Logout modal
   const logoutBtn = document.getElementById('logout-btn');
-  logoutBtn?.addEventListener('click', async () => {
-    if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+  const logoutModal = document.getElementById('logout-modal');
+  const logoutConfirmBtn = document.getElementById('logout-confirm-btn');
+  const logoutCancelBtn = document.getElementById('logout-cancel-btn');
+
+  // Abrir modal de confirmación
+  logoutBtn?.addEventListener('click', () => {
+    logoutModal?.classList.remove('hidden');
+    logoutModal?.classList.add('flex');
+  });
+
+  // Cancelar logout
+  logoutCancelBtn?.addEventListener('click', () => {
+    logoutModal?.classList.add('hidden');
+    logoutModal?.classList.remove('flex');
+  });
+
+  // Confirmar logout
+  logoutConfirmBtn?.addEventListener('click', async () => {
+    // Cerrar modal
+    logoutModal?.classList.add('hidden');
+    logoutModal?.classList.remove('flex');
+
+    try {
+      // Mostrar notificación de procesamiento
+      const { showInfo } = await import('../../lib/notifications');
+      showInfo('Cerrando sesión...');
+      
       await logout();
-      window.location.href = '/admin/login';
+      
+      // Redirigir a la página principal después de un breve delay
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 800);
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      
+      // Mostrar error
+      try {
+        const { showError } = await import('../../lib/notifications');
+        showError('Error al cerrar sesión, pero se limpió la sesión local');
+      } catch {
+        // Si no se puede cargar las notificaciones, solo limpiar
+      }
+      
+      // Redirigir a la página principal de todas formas después de un delay
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1500);
+    }
+  });
+
+  // Cerrar modal al hacer click fuera de él
+  logoutModal?.addEventListener('click', (e) => {
+    if (e.target === logoutModal) {
+      logoutModal.classList.add('hidden');
+      logoutModal.classList.remove('flex');
     }
   });
 

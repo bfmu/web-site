@@ -85,7 +85,7 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
 
   const handleSubmit = async () => {
     if (!title || !slug || !content) {
-      alert('Por favor completa todos los campos requeridos');
+      showWarning('Por favor completa todos los campos requeridos');
       return;
     }
 
@@ -126,7 +126,7 @@ export function PostForm({ post, onSuccess }: PostFormProps) {
       console.error('Error al crear/actualizar post:', error);
       const errorMessage = error?.message || error?.data?.message || error?.statusText || 'Error desconocido';
       const errorDetails = error?.data ? JSON.stringify(error.data, null, 2) : '';
-      alert(`Error al ${draft ? 'guardar' : 'publicar'} el post: ${errorMessage}${errorDetails ? '\n\nDetalles: ' + errorDetails : ''}`);
+      showError(`Error al ${draft ? 'guardar' : 'publicar'} el post: ${errorMessage}${errorDetails ? '\n\nDetalles: ' + errorDetails : ''}`);
     } finally {
       setLoading(false);
     }

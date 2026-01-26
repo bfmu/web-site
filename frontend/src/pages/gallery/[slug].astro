@@ -32,7 +32,7 @@ const processedImages = images.map((img: any) => {
   
   let imageUrl = image.url;
   if (!imageUrl.startsWith('http')) {
-    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
     imageUrl = `${baseUrl.replace(/\/$/, '')}${image.url}`;
   }
   

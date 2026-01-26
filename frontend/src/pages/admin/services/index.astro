@@ -1,0 +1,175 @@
+---
+import AdminLayout from '@components/admin/AdminLayout.astro';
+
+interface ServiceStatus {
+  name: string;
+  type: 'oauth' | 'integration';
+  description: string;
+  icon: string;
+  configUrl: string;
+  enabled?: boolean;
+}
+
+const services: ServiceStatus[] = [
+  {
+    name: 'Google OAuth',
+    type: 'oauth',
+    description: 'Permite a los usuarios hacer login con su cuenta de Google',
+    icon: '🔐',
+    configUrl: '/admin/services/oauth',
+  },
+  {
+    name: 'GitHub OAuth',
+    type: 'oauth',
+    description: 'Permite a los usuarios hacer login con su cuenta de GitHub',
+    icon: '🔐',
+    configUrl: '/admin/services/oauth',
+  },
+  {
+    name: 'Spotify Integration',
+    type: 'integration',
+    description: 'Muestra tus estadísticas personales de Spotify en el sitio',
+    icon: '🎵',
+    configUrl: '/admin/services/integrations',
+  },
+];
+---
+
+<AdminLayout title="Configuración de Servicios">
+  <div class="space-y-6">
+    <!-- Header -->
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+        Configuración de Servicios
+      </h1>
+      <p class="mt-2 text-gray-600 dark:text-gray-400">
+        Configura servicios OAuth para autenticación de usuarios e integraciones de API
+      </p>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+      <div class="flex items-start">
+        <div class="text-2xl mr-3">ℹ️</div>
+        <div class="flex-1">
+          <h3 class="text-sm font-medium text-blue-900 dark:text-blue-100">
+            Configuración Dinámica
+          </h3>
+          <p class="mt-1 text-sm text-blue-700 dark:text-blue-300">
+            Todos los servicios pueden configurarse desde esta interfaz sin necesidad de reiniciar el servidor.
+            Las configuraciones se guardan en la base de datos y tienen prioridad sobre las variables de entorno.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- OAuth Services -->
+    <div class="space-y-4">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+        OAuth Social Login
+      </h2>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <a
+          href="/admin/services/oauth#google"
+          class="block p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+        >
+          <div class="flex items-start">
+            <div class="text-4xl mr-4">🔐</div>
+            <div class="flex-1">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                Google OAuth
+              </h3>
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                Login con Google para tus usuarios
+              </p>
+              <div class="mt-3 flex items-center text-sm">
+                <span class="text-blue-600 dark:text-blue-400 font-medium">
+                  Configurar →
+                </span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <a
+          href="/admin/services/oauth#github"
+          class="block p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+        >
+          <div class="flex items-start">
+            <div class="text-4xl mr-4">🔐</div>
+            <div class="flex-1">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                GitHub OAuth
+              </h3>
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                Login con GitHub para tus usuarios
+              </p>
+              <div class="mt-3 flex items-center text-sm">
+                <span class="text-blue-600 dark:text-blue-400 font-medium">
+                  Configurar →
+                </span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- API Integrations -->
+    <div class="space-y-4">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+        Integraciones de API
+      </h2>
+      <div class="grid grid-cols-1 gap-4">
+        <a
+          href="/admin/services/integrations#spotify"
+          class="block p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+        >
+          <div class="flex items-start">
+            <div class="text-4xl mr-4">🎵</div>
+            <div class="flex-1">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                Spotify Integration
+              </h3>
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                Muestra tus estadísticas personales de Spotify en tu sitio (top tracks, artists, recently played)
+              </p>
+              <div class="mt-3 flex items-center text-sm">
+                <span class="text-blue-600 dark:text-blue-400 font-medium">
+                  Configurar →
+                </span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Documentation Links -->
+    <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+        📚 Documentación
+      </h3>
+      <div class="space-y-2">
+        <a
+          href="/docs/oauth-setup"
+          class="block text-blue-600 dark:text-blue-400 hover:underline text-sm"
+        >
+          → Cómo configurar OAuth (Google, GitHub)
+        </a>
+        <a
+          href="/docs/spotify-integration"
+          class="block text-blue-600 dark:text-blue-400 hover:underline text-sm"
+        >
+          → Guía de integración de Spotify
+        </a>
+        <a
+          href="/docs/production-deployment"
+          class="block text-blue-600 dark:text-blue-400 hover:underline text-sm"
+        >
+          → Despliegue en producción
+        </a>
+      </div>
+    </div>
+  </div>
+</AdminLayout>

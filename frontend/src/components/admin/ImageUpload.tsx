@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { showError, showWarning } from '@/lib/notifications';
 import { uploadImage } from '../../lib/admin-api';
 import { ImageLibraryModal } from './ImageLibraryModal';
 
@@ -17,7 +18,7 @@ export function ImageUpload({ currentImage, onUploadComplete, label = 'Imagen de
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('Por favor selecciona un archivo de imagen');
+      showWarning('Por favor selecciona un archivo de imagen');
       return;
     }
 
@@ -34,7 +35,7 @@ export function ImageUpload({ currentImage, onUploadComplete, label = 'Imagen de
       const result = await uploadImage(file);
       onUploadComplete(result.url);
     } catch (error: any) {
-      alert(`Error al subir imagen: ${error.message}`);
+      showError(`Error al subir imagen: ${error.message}`);
       setPreview(currentImage || null);
     } finally {
       setUploading(false);

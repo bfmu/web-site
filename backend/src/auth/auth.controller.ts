@@ -29,6 +29,7 @@ import * as path from 'path';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
@@ -64,11 +65,37 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
+    // Verificar si es un test
+    const isTest = req.query.test === 'true';
+    
+    if (isTest) {
+      // En modo test, enviar mensaje al window.opener (popup)
+      return res.send(`
+        <html>
+          <body>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({
+                  type: 'oauth-test-success',
+                  provider: 'google',
+                  message: 'Configuración de Google OAuth validada exitosamente'
+                }, '*');
+                window.close();
+              } else {
+                document.body.innerHTML = '<h2>✅ Test exitoso! Puedes cerrar esta ventana.</h2>';
+              }
+            </script>
+          </body>
+        </html>
+      `);
+    }
+    
+    // Flujo normal de login
     const result = await this.authService.googleLogin(req.user);
 
     // Redireccionar al frontend con tokens
     const redirectUrl = `${
-      process.env.FRONTEND_ADMIN_URL || 'http://localhost:4200'
+      process.env.FRONTEND_ADMIN_URL || 'http://localhost:4321'
     }/auth/callback?token=${result.tokens.accessToken}&refresh=${
       result.tokens.refreshToken
     }`;
@@ -85,11 +112,37 @@ export class AuthController {
   @Get('github/callback')
   @UseGuards(AuthGuard('github'))
   async githubAuthRedirect(@Req() req: Request, @Res() res: Response) {
+    // Verificar si es un test
+    const isTest = req.query.test === 'true';
+    
+    if (isTest) {
+      // En modo test, enviar mensaje al window.opener (popup)
+      return res.send(`
+        <html>
+          <body>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({
+                  type: 'oauth-test-success',
+                  provider: 'github',
+                  message: 'Configuración de GitHub OAuth validada exitosamente'
+                }, '*');
+                window.close();
+              } else {
+                document.body.innerHTML = '<h2>✅ Test exitoso! Puedes cerrar esta ventana.</h2>';
+              }
+            </script>
+          </body>
+        </html>
+      `);
+    }
+    
+    // Flujo normal de login
     const result = await this.authService.githubLogin(req.user);
 
     // Redireccionar al frontend con tokens
     const redirectUrl = `${
-      process.env.FRONTEND_ADMIN_URL || 'http://localhost:4200'
+      process.env.FRONTEND_ADMIN_URL || 'http://localhost:4321'
     }/auth/callback?token=${result.tokens.accessToken}&refresh=${
       result.tokens.refreshToken
     }`;
@@ -244,5 +297,21 @@ export class AuthController {
       size: file.size,
       mimetype: file.mimetype,
     };
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cambiar/establecer contraseña del usuario autenticado' })
+  @ApiResponse({ status: 200, description: 'Contraseña actualizada exitosamente' })
+  async changePassword(
+    @CurrentUser() user: any,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(
+      user._id,
+      changePasswordDto.currentPassword,
+      changePasswordDto.newPassword,
+    );
   }
 }

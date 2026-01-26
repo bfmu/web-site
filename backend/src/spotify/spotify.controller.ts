@@ -19,8 +19,15 @@ export class SpotifyController {
    */
   @Get('login')
   login(@Res() res: Response) {
-    const authUrl = this.spotifyService.getAuthorizationUrl();
-    res.redirect(authUrl); // Redirige al usuario a la página de autorización de Spotify
+    try {
+      const authUrl = this.spotifyService.getAuthorizationUrl();
+      res.redirect(authUrl); // Redirige al usuario a la página de autorización de Spotify
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to generate Spotify authorization URL',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   /**
@@ -30,20 +37,113 @@ export class SpotifyController {
   @Get('callback')
   async callback(@Query('code') code: string, @Res() res: Response) {
     if (!code) {
-      throw new HttpException(
-        'Authorization code is missing',
-        HttpStatus.BAD_REQUEST,
-      );
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Spotify Authorization Error</title>
+            <style>
+              body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f5f5f5; }
+              .container { text-align: center; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+              .error { color: #e74c3c; font-size: 24px; margin-bottom: 10px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="error">❌ Error</div>
+              <p>Authorization code is missing</p>
+            </div>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({ type: 'spotify-auth-error', error: 'No authorization code' }, '*');
+              }
+              setTimeout(() => window.close(), 3000);
+            </script>
+          </body>
+        </html>
+      `);
     }
 
     try {
+      // Recargar configuración antes de intercambiar tokens (por si acaso cambió)
+      await this.spotifyService.reloadConfiguration();
+      
       const tokens = await this.spotifyService.exchangeCodeForTokens(code);
-      res.json({
-        message: 'Authorization successful',
-        tokens,
-      });
+      
+      console.log('✅ Tokens received from Spotify, sending to frontend...');
+      
+      // Enviar tokens al opener y cerrar ventana
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Spotify Authorization Success</title>
+            <style>
+              body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #1DB954; }
+              .container { text-align: center; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+              .success { color: #1DB954; font-size: 48px; margin-bottom: 10px; }
+              h2 { color: #333; margin: 10px 0; }
+              p { color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="success">✅</div>
+              <h2>Autorización exitosa</h2>
+              <p>Puedes cerrar esta ventana</p>
+            </div>
+            <script>
+              console.log('📤 Sending message to opener window...');
+              if (window.opener) {
+                window.opener.postMessage({
+                  type: 'spotify-auth-success',
+                  accessToken: '${tokens.access_token}',
+                  refreshToken: '${tokens.refresh_token}',
+                  expiresIn: ${tokens.expires_in || 3600}
+                }, '*');
+                console.log('✅ Message sent!');
+              } else {
+                console.error('❌ No opener window found!');
+              }
+              setTimeout(() => window.close(), 2000);
+            </script>
+          </body>
+        </html>
+      `);
     } catch (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Spotify Authorization Error</title>
+            <style>
+              body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f5f5f5; }
+              .container { text-align: center; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+              .error { color: #e74c3c; font-size: 48px; margin-bottom: 10px; }
+              h2 { color: #333; margin: 10px 0; }
+              p { color: #666; }
+              .details { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 15px; font-size: 14px; color: #333; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="error">❌</div>
+              <h2>Error en la autorización</h2>
+              <p>No se pudieron obtener los tokens de Spotify</p>
+              <div class="details">${error.message}</div>
+            </div>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({ 
+                  type: 'spotify-auth-error', 
+                  error: '${error.message}' 
+                }, '*');
+              }
+              setTimeout(() => window.close(), 5000);
+            </script>
+          </body>
+        </html>
+      `);
     }
   }
 

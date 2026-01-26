@@ -375,7 +375,8 @@ const visiblePages = getVisiblePages(pagination.pages, pagination.page);
         await deletePost(slug);
         window.location.reload();
       } catch (error: any) {
-        alert(`Error al eliminar: ${error.message}`);
+        const { showError } = await import('../../../lib/notifications');
+        showError(`Error al eliminar: ${error.message}`);
       }
     }
   });

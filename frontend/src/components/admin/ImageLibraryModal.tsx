@@ -104,7 +104,7 @@ export function ImageLibraryModal({
       onClose();
     } catch (error: any) {
       console.error('Error uploading image:', error);
-      alert(error.message || 'Error al subir imagen');
+      showError(error.message || 'Error al subir imagen');
     } finally {
       setUploading(false);
     }
@@ -112,7 +112,7 @@ export function ImageLibraryModal({
 
   const handleSelectFromLibrary = () => {
     if (selectedImage) {
-      const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+      const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
       const cleanBaseUrl = baseUrl.replace(/\/$/, '');
       const fullUrl = selectedImage.url.startsWith('http')
         ? selectedImage.url
@@ -124,7 +124,7 @@ export function ImageLibraryModal({
 
   const getImageUrl = (media: MediaFile): string => {
     if (media.url.startsWith('http')) return media.url;
-    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
     return `${baseUrl.replace(/\/$/, '')}${media.url}`;
   };
 
