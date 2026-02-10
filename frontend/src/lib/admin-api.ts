@@ -582,6 +582,16 @@ export async function addImageToAlbum(slug: string, mediaId: string): Promise<Al
 }
 
 /**
+ * Agregar múltiples imágenes al álbum
+ */
+export async function addImagesToAlbumBatch(
+  slug: string,
+  mediaIds: string[],
+): Promise<Album> {
+  return apiPost<Album>(`albums/${slug}/images/batch`, { mediaIds });
+}
+
+/**
  * Remover imagen del álbum
  */
 export async function removeImageFromAlbum(slug: string, mediaId: string): Promise<Album> {

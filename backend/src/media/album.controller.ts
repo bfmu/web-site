@@ -93,6 +93,23 @@ export class AlbumController {
     await this.albumService.delete(slug);
   }
 
+  @Post(':slug/images/batch')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'editor')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Agregar múltiples imágenes al álbum (requiere autenticación)' })
+  @ApiParam({ name: 'slug', description: 'Slug del álbum' })
+  @ApiResponse({ status: 200, description: 'Imágenes agregadas al álbum' })
+  async addImagesBatch(
+    @Param('slug') slug: string,
+    @Body() body: { mediaIds: string[] },
+  ) {
+    if (!body.mediaIds || !Array.isArray(body.mediaIds)) {
+      throw new BadRequestException('mediaIds must be a non-empty array');
+    }
+    return this.albumService.addImagesBatch(slug, body.mediaIds);
+  }
+
   @Post(':slug/images')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'editor')

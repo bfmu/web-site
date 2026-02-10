@@ -20,9 +20,12 @@ export class AlbumService {
       throw new BadRequestException(`Album with slug "${createAlbumDto.slug}" already exists`);
     }
 
+    const images = createAlbumDto.images?.map((id) => new Types.ObjectId(id)) || [];
     const albumData: any = {
       ...createAlbumDto,
-      images: createAlbumDto.images?.map((id) => new Types.ObjectId(id)) || [],
+      images,
+      // Álbumes vacíos se marcan automáticamente como no públicos
+      isPublic: images.length > 0 ? (createAlbumDto.isPublic ?? true) : false,
     };
 
     if (createAlbumDto.publishedAt) {
@@ -152,6 +155,34 @@ export class AlbumService {
     return this.findOne(slug);
   }
 
+  async addImagesBatch(slug: string, mediaIds: string[]): Promise<Album> {
+    const album = await this.albumModel.findOne({ slug }).exec();
+    if (!album) {
+      throw new NotFoundException(`Album with slug "${slug}" not found`);
+    }
+
+    const validIds = mediaIds.filter((id) => Types.ObjectId.isValid(id));
+    const newIds = validIds.filter(
+      (mediaId) => !album.images.some((imgId) => imgId.toString() === mediaId),
+    );
+
+    if (newIds.length === 0) {
+      return this.findOne(slug);
+    }
+
+    await this.albumModel.findByIdAndUpdate(
+      album._id,
+      { $push: { images: { $each: newIds.map((id) => new Types.ObjectId(id)) } } },
+    ).exec();
+
+    await this.mediaModel.updateMany(
+      { _id: { $in: newIds } },
+      { albumId: album._id },
+    ).exec();
+
+    return this.findOne(slug);
+  }
+
   async removeImage(slug: string, mediaId: string): Promise<Album> {
     if (!Types.ObjectId.isValid(mediaId)) {
       throw new BadRequestException('Invalid media ID');
@@ -163,16 +194,27 @@ export class AlbumService {
     }
 
     // Remover de álbum
-    await this.albumModel.findByIdAndUpdate(
-      album._id,
-      { $pull: { images: new Types.ObjectId(mediaId) } },
-    ).exec();
+    const updatedAlbum = await this.albumModel
+      .findByIdAndUpdate(
+        album._id,
+        { $pull: { images: new Types.ObjectId(mediaId) } },
+        { new: true },
+      )
+      .exec();
 
     // Desvincular albumId en media
     await this.mediaModel.findByIdAndUpdate(
       mediaId,
       { $unset: { albumId: 1 } },
     ).exec();
+
+    // Si el álbum quedó vacío, marcarlo como no público automáticamente
+    if (updatedAlbum && (!updatedAlbum.images || updatedAlbum.images.length === 0)) {
+      await this.albumModel.findByIdAndUpdate(
+        album._id,
+        { isPublic: false },
+      ).exec();
+    }
 
     return this.findOne(slug);
   }
