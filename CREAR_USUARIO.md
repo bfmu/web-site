@@ -49,7 +49,7 @@ El primer usuario registrado automáticamente será admin. Los siguientes serán
 ### Usando cURL:
 
 ```bash
-curl -X POST http://localhost:4000/api/auth/register \
+curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Juan Pérez",
@@ -81,7 +81,7 @@ make promote-user
 
 ## Opción 4: Usando Swagger (Interfaz Web)
 
-1. Ve a http://localhost:4000/api/docs
+1. Ve a http://localhost:3000/api/docs
 2. Busca el endpoint `POST /api/auth/register`
 3. Haz clic en "Try it out"
 4. Completa los campos:

@@ -73,7 +73,7 @@ cd frontend
 
 Crea `frontend/.env` con:
 ```env
-PUBLIC_API_URL=http://localhost:4000/
+PUBLIC_API_URL=http://localhost:3000/
 PUBLIC_BASE_URL=http://localhost:4321/
 ```
 
@@ -101,8 +101,8 @@ Deberías ver 3 servicios: `mongodb`, `backend`, `frontend` todos con estado "Up
 ### 6. Acceder a las aplicaciones
 
 - **Frontend**: http://localhost:4321
-- **Backend API**: http://localhost:4000
-- **Swagger Docs**: http://localhost:4000/api/docs
+- **Backend API**: http://localhost:3000
+- **Swagger Docs**: http://localhost:3000/api/docs
 - **Admin Panel**: http://localhost:4321/admin/login
 
 ## 🔧 Comandos Útiles
@@ -144,7 +144,7 @@ make create-admin
 
 1. Verifica que los puertos estén libres:
    ```bash
-   lsof -i :4000
+   lsof -i :3000
    lsof -i :4321
    lsof -i :27017
    ```
@@ -158,12 +158,12 @@ make create-admin
 
 1. Verifica que `PUBLIC_API_URL` en `frontend/.env` sea:
    ```
-   PUBLIC_API_URL=http://localhost:4000/
+   PUBLIC_API_URL=http://localhost:3000/
    ```
 
 2. Verifica que el backend esté corriendo:
    ```bash
-   curl http://localhost:4000/api/blog
+   curl http://localhost:3000/api/blog
    ```
 
 ### MongoDB no conecta

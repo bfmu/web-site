@@ -1,6 +1,6 @@
 # Makefile para facilitar el uso de Docker Compose
 
-.PHONY: up down logs restart clean build ps shell-backend shell-frontend shell-mongo
+.PHONY: up down logs restart clean build ps up-prod down-prod shell-backend shell-frontend shell-mongo
 
 # Levantar todos los servicios
 up:
@@ -71,4 +71,18 @@ install-frontend:
 # Crear admin (backend)
 create-admin:
 	docker-compose -f docker-compose.dev.yml exec backend npm run create-admin
+
+# ==================== Producción ====================
+
+up-prod:
+	docker-compose -f docker-compose.prod.yml up -d
+
+down-prod:
+	docker-compose -f docker-compose.prod.yml down
+
+build-prod:
+	docker-compose -f docker-compose.prod.yml build --no-cache
+
+ps-prod:
+	docker-compose -f docker-compose.prod.yml ps
 

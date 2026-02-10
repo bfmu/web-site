@@ -30,7 +30,7 @@ cd backend
 npm run start:dev
 ```
 
-El backend estará disponible en `http://localhost:4000` (o el puerto configurado).
+El backend estará disponible en `http://localhost:3000` (o el puerto configurado).
 
 ### 2. Iniciar el frontend
 
@@ -98,7 +98,7 @@ frontend/
 Asegúrate de tener en `.env`:
 
 ```env
-PUBLIC_API_URL=http://localhost:4000/
+PUBLIC_API_URL=http://localhost:3000/
 ```
 
 ### Variables de entorno del backend

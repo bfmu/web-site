@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { MediaModule } from './media/media.module';
 import { SettingsModule } from './settings/settings.module';
 import { BackupModule } from './backup/backup.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { BackupModule } from './backup/backup.module';
     MediaModule,
     SettingsModule,
     BackupModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [],

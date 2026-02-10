@@ -16,7 +16,7 @@ docker-compose -f docker-compose.dev.yml up -d
 
 Esto levanta:
 - MongoDB (puerto 27017)
-- Backend NestJS (puerto 4000)
+- Backend NestJS (puerto 3000)
 - Frontend Astro (puerto 4321)
 
 ### Opción 2: Manual
@@ -53,13 +53,13 @@ web-site/
 **Backend** (`backend/.env`):
 ```env
 MONGODB_URI=mongodb://admin:admin123@mongodb:27017/blog?authSource=admin
-PORT=4000
+PORT=3000
 JWT_SECRET=tu-secret-aqui
 ```
 
 **Frontend** (`frontend/.env`):
 ```env
-PUBLIC_API_URL=http://localhost:4000/
+PUBLIC_API_URL=http://localhost:3000/
 PUBLIC_BASE_URL=http://localhost:4321/
 ```
 
@@ -83,6 +83,6 @@ PUBLIC_BASE_URL=http://localhost:4321/
 ## 🔗 URLs de Desarrollo
 
 - Frontend: http://localhost:4321
-- Backend API: http://localhost:4000
-- Swagger Docs: http://localhost:4000/api/docs
+- Backend API: http://localhost:3000
+- Swagger Docs: http://localhost:3000/api/docs
 - Admin Panel: http://localhost:4321/admin/login

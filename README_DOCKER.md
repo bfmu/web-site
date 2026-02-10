@@ -58,8 +58,8 @@ docker-compose -f docker-compose.dev.yml down -v
 | Servicio | URL | Descripción |
 |----------|-----|-------------|
 | Frontend | http://localhost:4321 | Astro con hot-reload |
-| Backend API | http://localhost:4000 | NestJS con hot-reload |
-| Backend Docs | http://localhost:4000/api/docs | Swagger UI |
+| Backend API | http://localhost:3000 | NestJS con hot-reload |
+| Backend Docs | http://localhost:3000/api/docs | Swagger UI |
 | MongoDB | localhost:27017 | Base de datos |
 
 ## 🔧 Comandos Útiles
@@ -116,7 +116,7 @@ Tanto el backend como el frontend tienen hot-reload configurado:
 
 1. Verificar que los puertos no estén en uso:
    ```bash
-   lsof -i :4000  # Backend
+   lsof -i :3000  # Backend
    lsof -i :4321  # Frontend
    lsof -i :27017 # MongoDB
    ```
@@ -142,7 +142,7 @@ Tanto el backend como el frontend tienen hot-reload configurado:
 
 1. Verificar que `PUBLIC_API_URL` en `.env` del frontend sea:
    ```
-   PUBLIC_API_URL=http://localhost:4000/
+   PUBLIC_API_URL=http://localhost:3000/
    ```
 
 2. Si estás accediendo desde el navegador, usa `localhost`, no `127.0.0.1`
@@ -155,9 +155,16 @@ Tanto el backend como el frontend tienen hot-reload configurado:
    chmod 755 backend/uploads/images
    ```
 
-## 🚀 Producción
+## Producción
 
-Para producción, usa `docker-compose.yml` (sin el `-dev`). Ese archivo está optimizado para producción.
+Para producción, usa `docker-compose.prod.yml`:
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+# o: make up-prod
+```
+
+Incluye MongoDB, backend, frontend y nginx (puertos 80/443). Requiere variables de entorno en `.env` (ver `env.prod.example`).
 
 ## 📝 Notas
 
