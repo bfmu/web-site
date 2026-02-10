@@ -5,16 +5,14 @@ import PostsArchive from "@/components/PostsArchive.jsx";
 import { fetchPosts } from "@/utils/api-blog";
 import { i18n } from "@i18n/translation";
 import I18nKey from "@i18n/i18nKey";
+import { getBackendApiUrl } from "@/lib/env";
 
 // Puedes poner aquí tus filtros si quieres
 const params = { category: Astro.params.category as string, page: 1, draft: false };
 const res = await fetchPosts(params);
 const initialPosts = res.posts || res;
 const initialPagination = res.pagination;
-const apiUrl = import.meta.env.PUBLIC_API_URL;
-const fetchUrlBase = apiUrl.endsWith("/")
-  ? apiUrl + "api/blog"
-  : apiUrl + "/api/blog";
+const fetchUrlBase = `${getBackendApiUrl()}/blog`;
 ---
 
 <MainGridLayout

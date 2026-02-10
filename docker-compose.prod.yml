@@ -62,14 +62,16 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        - PUBLIC_BASE_URL=${PUBLIC_BASE_URL}
+    args:
+        - PUBLIC_WEB_SITE_URL=${PUBLIC_WEB_SITE_URL}
+        - PUBLIC_BACKEND_URL=${PUBLIC_BACKEND_URL}
     container_name: website-frontend
     restart: unless-stopped
     expose:
       - 4321
     environment:
-      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL}
+      - PUBLIC_WEB_SITE_URL=${PUBLIC_WEB_SITE_URL}
+      - PUBLIC_BACKEND_URL=${PUBLIC_BACKEND_URL}
     networks:
       - internal
     depends_on:

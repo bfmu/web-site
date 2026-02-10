@@ -73,8 +73,9 @@ cd frontend
 
 Crea `frontend/.env` con:
 ```env
-PUBLIC_API_URL=http://localhost:3000/
-PUBLIC_BASE_URL=http://localhost:4321/
+PUBLIC_BACKEND_URL=http://localhost:3000/
+PUBLIC_BACKEND_URL_SSR=http://backend:3000/
+PUBLIC_WEB_SITE_URL=http://localhost:4321/
 ```
 
 ### 4. Levantar servicios
@@ -156,9 +157,9 @@ make create-admin
 
 ### El frontend no puede conectar al backend
 
-1. Verifica que `PUBLIC_API_URL` en `frontend/.env` sea:
+1. Verifica que `PUBLIC_BACKEND_URL` en `frontend/.env` sea:
    ```
-   PUBLIC_API_URL=http://localhost:3000/
+   PUBLIC_BACKEND_URL=http://localhost:3000/
    ```
 
 2. Verifica que el backend esté corriendo:

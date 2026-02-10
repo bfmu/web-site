@@ -32,8 +32,9 @@ const oklchToHex = (str) => {
   });
 };
 
+// WEB_SITE_URL para links de compartir, sitemap, etc. Compatible con PUBLIC_BASE_URL.
 const runtimeConfig = {
-  baseUrl: process.env.PUBLIC_BASE_URL || "http://localhost:3000/",
+  baseUrl: process.env.PUBLIC_WEB_SITE_URL || process.env.WEB_SITE_URL || process.env.PUBLIC_BASE_URL || "http://localhost:4321/",
 };
 
 // https://astro.build/config

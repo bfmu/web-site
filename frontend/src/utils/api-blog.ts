@@ -1,5 +1,7 @@
 // Utilidades para consumir la API REST del backend de blog
 
+import { getBackendApiUrl } from '../lib/env';
+
 // Función helper para construir URLs correctamente
 function buildUrl(...parts: string[]): string {
   return parts
@@ -8,25 +10,8 @@ function buildUrl(...parts: string[]): string {
     .join('/');
 }
 
-// Configurar URLs de la API
-// En SSR (servidor): PUBLIC_API_URL_DOCKER en Docker, si no PUBLIC_API_URL (localhost)
-// En el cliente (navegador): PUBLIC_API_URL (localhost)
-function getApiBaseUrl(): string {
-  if (import.meta.env.SSR) {
-    const dockerApiUrl = import.meta.env.PUBLIC_API_URL_DOCKER;
-    if (dockerApiUrl) {
-      const base = dockerApiUrl.endsWith('/') ? dockerApiUrl : `${dockerApiUrl}/`;
-      return base;
-    }
-    const fallback = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000/';
-    return fallback.endsWith('/') ? fallback : `${fallback}/`;
-  }
-  const publicApiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000/';
-  return publicApiUrl.endsWith('/') ? publicApiUrl : `${publicApiUrl}/`;
-}
-
 function getBlogApiUrl(): string {
-  return buildUrl(`${getApiBaseUrl()}api`, 'blog');
+  return buildUrl(getBackendApiUrl(), 'blog');
 }
 
 // Permitir ver borradores en frontend si PUBLIC_SHOW_DRAFTS=true (solo para desarrollo/admin)
@@ -78,7 +63,7 @@ export async function fetchTags(params: Record<string, any> = {}) {
 // ==================== GALLERY API ====================
 
 function getGalleryApiUrl(): string {
-  return buildUrl(`${getApiBaseUrl()}api`, 'gallery');
+  return buildUrl(getBackendApiUrl(), 'gallery');
 }
 
 export interface GalleryAlbum {

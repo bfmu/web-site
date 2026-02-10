@@ -385,6 +385,7 @@ if (typeof window !== 'undefined') {
 
 <script>
   import { logout, getUser, isAuthenticated, isAdmin } from '../../lib/auth';
+  import { getBackendResourceUrl } from '../../lib/env';
 
   // Verificar autenticación en el cliente y redirigir si es necesario
   if (!isAuthenticated()) {
@@ -454,8 +455,7 @@ if (typeof window !== 'undefined') {
         return avatar;
       }
       if (avatar.startsWith('/uploads/')) {
-        const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/';
-        return `${apiUrl.replace(/\/$/, '')}${avatar}`;
+        return getBackendResourceUrl(avatar);
       }
       return avatar;
     }

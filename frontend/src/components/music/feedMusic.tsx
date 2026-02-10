@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
+import { getBackendUrl } from "../../lib/env";
 
-const backendUrl = import.meta.env.PUBLIC_API_URL
-  ? import.meta.env.PUBLIC_API_URL
-  : "http://website_backend:3000/";
+const backendUrl = getBackendUrl();
 
 // Función para calcular el tiempo transcurrido
 function timeAgo(dateString: string) {

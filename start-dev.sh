@@ -48,8 +48,9 @@ if [ ! -f "frontend/.env" ]; then
     echo -e "${YELLOW}⚠️  frontend/.env no existe${NC}"
     echo "Creando..."
     cat > frontend/.env << EOF
-PUBLIC_API_URL=http://localhost:3000/
-PUBLIC_BASE_URL=http://localhost:4321/
+PUBLIC_BACKEND_URL=http://localhost:3000/
+PUBLIC_BACKEND_URL_SSR=http://backend:3000/
+PUBLIC_WEB_SITE_URL=http://localhost:4321/
 EOF
     echo -e "${GREEN}✓ frontend/.env creado${NC}"
 fi

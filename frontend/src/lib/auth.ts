@@ -3,6 +3,8 @@
  * Maneja login, logout, tokens y sesión
  */
 
+import { getBackendApiUrl } from './env';
+
 export interface User {
   _id: string;
   email: string;
@@ -32,13 +34,7 @@ const TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
 const USER_KEY = 'user';
 
-// Obtener URL base de la API
-function getApiBaseUrl(): string {
-  const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/';
-  return baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-}
-
-const API_BASE = `${getApiBaseUrl()}api/auth`;
+const API_BASE = `${getBackendApiUrl()}/auth`;
 
 /**
  * Verificar si estamos en el cliente (navegador)

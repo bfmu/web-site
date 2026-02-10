@@ -9,6 +9,7 @@ import {
   type MediaFile,
   type MediaQuery,
 } from '../../lib/admin-api';
+import { getBackendResourceUrl } from '../../lib/env';
 
 export default function MediaLibrary() {
   const [media, setMedia] = useState<MediaFile[]>([]);
@@ -140,8 +141,7 @@ export default function MediaLibrary() {
 
   const getImageUrl = (media: MediaFile): string => {
     if (media.url.startsWith('http')) return media.url;
-    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-    return `${baseUrl.replace(/\/$/, '')}${media.url}`;
+    return getBackendResourceUrl(media.url);
   };
 
   return (

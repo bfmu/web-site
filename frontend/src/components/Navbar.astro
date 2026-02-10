@@ -159,6 +159,7 @@ let links: NavBarLink[] = navBarConfig.links.map(
 </div>
 
 <script>
+  import { getBackendResourceUrl } from '../lib/env';
 
 function switchTheme() {
     if (localStorage.theme === 'dark') {
@@ -248,24 +249,13 @@ function updateAdminButton() {
             if (userAvatar) {
                 let avatarUrl = user.avatar || '/default-avatar.svg';
                 
-                // Si el avatar es una ruta de uploads, construir URL completa del backend
+                // Si el avatar es una ruta de uploads o relativa del backend, construir URL completa
                 if (avatarUrl && avatarUrl.startsWith('/uploads/')) {
-                    // En el navegador, usar PUBLIC_API_URL (localhost)
-                    // En SSR, usar PUBLIC_API_URL_DOCKER (backend)
-                    const isServer = typeof window === 'undefined';
-                    const apiUrl = isServer 
-                        ? (import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:4000/')
-                        : (import.meta.env.PUBLIC_API_URL || 'http://localhost:4000/');
-                    avatarUrl = `${apiUrl.replace(/\/$/, '')}${avatarUrl}`;
+                    avatarUrl = getBackendResourceUrl(avatarUrl);
                 } else if (!avatarUrl || avatarUrl === '/default-avatar.png' || avatarUrl === '/default-avatar.svg') {
                     avatarUrl = '/default-avatar.svg';
                 } else if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('/default-avatar')) {
-                    // Si es otra ruta relativa, construir URL del backend
-                    const isServer = typeof window === 'undefined';
-                    const apiUrl = isServer 
-                        ? (import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:4000/')
-                        : (import.meta.env.PUBLIC_API_URL || 'http://localhost:4000/');
-                    avatarUrl = `${apiUrl.replace(/\/$/, '')}${avatarUrl}`;
+                    avatarUrl = getBackendResourceUrl(avatarUrl);
                 }
                 
                 console.log('Setting avatar URL:', avatarUrl, 'User avatar:', user.avatar);

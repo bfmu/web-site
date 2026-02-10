@@ -5,6 +5,7 @@ import {
   type MediaFile,
   type MediaQuery,
 } from '../../lib/admin-api';
+import { getBackendResourceUrl } from '../../lib/env';
 
 interface ImageLibraryModalProps {
   isOpen: boolean;
@@ -112,11 +113,9 @@ export function ImageLibraryModal({
 
   const handleSelectFromLibrary = () => {
     if (selectedImage) {
-      const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-      const cleanBaseUrl = baseUrl.replace(/\/$/, '');
       const fullUrl = selectedImage.url.startsWith('http')
         ? selectedImage.url
-        : `${cleanBaseUrl}${selectedImage.url}`;
+        : getBackendResourceUrl(selectedImage.url);
       onSelect(fullUrl);
       onClose();
     }
@@ -124,8 +123,7 @@ export function ImageLibraryModal({
 
   const getImageUrl = (media: MediaFile): string => {
     if (media.url.startsWith('http')) return media.url;
-    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-    return `${baseUrl.replace(/\/$/, '')}${media.url}`;
+    return getBackendResourceUrl(media.url);
   };
 
   if (!isOpen) return null;

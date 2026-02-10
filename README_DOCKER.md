@@ -140,9 +140,9 @@ Tanto el backend como el frontend tienen hot-reload configurado:
 
 ### El frontend no puede conectar al backend
 
-1. Verificar que `PUBLIC_API_URL` en `.env` del frontend sea:
+1. Verificar que `PUBLIC_BACKEND_URL` en `.env` del frontend sea:
    ```
-   PUBLIC_API_URL=http://localhost:3000/
+   PUBLIC_BACKEND_URL=http://localhost:3000/
    ```
 
 2. Si estás accediendo desde el navegador, usa `localhost`, no `127.0.0.1`

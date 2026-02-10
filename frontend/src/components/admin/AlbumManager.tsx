@@ -12,6 +12,7 @@ import {
   type Album,
   type MediaFile,
 } from '../../lib/admin-api';
+import { getBackendResourceUrl } from '../../lib/env';
 
 export default function AlbumManager() {
   const [albums, setAlbums] = useState<Album[]>([]);
@@ -177,8 +178,7 @@ export default function AlbumManager() {
 
   const getImageUrl = (url: string): string => {
     if (url.startsWith('http')) return url;
-    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-    return `${baseUrl.replace(/\/$/, '')}${url}`;
+    return getBackendResourceUrl(url);
   };
 
   return (

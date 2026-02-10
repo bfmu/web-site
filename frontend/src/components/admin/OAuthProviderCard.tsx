@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { showSuccess, showError, showWarning } from '@/lib/notifications';
+import { getBackendUrl } from '../../lib/env';
 
 interface OAuthProviderCardProps {
   provider: 'google' | 'github';
@@ -21,9 +22,7 @@ export default function OAuthProviderCard({ provider, title, description, icon }
     enabled: true,
   });
 
-  const getApiUrl = () => {
-    return import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/';
-  };
+  const getApiUrl = () => getBackendUrl();
 
   useEffect(() => {
     loadConfig();

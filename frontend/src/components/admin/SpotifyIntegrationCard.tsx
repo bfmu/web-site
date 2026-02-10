@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { showSuccess, showError, showWarning, showInfo } from '@/lib/notifications';
 import { apiGet, apiPut, ApiException } from '../../lib/api';
+import { getBackendUrl } from '../../lib/env';
 
 export default function SpotifyIntegrationCard() {
   const [config, setConfig] = useState<any>(null);
@@ -17,7 +18,7 @@ export default function SpotifyIntegrationCard() {
     clientSecret: '',
     refreshToken: '',
     redirectUri: typeof window !== 'undefined' 
-      ? `${(import.meta.env.PUBLIC_API_URL || 'http://localhost:3000').replace(/\/$/, '')}/api/spotify/callback`
+      ? `${getBackendUrl().replace(/\/$/, '')}/api/spotify/callback`
       : '',
     enabled: true,
   });
@@ -133,7 +134,7 @@ export default function SpotifyIntegrationCard() {
   };
 
   const getApiUrl = () => {
-    return import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/';
+    return getBackendUrl();
   };
 
   const loadConfig = async () => {

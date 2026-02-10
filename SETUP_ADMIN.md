@@ -95,10 +95,15 @@ frontend/
 
 ### Variables de entorno del frontend
 
-Asegúrate de tener en `.env`:
+Asegúrate de tener en `frontend/.env`:
 
 ```env
-PUBLIC_API_URL=http://localhost:3000/
+# URL del backend (API, imágenes)
+PUBLIC_BACKEND_URL=http://localhost:3000/
+# Opcional: para SSR en Docker (cuando el servidor hace peticiones al backend)
+PUBLIC_BACKEND_URL_SSR=http://backend:3000/
+# URL del sitio para links de compartir
+PUBLIC_WEB_SITE_URL=http://localhost:4321/
 ```
 
 ### Variables de entorno del backend
@@ -130,7 +135,7 @@ El backend necesita:
 
 ### Error: "No se puede conectar al backend"
 - Verifica que el backend esté corriendo
-- Verifica `PUBLIC_API_URL` en el frontend
+- Verifica `PUBLIC_BACKEND_URL` en `frontend/.env`
 - Verifica CORS en el backend
 
 ### Error: "Token expirado"

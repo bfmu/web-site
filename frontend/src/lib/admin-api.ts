@@ -5,6 +5,7 @@
 
 import { apiGet, apiPost, apiPatch, apiDelete, apiUpload, ApiException } from './api';
 import { getAccessToken } from './auth';
+import { getBackendUrl, getBackendApiUrl } from './env';
 
 // Tipos
 export interface BlogPost {
@@ -179,8 +180,7 @@ export async function uploadImage(file: File): Promise<{ url: string }> {
     // El backend retorna { url, filename, size, mimetype }
     // La URL ya viene como /uploads/images/filename.jpg
     // Necesitamos construir la URL completa con el base URL del backend
-    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:82';
-    const cleanBaseUrl = baseUrl.replace(/\/$/, ''); // Remover trailing slash
+    const cleanBaseUrl = getBackendUrl().replace(/\/$/, '');
     const imageUrl = result.url.startsWith('http') 
       ? result.url 
       : `${cleanBaseUrl}${result.url}`;
@@ -384,7 +384,7 @@ export async function uploadMedia(
   const endpoint = 'media/upload';
   const url = endpoint.startsWith('http')
     ? endpoint
-    : `${getApiBaseUrl()}/${endpoint.replace(/^\//, '')}`;
+    : `${getBackendApiUrl()}/${endpoint.replace(/^\//, '')}`;
 
   const token = getAccessToken();
   const headers: Record<string, string> = {};
@@ -412,10 +412,7 @@ export async function uploadMedia(
   const result = await response.json();
   
   // Construir URL completa
-  const apiBase = typeof window !== 'undefined' 
-    ? (import.meta.env.PUBLIC_API_URL || 'http://localhost:3000')
-    : (import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:3000');
-  const cleanBaseUrl = apiBase.replace(/\/$/, '');
+  const cleanBaseUrl = getBackendUrl().replace(/\/$/, '');
   const imageUrl = result.url.startsWith('http') 
     ? result.url 
     : `${cleanBaseUrl}${result.url}`;
@@ -426,17 +423,6 @@ export async function uploadMedia(
   } as MediaFile;
 }
 
-// Helper para obtener la URL base de la API (similar a api.ts)
-function getApiBaseUrl(): string {
-  if (import.meta.env.SSR) {
-    const dockerApiUrl = import.meta.env.PUBLIC_API_URL_DOCKER || 'http://backend:3000/';
-    const baseUrl = dockerApiUrl.endsWith('/') ? dockerApiUrl : `${dockerApiUrl}/`;
-    return `${baseUrl}api`;
-  }
-  const publicApiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/';
-  const baseUrl = publicApiUrl.endsWith('/') ? publicApiUrl : `${publicApiUrl}/`;
-  return `${baseUrl}api`;
-}
 
 /**
  * Listar medios
@@ -659,7 +645,7 @@ export interface RestoreResult {
  * Retorna el Blob del archivo .tar.gz para descargar.
  */
 export async function createBackup(): Promise<Blob> {
-  const url = `${getApiBaseUrl()}/backup/create`;
+  const url = `${getBackendApiUrl()}/backup/create`;
   const token = getAccessToken();
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -680,7 +666,7 @@ export async function createBackup(): Promise<Blob> {
 export async function validateBackup(file: File): Promise<ValidationResult> {
   const formData = new FormData();
   formData.append('file', file);
-  const url = `${getApiBaseUrl()}/backup/validate`;
+  const url = `${getBackendApiUrl()}/backup/validate`;
   const token = getAccessToken();
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -706,7 +692,7 @@ export async function validateBackup(file: File): Promise<ValidationResult> {
 export async function restoreBackup(file: File): Promise<RestoreResult> {
   const formData = new FormData();
   formData.append('file', file);
-  const url = `${getApiBaseUrl()}/backup/restore`;
+  const url = `${getBackendApiUrl()}/backup/restore`;
   const token = getAccessToken();
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;

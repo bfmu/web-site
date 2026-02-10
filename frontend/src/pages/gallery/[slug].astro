@@ -5,6 +5,7 @@ import AlbumGrid from '../../components/AlbumGrid.tsx'
 import Breadcrumb from '../../components/Breadcrumb.astro'
 import { i18n } from '@i18n/translation'
 import I18nKey from '@i18n/i18nKey'
+import { getBackendResourceUrl } from '../../lib/env'
 
 const { slug } = Astro.params;
 
@@ -32,8 +33,7 @@ const processedImages = images.map((img: any) => {
   
   let imageUrl = image.url;
   if (!imageUrl.startsWith('http')) {
-    const baseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-    imageUrl = `${baseUrl.replace(/\/$/, '')}${image.url}`;
+    imageUrl = getBackendResourceUrl(image.url);
   }
   
   return {

@@ -70,9 +70,9 @@ services:
       - ./frontend/.env
     environment:
       - NODE_ENV=development
-      - PUBLIC_API_URL=http://localhost:3000/
-      - PUBLIC_API_URL_DOCKER=http://backend:3000/
-      - PUBLIC_BASE_URL=http://localhost:4321/
+      - PUBLIC_BACKEND_URL=http://localhost:3000/
+      - PUBLIC_BACKEND_URL_SSR=http://backend:3000/
+      - PUBLIC_WEB_SITE_URL=http://localhost:4321/
     networks:
       - website-network
     depends_on:

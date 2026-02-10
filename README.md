@@ -59,8 +59,8 @@ JWT_SECRET=tu-secret-aqui
 
 **Frontend** (`frontend/.env`):
 ```env
-PUBLIC_API_URL=http://localhost:3000/
-PUBLIC_BASE_URL=http://localhost:4321/
+PUBLIC_BACKEND_URL=http://localhost:3000/
+PUBLIC_WEB_SITE_URL=http://localhost:4321/
 ```
 
 ## 📚 Documentación

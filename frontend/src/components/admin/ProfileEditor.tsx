@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getUser, setUser } from '../../lib/auth';
 import { getProfile, updateProfile, uploadAvatar, changePassword } from '../../lib/admin-api';
 import { apiGet } from '../../lib/api';
+import { getBackendResourceUrl } from '../../lib/env';
 
 export function ProfileEditor() {
   const [loading, setLoading] = useState(false);
@@ -125,9 +126,7 @@ export function ProfileEditor() {
     }
     if (url.startsWith('http')) return url;
     if (url.startsWith('/uploads/')) {
-      // Construir URL completa del backend
-      const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/';
-      return `${apiUrl.replace(/\/$/, '')}${url}`;
+      return getBackendResourceUrl(url);
     }
     if (url.startsWith('/')) {
       // Para rutas absolutas que no sean uploads, usar directamente
