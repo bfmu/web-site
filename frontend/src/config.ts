@@ -77,7 +77,7 @@ export const navBarConfig: NavBarConfig = {
     LinkPreset.Music,
     LinkPreset.Blog,
     // LinkPreset.Archive, // Removido - ahora está en el sidebar de blog
-    LinkPreset.About,
+    // LinkPreset.About, // Oculto del navbar
     {
       name: "Portafolio",
       url: "https://portfolio.bfmu.dev/", // Internal links should not include the base path, as it is automatically added

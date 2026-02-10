@@ -45,7 +45,7 @@ services:
       - SPOTIFY_REFRESH_TOKEN=${SPOTIFY_REFRESH_TOKEN:-}
       - FRONTEND_ADMIN_URL=${FRONTEND_ADMIN_URL:-}
     volumes:
-      - ./backend/uploads:/app/uploads
+      - ./backend/uploads:/usr/src/app/uploads
     networks:
       - internal
     depends_on:

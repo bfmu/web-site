@@ -10,6 +10,7 @@ interface Props {
 }
 import { Image } from 'astro:assets'
 import { url } from '../../utils/url-utils'
+import { getBackendResourceUrl } from '../../lib/env'
 
 const { id, src, alt, position = 'center', basePath = '/' } = Astro.props
 const className = Astro.props.class
@@ -21,6 +22,8 @@ let isLocal = !(
   src.startsWith('data:')
 )
 const isPublic = src.startsWith('/')
+// Imágenes en /uploads/ se sirven desde el backend - usar URL absoluta
+const isBackendResource = src.startsWith('/uploads/')
 
 // TODO temporary workaround for images dynamic import
 // https://github.com/withastro/astro/issues/3373
@@ -48,6 +51,6 @@ const imageStyle = `object-position: ${position}`
 <div id={id} class:list={[className, 'overflow-hidden relative']}>
     <div class="transition absolute inset-0 dark:bg-black/10 bg-opacity-50 pointer-events-none"></div>
     {isLocal && img && <Image src={img} alt={alt || ""} class={imageClass} style={imageStyle} format="webp" quality={80} loading="lazy" />}
-    {!isLocal && <img src={isPublic ? url(src) : src} alt={alt || ""} class={imageClass} style={imageStyle} loading="lazy" />}
+    {!isLocal && <img src={isBackendResource ? getBackendResourceUrl(src) : isPublic ? url(src) : src} alt={alt || ""} class={imageClass} style={imageStyle} loading="lazy" />}
 </div>
 

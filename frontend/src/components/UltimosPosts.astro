@@ -1,6 +1,7 @@
 ---
 import { getPostUrlBySlug } from '@utils/url-utils'
 import { fetchRecentPosts } from '@utils/api-blog'
+import { getBackendResourceUrl } from '../lib/env'
 
 let ultimosPosts: Array<{ slug: string; title: string; description?: string; image?: string; published: string }> = []
 try {
@@ -22,7 +23,7 @@ try {
         {ultimosPosts.length > 0 ? ultimosPosts.map((entry) => (
             <a href={getPostUrlBySlug(entry.slug)} class="relative group overflow-hidden rounded-[var(--radius-large)] shadow-md block bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)] transition">
                 {entry.image && (
-                    <img src={entry.image} alt={entry.title} class="w-full h-48 object-cover transition group-hover:scale-105" />
+                    <img src={entry.image.startsWith('/uploads/') ? getBackendResourceUrl(entry.image) : entry.image} alt={entry.title} class="w-full h-48 object-cover transition group-hover:scale-105" />
                 )}
                 <div class="p-6 text-left">
                     <h3 class="text-xl font-semibold text-[var(--primary)] dark:text-[var(--title-active)]">{entry.title}</h3>
