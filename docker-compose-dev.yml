@@ -28,6 +28,7 @@ services:
       - "3000:3000"
     volumes:
       - ./backend/src:/app/src
+      - ./backend/uploads:/app/uploads
     env_file:
       - ./backend/.env
     networks:

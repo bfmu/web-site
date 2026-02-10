@@ -6,6 +6,7 @@ import { BlogModule } from './blog/blog.module';
 import { AuthModule } from './auth/auth.module';
 import { MediaModule } from './media/media.module';
 import { SettingsModule } from './settings/settings.module';
+import { BackupModule } from './backup/backup.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { SettingsModule } from './settings/settings.module';
     AuthModule,
     MediaModule,
     SettingsModule,
+    BackupModule,
   ],
   controllers: [],
   providers: [],

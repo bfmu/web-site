@@ -616,3 +616,111 @@ export async function setAlbumCover(slug: string, mediaId: string): Promise<Albu
   return apiPatch<Album>(`albums/${slug}/cover`, { mediaId });
 }
 
+// ==================== BACKUP API ====================
+
+export interface BackupMetadata {
+  version: string;
+  createdAt: string;
+  checksums?: Record<string, string>;
+  counts?: {
+    users: number;
+    posts: number;
+    media: number;
+    albums: number;
+    apiintegrations: number;
+    oauthproviders: number;
+  };
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  metadata?: BackupMetadata;
+  warnings: string[];
+  error?: string;
+}
+
+export interface RestoreResult {
+  success: boolean;
+  restored: {
+    users: number;
+    posts: number;
+    media: number;
+    albums: number;
+    apiintegrations: number;
+    oauthproviders: number;
+    filesCount: number;
+  };
+  preRestoreBackupPath?: string;
+  error?: string;
+}
+
+/**
+ * Crear backup completo (base de datos + archivos).
+ * Retorna el Blob del archivo .tar.gz para descargar.
+ */
+export async function createBackup(): Promise<Blob> {
+  const url = `${getApiBaseUrl()}/backup/create`;
+  const token = getAccessToken();
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const response = await fetch(url, { method: 'POST', headers });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ message: 'Error al crear backup' }));
+    throw new ApiException(err.message || `Error ${response.status}`, response.status, err);
+  }
+
+  return response.blob();
+}
+
+/**
+ * Validar archivo de backup sin restaurar.
+ */
+export async function validateBackup(file: File): Promise<ValidationResult> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const url = `${getApiBaseUrl()}/backup/validate`;
+  const token = getAccessToken();
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ message: 'Error al validar backup' }));
+    throw new ApiException(err.message || `Error ${response.status}`, response.status, err);
+  }
+
+  return response.json();
+}
+
+/**
+ * Restaurar sitio desde archivo de backup.
+ * Crea un backup automático antes de restaurar.
+ */
+export async function restoreBackup(file: File): Promise<RestoreResult> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const url = `${getApiBaseUrl()}/backup/restore`;
+  const token = getAccessToken();
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ message: 'Error al restaurar backup' }));
+    throw new ApiException(err.message || `Error ${response.status}`, response.status, err);
+  }
+
+  return response.json();
+}

@@ -220,6 +220,20 @@ if (typeof window !== 'undefined') {
             </svg>
             <span>Servicios</span>
           </a>
+
+          <a
+            href="/admin/backup"
+            id="backup-link"
+            class="hidden flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            class:list={[
+              {
+                'bg-gray-100 dark:bg-gray-700': Astro.url.pathname.startsWith('/admin/backup'),
+              },
+            ]}
+          >
+            <span class="text-lg">💾</span>
+            <span>Backup y Restauración</span>
+          </a>
           
         </nav>
 
@@ -410,6 +424,7 @@ if (typeof window !== 'undefined') {
   const viewSiteLink = document.getElementById('view-site-link');
   const goToSiteLink = document.getElementById('go-to-site-link');
   const servicesLink = document.getElementById('services-link');
+  const backupLink = document.getElementById('backup-link');
   
   if (userIsAdmin) {
     if (viewSiteLink) {
@@ -420,6 +435,9 @@ if (typeof window !== 'undefined') {
     }
     if (servicesLink) {
       servicesLink.classList.remove('hidden');
+    }
+    if (backupLink) {
+      backupLink.classList.remove('hidden');
     }
   }
 
