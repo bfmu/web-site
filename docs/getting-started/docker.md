@@ -1,4 +1,4 @@
-# Docker Compose para Desarrollo
+# 🐳 Docker Compose para Desarrollo
 
 Este docker-compose levanta automáticamente todo lo necesario para desarrollo:
 - MongoDB
@@ -115,6 +115,7 @@ Tanto el backend como el frontend tienen hot-reload configurado:
 ### Los servicios no inician
 
 1. Verificar que los puertos no estén en uso:
+
    ```bash
    lsof -i :3000  # Backend
    lsof -i :4321  # Frontend
@@ -171,4 +172,3 @@ Incluye MongoDB, backend, frontend y nginx (puertos 80/443). Requiere variables 
 - Los `node_modules` están en volúmenes anónimos para evitar conflictos
 - MongoDB usa credenciales por defecto (`admin/admin123`) - **cámbialas en producción**
 - El backend y frontend se reconstruyen automáticamente si cambias los Dockerfiles
-

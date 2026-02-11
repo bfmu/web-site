@@ -118,4 +118,3 @@ make promote-user
   ```bash
   docker-compose -f docker-compose.dev.yml ps backend
   ```
-

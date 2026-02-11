@@ -168,4 +168,3 @@ Los colores se pueden cambiar en los componentes usando las clases de Tailwind. 
 - [Tiptap Docs](https://tiptap.dev/)
 - [Astro Docs](https://docs.astro.build/)
 - [NestJS Docs](https://docs.nestjs.com/)
-

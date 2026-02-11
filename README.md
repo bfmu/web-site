@@ -65,9 +65,15 @@ PUBLIC_WEB_SITE_URL=http://localhost:4321/
 
 ## 📚 Documentación
 
-- [Inicio Rápido con Docker](QUICK_START.md)
-- [Setup del Admin](SETUP_ADMIN.md)
-- [Docker Compose](README_DOCKER.md)
+Toda la documentación está organizada en la carpeta [`docs/`](docs/README.md) con un gestor de documentación (Docsify):
+
+```bash
+# Ver la documentación localmente
+make docs
+# o: npx docsify-cli serve docs
+```
+
+Luego abre http://localhost:3333 en tu navegador.
 
 ## 🎯 Características
 

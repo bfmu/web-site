@@ -72,6 +72,12 @@ install-frontend:
 create-admin:
 	docker-compose -f docker-compose.dev.yml exec backend npm run create-admin
 
+# ==================== Documentación ====================
+
+# Servir documentación con Docsify (http://localhost:3333)
+docs:
+	npx docsify-cli serve docs -p 3333
+
 # ==================== Producción ====================
 
 up-prod:

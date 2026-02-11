@@ -67,11 +67,8 @@ Edita `backend/.env` con:
 
 ### 3. Crear archivo .env para frontend
 
-```bash
-cd frontend
-```
-
 Crea `frontend/.env` con:
+
 ```env
 PUBLIC_BACKEND_URL=http://localhost:3000/
 PUBLIC_BACKEND_URL_SSR=http://backend:3000/
@@ -87,9 +84,7 @@ make up
 docker-compose -f docker-compose.dev.yml up -d
 ```
 
-### 5. Esperar a que todo esté listo
-
-Verifica que todos los servicios estén corriendo:
+### 5. Verificar que todo esté listo
 
 ```bash
 make ps
@@ -144,6 +139,7 @@ make create-admin
 ### Los servicios no inician
 
 1. Verifica que los puertos estén libres:
+
    ```bash
    lsof -i :3000
    lsof -i :4321
@@ -151,6 +147,7 @@ make create-admin
    ```
 
 2. Verifica los logs:
+
    ```bash
    make logs
    ```
@@ -186,4 +183,3 @@ make create-admin
 - Los datos de MongoDB se persisten en un volumen de Docker
 - Las imágenes subidas se guardan en `backend/uploads/images/`
 - Para limpiar todo (incluyendo datos): `make clean`
-

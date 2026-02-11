@@ -8,16 +8,16 @@ Crea un archivo `.env` en la raíz del backend con las siguientes variables:
 
 ```env
 # Puerto del servidor
-PORT=4000
+PORT=3000
 
 # MongoDB
 MONGODB_URI=mongodb://localhost:27017/blog
 
-# Spotify API (ya configurado)
+# Spotify API (opcional)
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
 SPOTIFY_REFRESH_TOKEN=your_spotify_refresh_token
-SPOTIFY_REDIRECT=http://localhost:4000/api/spotify/callback
+SPOTIFY_REDIRECT=http://localhost:3000/api/spotify/callback
 ```
 
 ## Tests unitarios y de integración
@@ -32,7 +32,7 @@ Desde la carpeta `backend` ejecuta:
 npm test
 ```
 
-Esto ejecutará todos los tests de los servicios y controladores del blog. Si todo está correcto, deberías ver:
+Si todo está correcto, deberías ver:
 
 ```
 Test Suites: 2 passed, 2 total
@@ -40,7 +40,6 @@ Tests:       16 passed, 16 total
 ```
 
 Puedes modificar o agregar más tests en los archivos:
-
 - `src/blog/blog.service.spec.ts`
 - `src/blog/blog.controller.spec.ts`
 
@@ -55,7 +54,6 @@ GET /api/blog
 ```
 
 **Query parameters:**
-
 - `search`: Buscar en título, descripción y contenido
 - `category`: Filtrar por categoría
 - `tag`: Filtrar por tag
@@ -128,15 +126,13 @@ GET /api/blog/categories
 GET /api/blog/tags
 ```
 
-### Posts relacionados
+### Posts relacionados y recientes
 
 #### Obtener posts relacionados
 
 ```
 GET /api/blog/related/:slug?limit=3
 ```
-
-### Posts recientes
 
 #### Obtener posts recientes
 
@@ -158,12 +154,12 @@ GET /api/blog/recent?limit=5
   tags?: string[];        // Array de tags
   category?: string;      // Categoría
   draft: boolean;         // Estado de borrador
-  published: Date;        // Fecha de publicación
+  published: Date;       // Fecha de publicación
   language: string;       // Idioma (default: 'es')
   readingTime: number;    // Tiempo de lectura en minutos
-  views: number;          // Número de vistas
-  createdAt: Date;        // Fecha de creación (automático)
-  updatedAt: Date;        // Fecha de actualización (automático)
+  views: number;         // Número de vistas
+  createdAt: Date;       // Fecha de creación (automático)
+  updatedAt: Date;       // Fecha de actualización (automático)
 }
 ```
 
@@ -172,7 +168,7 @@ GET /api/blog/recent?limit=5
 ### Crear un post
 
 ```bash
-curl -X POST http://localhost:4000/api/blog \
+curl -X POST http://localhost:3000/api/blog \
   -H "Content-Type: application/json" \
   -d '{
     "slug": "mi-primer-post",
@@ -188,13 +184,13 @@ curl -X POST http://localhost:4000/api/blog \
 ### Obtener posts con filtros
 
 ```bash
-curl "http://localhost:4000/api/blog?category=tech&limit=5&sortBy=published&sortOrder=desc"
+curl "http://localhost:3000/api/blog?category=tech&limit=5&sortBy=published&sortOrder=desc"
 ```
 
 ### Obtener un post específico
 
 ```bash
-curl http://localhost:4000/api/blog/mi-primer-post
+curl http://localhost:3000/api/blog/mi-primer-post
 ```
 
 ## Notas importantes
