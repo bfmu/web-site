@@ -29,6 +29,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS: HomepageSection[] = [
     config: {
       imageUrls: [] as string[],
       carouselIntervalSeconds: 5.5,
+      heightVh: 70,
       title: 'Desarrollo, Fotografía y Reflexión',
       subtitle:
         'Desarrollo soluciones. Capturo momentos. Reflexiono sobre historias. Aquí es donde todo converge.',

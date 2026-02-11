@@ -381,6 +381,23 @@ function HeroFields({
       />
       <div className="mb-3">
         <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Altura del hero (vh)
+        </label>
+        <input
+          type="number"
+          min={30}
+          max={100}
+          step={5}
+          value={typeof config.heightVh === 'number' ? config.heightVh : 70}
+          onChange={(e) => onUpdate({ ...config, heightVh: Math.max(30, Math.min(100, parseInt(e.target.value, 10) || 70)) })}
+          className="w-full rounded border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        />
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Altura del bloque en % del viewport (30–100). Por defecto 70.
+        </p>
+      </div>
+      <div className="mb-3">
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
           Intervalo del carrusel (segundos)
         </label>
         <input
