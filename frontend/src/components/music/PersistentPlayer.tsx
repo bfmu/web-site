@@ -189,7 +189,7 @@ export function PersistentPlayer() {
           aria-label="Reproductor de música"
         >
           <div
-            className={`mx-auto flex max-w-[var(--page-width)] items-center gap-2 rounded-2xl border border-white/10 bg-[var(--card-bg)]/85 px-3 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur-md dark:border-white/5 dark:bg-[var(--card-bg)]/80 dark:shadow-[0_-4px_24px_rgba(0,0,0,0.25)] md:gap-3 md:px-4 ${isCollapsed ? "w-fit" : "w-full"}`}
+            className={`mx-auto flex max-w-[var(--page-width)] items-center rounded-2xl border border-white/10 bg-[var(--card-bg)] px-2 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] dark:border-white/10 dark:bg-[var(--card-bg)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.4)] sm:px-3 md:px-4 ${isCollapsed ? "w-fit gap-2 sm:gap-3 md:gap-4" : "w-full justify-between gap-2"}`}
           >
             {isCollapsed ? (
               <>
@@ -197,7 +197,7 @@ export function PersistentPlayer() {
                   type="button"
                   onClick={handleTogglePlay}
                   disabled={!isReady}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--btn-regular-bg)]/90 text-[var(--primary)] transition hover:scale-105 hover:bg-[var(--btn-regular-bg-hover)] disabled:cursor-not-allowed disabled:opacity-70 dark:text-neutral-50"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--btn-regular-bg)] text-[var(--primary)] transition hover:scale-105 hover:bg-[var(--btn-regular-bg-hover)] disabled:cursor-not-allowed disabled:opacity-70 dark:text-neutral-50"
                   aria-label={isPlaying ? "Pausar" : "Reproducir"}
                 >
                   {isPlaying ? (
@@ -216,7 +216,7 @@ export function PersistentPlayer() {
                 <button
                   type="button"
                   onClick={() => setIsCollapsed(false)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--btn-regular-bg)]/80 text-[var(--primary)] transition hover:bg-[var(--btn-regular-bg-hover)] dark:text-neutral-50"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--btn-regular-bg)] text-[var(--primary)] transition hover:bg-[var(--btn-regular-bg-hover)] dark:text-neutral-50"
                   aria-label="Expandir reproductor"
                 >
                   <svg className="h-5 w-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -226,7 +226,7 @@ export function PersistentPlayer() {
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--btn-regular-bg)]/80 text-[var(--primary)] transition hover:bg-[var(--btn-regular-bg-hover)] dark:text-neutral-50"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--btn-regular-bg)] text-[var(--primary)] transition hover:bg-[var(--btn-regular-bg-hover)] dark:text-neutral-50"
                   aria-label="Cerrar reproductor"
                 >
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -236,24 +236,28 @@ export function PersistentPlayer() {
               </>
             ) : (
               <>
-                {trackInfo?.coverUrl && (
-                  <img
-                    src={trackInfo.coverUrl}
-                    alt=""
-                    className="h-12 w-12 shrink-0 rounded-md object-cover shadow-sm"
-                  />
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-[var(--deep-text)] dark:text-neutral-50">
-                    {trackInfo?.name ?? "Cargando…"}
-                  </p>
-                  <p className="truncate text-xs text-[var(--meta-divider)] dark:text-gray-400">
-                    {trackInfo?.artist ?? ""}
-                  </p>
+                {/* Izquierda: imagen + título + autor */}
+                <div className="flex min-w-0 shrink items-center gap-2 sm:gap-3">
+                  {trackInfo?.coverUrl && (
+                    <img
+                      src={trackInfo.coverUrl}
+                      alt=""
+                      className="h-10 w-10 shrink-0 rounded-md object-cover shadow-sm md:h-12 md:w-12"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-[var(--deep-text)] dark:text-neutral-50 md:text-sm">
+                      {trackInfo?.name ?? "Cargando…"}
+                    </p>
+                    <p className="truncate text-[10px] text-[var(--meta-divider)] dark:text-gray-400 md:text-xs">
+                      {trackInfo?.artist ?? ""}
+                    </p>
+                  </div>
                 </div>
 
-                {duration > 0 && (
-                  <div className="flex min-w-0 flex-1 max-w-[200px] flex-col gap-1.5 md:max-w-[280px]">
+                {/* Centro: barra de tiempo */}
+                {duration > 0 ? (
+                  <div className="flex min-w-[80px] flex-1 flex-col justify-center gap-0.5 px-2 sm:min-w-[120px] sm:gap-1 sm:px-4 md:min-w-[160px] md:gap-1.5 md:px-6">
                     <div
                       role="slider"
                       aria-label="Posición en la pista"
@@ -261,7 +265,7 @@ export function PersistentPlayer() {
                       aria-valuemax={duration}
                       aria-valuenow={position}
                       tabIndex={0}
-                      className="group h-2 w-full cursor-pointer rounded-full bg-[var(--btn-regular-bg)] shadow-inner transition hover:h-2.5 dark:bg-black/20"
+                      className="group h-1.5 w-full cursor-pointer rounded-full bg-[var(--btn-regular-bg)] shadow-inner transition hover:h-2 md:h-2 md:hover:h-2.5 dark:bg-black/20"
                       onClick={handleSeek}
                     >
                       <div
@@ -269,28 +273,31 @@ export function PersistentPlayer() {
                         style={{ width: `${(position / duration) * 100}%` }}
                       />
                     </div>
-                    <div className="flex justify-between text-xs font-medium tabular-nums text-[var(--meta-divider)] dark:text-gray-400">
+                    <div className="flex justify-between text-[10px] font-medium tabular-nums text-[var(--meta-divider)] dark:text-gray-400 sm:text-xs">
                       <span>{formatTime(position)}</span>
                       <span>{formatTime(duration)}</span>
                     </div>
                   </div>
+                ) : (
+                  <div className="min-w-[80px] flex-1 sm:min-w-[120px] md:min-w-[160px]" />
                 )}
 
+                {/* Derecha: controles */}
                 <div className="flex shrink-0 items-center gap-1 md:gap-2">
                   <button
                     type="button"
                     onClick={handleTogglePlay}
                     disabled={!isReady}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--btn-regular-bg)] text-[var(--primary)] transition hover:bg-[var(--btn-regular-bg-hover)] disabled:cursor-not-allowed disabled:opacity-70 dark:text-neutral-50 md:h-10 md:w-10"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--btn-regular-bg)] text-[var(--primary)] transition hover:bg-[var(--btn-regular-bg-hover)] disabled:cursor-not-allowed disabled:opacity-70 dark:text-neutral-50 sm:h-9 sm:w-9 md:h-10 md:w-10"
                     aria-label={isPlaying ? "Pausar" : "Reproducir"}
                   >
                     {isPlaying ? (
-                      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
                         <rect x="6" y="4" width="4" height="16" rx="1" />
                         <rect x="14" y="4" width="4" height="16" rx="1" />
                       </svg>
                     ) : (
-                      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
                         <path d="M8 5v14l11-7z" />
                       </svg>
                     )}
@@ -298,7 +305,7 @@ export function PersistentPlayer() {
 
                   <a
                     href="/music"
-                    className="flex h-9 items-center justify-center rounded-full bg-[var(--btn-regular-bg)] px-3 text-sm font-medium text-[var(--primary)] transition hover:bg-[var(--btn-regular-bg-hover)] dark:text-neutral-50 md:h-10 md:px-4"
+                    className="flex h-8 shrink-0 items-center justify-center rounded-full bg-[var(--btn-regular-bg)] px-2.5 text-xs font-medium text-[var(--primary)] transition hover:bg-[var(--btn-regular-bg-hover)] dark:text-neutral-50 sm:h-9 sm:px-3 sm:text-sm md:h-10 md:px-4"
                   >
                     Ir a Música
                   </a>
@@ -306,7 +313,7 @@ export function PersistentPlayer() {
                   <button
                     type="button"
                     onClick={() => setIsCollapsed(true)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--btn-regular-bg)] text-[var(--primary)] transition hover:bg-[var(--btn-regular-bg-hover)] dark:text-neutral-50 md:h-10 md:w-10"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--btn-regular-bg)] text-[var(--primary)] transition hover:bg-[var(--btn-regular-bg-hover)] dark:text-neutral-50 sm:h-9 sm:w-9 md:h-10 md:w-10"
                     aria-label="Minimizar reproductor"
                   >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -317,7 +324,7 @@ export function PersistentPlayer() {
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--btn-regular-bg)] text-[var(--primary)] transition hover:bg-[var(--btn-regular-bg-hover)] dark:text-neutral-50 md:h-10 md:w-10"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--btn-regular-bg)] text-[var(--primary)] transition hover:bg-[var(--btn-regular-bg-hover)] dark:text-neutral-50 sm:h-9 sm:w-9 md:h-10 md:w-10"
                     aria-label="Cerrar reproductor"
                   >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
