@@ -3,7 +3,7 @@
  * Funciones para CRUD de posts, estadísticas, etc.
  */
 
-import { apiGet, apiPost, apiPatch, apiDelete, apiUpload, ApiException } from './api';
+import { apiGet, apiPost, apiPatch, apiPut, apiDelete, apiUpload, ApiException } from './api';
 import { getAccessToken } from './auth';
 import { getBackendUrl, getBackendApiUrl } from './env';
 
@@ -307,6 +307,25 @@ export async function changePassword(data: {
   newPassword: string;
 }): Promise<{ message: string }> {
   return apiPost('auth/change-password', data);
+}
+
+// ==================== HOMEPAGE API ====================
+
+export interface HomepageSectionConfig {
+  id: string;
+  enabled?: boolean;
+  order?: number;
+  config?: Record<string, unknown>;
+}
+
+export interface HomepageConfigResponse {
+  sections: HomepageSectionConfig[];
+}
+
+export async function updateHomepageConfig(data: {
+  sections: HomepageSectionConfig[];
+}): Promise<HomepageConfigResponse> {
+  return apiPut<HomepageConfigResponse>('homepage', data);
 }
 
 // ==================== MEDIA API ====================

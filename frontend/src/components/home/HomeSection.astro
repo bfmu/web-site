@@ -1,0 +1,59 @@
+---
+import Hero from './Hero.astro';
+import IntroPersonal from './IntroPersonal.astro';
+import SeccionesGrid from './SeccionesGrid.astro';
+import GalleryPreview from './GalleryPreview.astro';
+import UltimosPosts from './UltimosPosts.astro';
+import ScrollReveal from './ScrollReveal.astro';
+import NowListening from './NowListening.tsx';
+import type { HomepageSection } from './componentRegistry';
+
+interface Props {
+  section: HomepageSection;
+  index?: number;
+}
+
+const { section, index = 0 } = Astro.props;
+const staggerDelay = index * 80;
+---
+
+{section.id === 'hero' && (
+  <section class="mb-12">
+    <Hero config={section.config} />
+  </section>
+)}
+{section.id === 'intro' && (
+  <ScrollReveal delay={staggerDelay} class="mb-12">
+    <section id="explore">
+      <IntroPersonal config={section.config} />
+    </section>
+  </ScrollReveal>
+)}
+{section.id === 'secciones' && (
+  <ScrollReveal delay={staggerDelay} class="mb-12">
+    <section id="work">
+      <SeccionesGrid config={section.config} />
+    </section>
+  </ScrollReveal>
+)}
+{section.id === 'gallery-preview' && (
+  <ScrollReveal delay={staggerDelay} class="mb-12">
+    <section>
+      <GalleryPreview config={section.config} />
+    </section>
+  </ScrollReveal>
+)}
+{section.id === 'ultimos-posts' && (
+  <ScrollReveal delay={staggerDelay} class="mb-12">
+    <section>
+      <UltimosPosts config={section.config} />
+    </section>
+  </ScrollReveal>
+)}
+{section.id === 'now-listening' && (
+  <ScrollReveal delay={staggerDelay} class="mb-12">
+    <section>
+      <NowListening client:only="react" />
+    </section>
+  </ScrollReveal>
+)}

@@ -1,0 +1,597 @@
+import React, { useState, useEffect } from 'react';
+import { fetchHomepageConfig } from '../../lib/api-homepage';
+import { updateHomepageConfig, type HomepageSectionConfig } from '../../lib/admin-api';
+import { ImageLibraryModal } from './ImageLibraryModal';
+import { getBackendResourceUrl } from '../../lib/env';
+import { DEFAULT_HOMEPAGE_SECTIONS } from '../home/componentRegistry';
+
+const SECTION_LABELS: Record<string, string> = {
+  hero: 'Hero (banner principal)',
+  intro: 'Introducción personal',
+  secciones: 'Grid de secciones',
+  'gallery-preview': 'Preview galería',
+  'ultimos-posts': 'Últimos artículos',
+  'now-listening': 'Ahora escuchando (Spotify)',
+};
+
+export function HomepageEditor() {
+  const [sections, setSections] = useState<HomepageSectionConfig[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [openSection, setOpenSection] = useState<string | null>('hero');
+  const [imageModalFor, setImageModalFor] = useState<{ sectionId: string; field: string; appendToArray?: boolean } | null>(null);
+
+  useEffect(() => {
+    loadConfig();
+  }, []);
+
+  const loadConfig = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchHomepageConfig();
+      if (data?.sections?.length) {
+        setSections([...data.sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+      } else {
+        setSections(DEFAULT_HOMEPAGE_SECTIONS);
+      }
+    } catch (e) {
+      console.error(e);
+      setSections(DEFAULT_HOMEPAGE_SECTIONS);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateSection = (id: string, updates: Partial<HomepageSectionConfig>) => {
+    setSections((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
+    );
+  };
+
+  const updateSectionConfig = (id: string, configUpdates: Record<string, unknown>) => {
+    setSections((prev) =>
+      prev.map((s) =>
+        s.id === id ? { ...s, config: { ...(s.config ?? {}), ...configUpdates } } : s
+      )
+    );
+  };
+
+  const updateSeccionesItem = (index: number, field: string, value: string) => {
+    const sec = sections.find((s) => s.id === 'secciones');
+    const items = Array.isArray(sec?.config?.items) ? [...(sec.config.items as Record<string, string>[])] : [];
+    if (!items[index]) return;
+    items[index] = { ...items[index], [field]: value };
+    updateSectionConfig('secciones', { items });
+  };
+
+  const addSeccionesItem = () => {
+    const sec = sections.find((s) => s.id === 'secciones');
+    const items = Array.isArray(sec?.config?.items) ? [...(sec.config.items as Record<string, string>[])] : [];
+    items.push({ titulo: '', descripcion: '', enlace: '', icono: '' });
+    updateSectionConfig('secciones', { items });
+  };
+
+  const removeSeccionesItem = (index: number) => {
+    const sec = sections.find((s) => s.id === 'secciones');
+    const items = Array.isArray(sec?.config?.items) ? [...(sec.config.items as Record<string, string>[])] : [];
+    items.splice(index, 1);
+    updateSectionConfig('secciones', { items });
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const payload = sections.map((s, i) => ({
+        id: s.id,
+        enabled: s.enabled ?? true,
+        order: i,
+        config: s.config ?? {},
+      }));
+      await updateHomepageConfig({ sections: payload });
+      setMessage({ type: 'success', text: 'Configuración guardada correctamente.' });
+    } catch (e: any) {
+      setMessage({ type: 'error', text: e?.message ?? 'Error al guardar.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleImageSelect = (url: string) => {
+    if (!imageModalFor) return;
+    if (imageModalFor.appendToArray && imageModalFor.field === 'imageUrls') {
+      const sec = sections.find((s) => s.id === imageModalFor.sectionId);
+      const current = (sec?.config?.imageUrls as string[] | undefined) ?? [];
+      updateSectionConfig(imageModalFor.sectionId, { imageUrls: [...current, url] });
+    } else {
+      updateSectionConfig(imageModalFor.sectionId, { [imageModalFor.field]: url });
+    }
+    setImageModalFor(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-gray-500 dark:text-gray-400">Cargando configuración...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {message && (
+        <div
+          className={`rounded-lg p-3 ${
+            message.type === 'success'
+              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200'
+              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200'
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+        >
+          {saving ? 'Guardando...' : 'Guardar cambios'}
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {sections.map((section) => (
+          <div
+            key={section.id}
+            className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+          >
+            <button
+              type="button"
+              onClick={() => setOpenSection(openSection === section.id ? null : section.id)}
+              className="flex w-full items-center justify-between px-4 py-3 text-left"
+            >
+              <span className="font-medium">{SECTION_LABELS[section.id] ?? section.id}</span>
+              <span className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={section.enabled !== false}
+                  onChange={(e) => updateSection(section.id, { enabled: e.target.checked })}
+                  onClick={(e) => e.stopPropagation()}
+                  className="rounded"
+                />
+                <span className="text-sm text-gray-500">
+                  {openSection === section.id ? '▼' : '▶'}
+                </span>
+              </span>
+            </button>
+            {openSection === section.id && (
+              <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-700">
+                {section.id === 'hero' && (
+                  <HeroFields
+                    config={section.config ?? {}}
+                    onUpdate={(c) => updateSectionConfig('hero', c)}
+                    onOpenImageModal={(field, appendToArray) => setImageModalFor({ sectionId: 'hero', field, appendToArray })}
+                  />
+                )}
+                {section.id === 'intro' && (
+                  <IntroFields
+                    config={section.config ?? {}}
+                    onUpdate={(c) => updateSectionConfig('intro', c)}
+                    onOpenImageModal={(field) => setImageModalFor({ sectionId: 'intro', field })}
+                  />
+                )}
+                {section.id === 'secciones' && (
+                  <SeccionesFields
+                    config={section.config ?? {}}
+                    onUpdate={(c) => updateSectionConfig('secciones', c)}
+                    items={Array.isArray(section.config?.items) ? (section.config.items as Record<string, string>[]) : []}
+                    onUpdateItem={updateSeccionesItem}
+                    onAddItem={addSeccionesItem}
+                    onRemoveItem={removeSeccionesItem}
+                  />
+                )}
+                {section.id === 'gallery-preview' && (
+                  <GalleryPreviewFields
+                    config={section.config ?? {}}
+                    onUpdate={(c) => updateSectionConfig('gallery-preview', c)}
+                  />
+                )}
+                {section.id === 'ultimos-posts' && (
+                  <UltimosPostsFields
+                    config={section.config ?? {}}
+                    onUpdate={(c) => updateSectionConfig('ultimos-posts', c)}
+                  />
+                )}
+                {section.id === 'now-listening' && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Muestra la canción actual de Spotify cuando hay algo reproduciéndose. No requiere configuración.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {imageModalFor && (
+        <ImageLibraryModal
+          isOpen={true}
+          onClose={() => setImageModalFor(null)}
+          onSelect={handleImageSelect}
+          allowUpload={true}
+        />
+      )}
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  textarea = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  textarea?: boolean;
+}) {
+  return (
+    <div className="mb-3">
+      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        {label}
+      </label>
+      {textarea ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={3}
+          className="w-full rounded border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        />
+      ) : (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        />
+      )}
+    </div>
+  );
+}
+
+function heroImageUrl(url: string): string {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return getBackendResourceUrl(url.startsWith('/') ? url : `/${url}`);
+}
+
+function HeroFields({
+  config,
+  onUpdate,
+  onOpenImageModal,
+}: {
+  config: Record<string, unknown>;
+  onUpdate: (c: Record<string, unknown>) => void;
+  onOpenImageModal: (field: string, appendToArray?: boolean) => void;
+}) {
+  const imageUrls = (Array.isArray(config.imageUrls) ? config.imageUrls : []) as string[];
+
+  const removeImage = (index: number) => {
+    const next = imageUrls.filter((_, i) => i !== index);
+    onUpdate({ ...config, imageUrls: next });
+  };
+
+  const moveImage = (index: number, dir: number) => {
+    const next = [...imageUrls];
+    const j = index + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[index], next[j]] = [next[j], next[index]];
+    onUpdate({ ...config, imageUrls: next });
+  };
+
+  return (
+    <div>
+      <div className="mb-4">
+        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Imágenes del carrusel (orden = orden en el carrusel)
+        </label>
+        <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+          Si no hay ninguna, se usará la imagen por defecto. Añade varias para un carrusel automático.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          {imageUrls.map((url, index) => (
+            <div
+              key={`${url}-${index}`}
+              className="group relative flex flex-col items-center rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden bg-gray-50 dark:bg-gray-700"
+            >
+              <div className="relative h-24 w-28 overflow-hidden">
+                <img
+                  src={heroImageUrl(url)}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = '/default-avatar.svg'; }}
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => moveImage(index, -1)}
+                    disabled={index === 0}
+                    className="rounded bg-white/90 p-1.5 text-gray-800 disabled:opacity-40"
+                    title="Mover antes"
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="rounded bg-red-500 p-1.5 text-white"
+                    title="Quitar"
+                  >
+                    ✕
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveImage(index, 1)}
+                    disabled={index === imageUrls.length - 1}
+                    className="rounded bg-white/90 p-1.5 text-gray-800 disabled:opacity-40"
+                    title="Mover después"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+              <span className="text-xs text-gray-500 py-1">{index + 1}</span>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => onOpenImageModal('imageUrls', true)}
+            className="flex h-24 w-28 flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-500 hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400 transition"
+          >
+            <span className="text-2xl">+</span>
+            <span className="text-xs mt-1">Añadir imagen</span>
+          </button>
+        </div>
+      </div>
+      <Field
+        label="Título"
+        value={(config.title as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, title: v })}
+      />
+      <Field
+        label="Subtítulo"
+        value={(config.subtitle as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, subtitle: v })}
+        textarea
+      />
+      <Field
+        label="Texto del botón"
+        value={(config.ctaText as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, ctaText: v })}
+      />
+      <Field
+        label="Enlace del botón"
+        value={(config.ctaHref as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, ctaHref: v })}
+      />
+      <div className="mb-3">
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Intervalo del carrusel (segundos)
+        </label>
+        <input
+          type="number"
+          min={2}
+          max={30}
+          step={0.5}
+          value={typeof config.carouselIntervalSeconds === 'number' ? config.carouselIntervalSeconds : 5.5}
+          onChange={(e) => onUpdate({ ...config, carouselIntervalSeconds: parseFloat(e.target.value) || 5.5 })}
+          className="w-full rounded border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        />
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Tiempo entre cada imagen (2–30 s). Solo aplica si hay más de una imagen.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function IntroFields({
+  config,
+  onUpdate,
+  onOpenImageModal,
+}: {
+  config: Record<string, unknown>;
+  onUpdate: (c: Record<string, unknown>) => void;
+  onOpenImageModal: (field: string) => void;
+}) {
+  return (
+    <div>
+      <Field
+        label="Título"
+        value={(config.title as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, title: v })}
+      />
+      <Field
+        label="Bio / descripción"
+        value={(config.bio as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, bio: v })}
+        textarea
+      />
+      <Field
+        label="Avatar (URL)"
+        value={(config.avatarUrl as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, avatarUrl: v })}
+      />
+      <button
+        type="button"
+        onClick={() => onOpenImageModal('avatarUrl')}
+        className="mb-3 text-sm text-indigo-600 hover:underline"
+      >
+        Seleccionar de la biblioteca
+      </button>
+      <Field
+        label="Texto del botón"
+        value={(config.ctaText as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, ctaText: v })}
+      />
+      <Field
+        label="Enlace del botón"
+        value={(config.ctaHref as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, ctaHref: v })}
+      />
+    </div>
+  );
+}
+
+function SeccionesFields({
+  config,
+  onUpdate,
+  items,
+  onUpdateItem,
+  onAddItem,
+  onRemoveItem,
+}: {
+  config: Record<string, unknown>;
+  onUpdate: (c: Record<string, unknown>) => void;
+  items: Record<string, string>[];
+  onUpdateItem: (index: number, field: string, value: string) => void;
+  onAddItem: () => void;
+  onRemoveItem: (index: number) => void;
+}) {
+  return (
+    <div>
+      <Field
+        label="Título de sección"
+        value={(config.title as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, title: v })}
+      />
+      <Field
+        label="Subtítulo"
+        value={(config.subtitle as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, subtitle: v })}
+      />
+      <div className="mt-3">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-sm font-medium">Items del grid</span>
+          <button
+            type="button"
+            onClick={onAddItem}
+            className="text-sm text-indigo-600 hover:underline"
+          >
+            + Añadir item
+          </button>
+        </div>
+        {items.map((item, index) => (
+          <div
+            key={index}
+            className="mb-3 rounded border border-gray-200 p-3 dark:border-gray-600"
+          >
+            <div className="mb-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => onRemoveItem(index)}
+                className="text-sm text-red-600 hover:underline"
+              >
+                Eliminar
+              </button>
+            </div>
+            <Field
+              label="Título"
+              value={item.titulo ?? ''}
+              onChange={(v) => onUpdateItem(index, 'titulo', v)}
+            />
+            <Field
+              label="Descripción"
+              value={item.descripcion ?? ''}
+              onChange={(v) => onUpdateItem(index, 'descripcion', v)}
+            />
+            <Field
+              label="Enlace"
+              value={item.enlace ?? ''}
+              onChange={(v) => onUpdateItem(index, 'enlace', v)}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GalleryPreviewFields({
+  config,
+  onUpdate,
+}: {
+  config: Record<string, unknown>;
+  onUpdate: (c: Record<string, unknown>) => void;
+}) {
+  return (
+    <div>
+      <Field
+        label="Título"
+        value={(config.title as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, title: v })}
+      />
+      <Field
+        label="Texto del botón"
+        value={(config.ctaText as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, ctaText: v })}
+      />
+      <Field
+        label="Enlace del botón"
+        value={(config.ctaHref as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, ctaHref: v })}
+      />
+    </div>
+  );
+}
+
+function UltimosPostsFields({
+  config,
+  onUpdate,
+}: {
+  config: Record<string, unknown>;
+  onUpdate: (c: Record<string, unknown>) => void;
+}) {
+  return (
+    <div>
+      <Field
+        label="Título"
+        value={(config.title as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, title: v })}
+      />
+      <Field
+        label="Subtítulo"
+        value={(config.subtitle as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, subtitle: v })}
+      />
+      <div className="mb-3">
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Cantidad de posts
+        </label>
+        <input
+          type="number"
+          min={1}
+          max={12}
+          value={typeof config.limit === 'number' ? config.limit : 3}
+          onChange={(e) => onUpdate({ ...config, limit: parseInt(e.target.value, 10) || 3 })}
+          className="w-full rounded border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        />
+      </div>
+      <Field
+        label="Texto del enlace"
+        value={(config.ctaText as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, ctaText: v })}
+      />
+      <Field
+        label="Enlace"
+        value={(config.ctaHref as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, ctaHref: v })}
+      />
+    </div>
+  );
+}

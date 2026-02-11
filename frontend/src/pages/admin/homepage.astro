@@ -1,0 +1,8 @@
+---
+import AdminLayout from '@components/admin/AdminLayout.astro';
+import { HomepageEditor } from '@components/admin/HomepageEditor.tsx';
+---
+
+<AdminLayout title="Página de inicio">
+  <HomepageEditor client:only="react" />
+</AdminLayout>

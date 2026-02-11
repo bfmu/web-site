@@ -404,6 +404,9 @@ const setup = () => {
 		}
 	})
 	window.swup.hooks.on('content:replace', initCustomScrollbar)
+	window.swup.hooks.on('content:replace', () => {
+		setTimeout(() => { (window as any).initScrollReveal?.(); }, 50)
+	})
 	window.swup.hooks.on('visit:start', (visit: {to: {url: string}}) => {
 		// change banner height immediately when a link is clicked
 		const bodyElement = document.querySelector('body')
@@ -431,6 +434,7 @@ const setup = () => {
 		if (heightExtend) {
 			heightExtend.classList.remove('hidden')
 		}
+		(window as any).initScrollReveal?.();
 	});
 	window.swup.hooks.on('visit:end', (visit: {to: {url: string}}) => {
 		setTimeout(() => {
