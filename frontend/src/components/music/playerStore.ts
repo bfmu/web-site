@@ -27,6 +27,7 @@ interface PlayerState {
   setController: (ctrl: SpotifyController | null) => void;
   playTrack: (trackId: string, trackInfo?: TrackInfo | null) => void;
   setPlaying: (playing: boolean) => void;
+  togglePlaying: () => void;
   savePosition: (trackId: string, positionMs: number) => void;
   close: () => void;
 }
@@ -63,6 +64,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   setPlaying: (isPlaying) => set({ isPlaying }),
+
+  /** Para evitar closure obsoleta; pasar true/false explícitamente */
+  togglePlaying: () => set((s) => ({ isPlaying: !s.isPlaying })),
 
   savePosition: (trackId, positionMs) =>
     set((s) => ({

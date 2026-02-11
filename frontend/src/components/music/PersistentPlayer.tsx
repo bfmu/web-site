@@ -67,10 +67,11 @@ function formatTime(ms: number): string {
 }
 
 export function PersistentPlayer() {
-  const { trackId, trackInfo, isPlaying, isVisible, setController, setPlaying, savePosition, close } =
+  const { trackId, trackInfo, isPlaying, isVisible, setController, setPlaying, togglePlaying, savePosition, close } =
     usePlayerStore();
   const embedWrapperRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<EmbedController | null>(null);
+  const lastPlaybackStartedAt = useRef(0);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -106,6 +107,7 @@ export function PersistentPlayer() {
           setController(ctrlForStore);
 
           EmbedController.addListener("playback_started", () => {
+            lastPlaybackStartedAt.current = Date.now();
             setPlaying(true);
           });
 
@@ -113,10 +115,12 @@ export function PersistentPlayer() {
             const { trackId: tid } = usePlayerStore.getState();
             const playingUri = (e.data as { playingURI?: string })?.playingURI;
             const isOurTrack = !tid || !playingUri || playingUri === `spotify:track:${tid}`;
-            // Solo aplicar isPaused: false. Spotify envía isPaused: true incorrectos mientras
-            // la canción suena; el estado "pausado" solo se actualiza al hacer clic en el botón
-            if (isOurTrack && e.data?.isPaused === false) {
-              setPlaying(true);
+            if (isOurTrack && e.data?.isPaused !== undefined) {
+              const recentlyStarted = Date.now() - lastPlaybackStartedAt.current < 4000;
+              // Ignorar isPaused: true en los ~4s tras playback_started (Spotify envía valores erróneos)
+              if (!e.data.isPaused || !recentlyStarted) {
+                setPlaying(!e.data.isPaused);
+              }
             }
             if (e.data?.position !== undefined) {
               setPosition(e.data.position);
@@ -145,8 +149,13 @@ export function PersistentPlayer() {
   const handleTogglePlay = () => {
     const ctrl = controllerRef.current;
     if (!ctrl || !isReady) return;
-    ctrl.togglePlay();
-    setPlaying(!isPlaying); // Actualizar UI al instante; no confiamos en playback_update
+    const currentlyPlaying = usePlayerStore.getState().isPlaying;
+    if (currentlyPlaying) {
+      ctrl.pause();
+    } else {
+      ctrl.resume();
+    }
+    togglePlaying();
   };
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
