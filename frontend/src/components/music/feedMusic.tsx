@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getBackendUrl } from "../../lib/env";
+import { usePlayerStore } from "./playerStore";
 
 const backendUrl = getBackendUrl();
 
@@ -77,14 +78,21 @@ export const FeedMusic = () => {
     loadAllData();
   }, []);
 
+  const playTrack = usePlayerStore((s) => s.playTrack);
+
   // Manejar clics en elementos de música
-  const handleMusicClick = (type: string, id: string) => {
+  const handleMusicClick = (type: string, id: string, trackInfo?: { name: string; artists: { name: string }[]; album: { images: { url: string }[] } }) => {
     if (type === "track") {
-      const player = document.getElementById(
-        "spotify-player",
-      ) as HTMLIFrameElement;
-      if (player) {
-        player.src = `https://open.spotify.com/embed/track/${id}?autoplay=1`;
+      if (trackInfo) {
+        playTrack(id, {
+          id,
+          name: trackInfo.name,
+          artist: trackInfo.artists?.[0]?.name ?? "",
+          coverUrl: trackInfo.album?.images?.[0]?.url ?? "",
+          spotifyUrl: `https://open.spotify.com/track/${id}`,
+        });
+      } else {
+        playTrack(id);
       }
     } else if (type === "artist" || type === "playlist") {
       window.open(`https://open.spotify.com/${type}/${id}`, "_blank");
@@ -93,7 +101,6 @@ export const FeedMusic = () => {
 
   const { lastPlayed, topArtists, recentlyPlayed, topTracks, loading, error } =
     data;
-  const initialTrackId = lastPlayed ? (lastPlayed as any).id : null;
 
   if (loading)
     return (
@@ -111,27 +118,10 @@ export const FeedMusic = () => {
   return (
     <div className="relative max-w-[var(--page-width)] mx-auto pointer-events-auto">
       <div className="transition duration-700 w-full left-0 right-0 mx-auto gap-4 px-0 md:px-4 onload-animation">
-        {/* ✅ Reproductor */}
-        <section className="bg-[var(--card-bg)] p-6 rounded-[var(--radius-large)] shadow-md">
-          <h2 className="text-2xl font-semibold text-[var(--primary)] dark:text-neutral-50">
-            Reproductor
-          </h2>
-          {initialTrackId && (
-            <iframe
-              id="spotify-player"
-              src={`https://open.spotify.com/embed/track/${initialTrackId}?autoplay=1`}
-              width="100%"
-              height="80"
-              style={{ border: "none" }}
-              loading="lazy"
-              onError={(e) => console.error("Error al cargar Spotify", e)}
-              allow="autoplay; clipboard-write; encrypted-media 'src'; fullscreen; picture-in-picture"
-              className="rounded-lg mt-4 shadow-md bg-[var(--btn-regular-bg)] dark:bg-[var(--btn-regular-bg-active)]"
-            />
-          )}
-        </section>
-
-        {/* ✅ Última Canción Escuchada */}
+        <p className="mb-4 rounded-lg bg-[var(--btn-regular-bg)] px-4 py-3 text-sm text-[var(--deep-text)] dark:text-neutral-50">
+          Toca una canción para escucharla en el reproductor de la parte inferior. Puedes seguir navegando y la música seguirá sonando.
+        </p>
+        {/* Última Canción Escuchada */}
         {lastPlayed && (
           <section className="mt-4 bg-[var(--card-bg)] p-6 rounded-[var(--radius-large)] shadow-md">
             <h2 className="text-2xl font-semibold text-[var(--primary)] dark:text-neutral-50">
@@ -141,7 +131,7 @@ export const FeedMusic = () => {
               className="flex items-center gap-4 p-4 bg-[var(--btn-regular-bg)] rounded-lg hover:bg-[var(--btn-regular-bg-hover)] cursor-pointer transition"
               data-type="track"
               data-id={(lastPlayed as any).id}
-              onClick={() => handleMusicClick("track", (lastPlayed as any).id)}
+              onClick={() => handleMusicClick("track", (lastPlayed as any).id, lastPlayed as any)}
             >
               <img
                 src={(lastPlayed as any).album.images[0].url}
@@ -186,7 +176,7 @@ export const FeedMusic = () => {
                     className="flex items-center gap-4 p-4 rounded-lg hover:bg-[var(--btn-card-bg-hover)] bg-[var(--btn-regular-bg)] transition cursor-pointer"
                     data-type="track"
                     data-id={data.track.id}
-                    onClick={() => handleMusicClick("track", data.track.id)}
+                    onClick={() => handleMusicClick("track", data.track.id, data.track)}
                   >
                     <img
                       src={
@@ -227,7 +217,7 @@ export const FeedMusic = () => {
                   className="flex items-center gap-4 p-4 rounded-lg hover:bg-[var(--btn-card-bg-hover)] bg-[var(--btn-regular-bg)] transition cursor-pointer"
                   data-type="track"
                   data-id={track.id}
-                  onClick={() => handleMusicClick("track", track.id)}
+                  onClick={() => handleMusicClick("track", track.id, track)}
                 >
                   <img
                     src={track.album.images[0].url}
@@ -248,7 +238,7 @@ export const FeedMusic = () => {
           </section>
         )}
 
-        {/* ✅ Top Artistas */}
+        {/* Top Artistas */}
         {topArtists && (
           <section className="mt-4 bg-[var(--card-bg)] p-6 rounded-[var(--radius-large)] shadow-md mb-10">
             <h2 className="text-2xl font-semibold text-[var(--primary)] dark:text-neutral-50">
