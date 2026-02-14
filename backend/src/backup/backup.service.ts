@@ -25,8 +25,12 @@ import {
   OAuthProvider,
   OAuthProviderDocument,
 } from '../settings/schemas/oauth-provider.schema';
+import {
+  HomepageConfig,
+  HomepageConfigDocument,
+} from '../homepage/schemas/homepage-config.schema';
 
-const BACKUP_VERSION = '1.0';
+const BACKUP_VERSION = '1.1';
 const COLLECTIONS = [
   'users',
   'posts',
@@ -35,6 +39,7 @@ const COLLECTIONS = [
   'apiintegrations',
   'oauthproviders',
 ] as const;
+const EXTRA_COLLECTIONS = ['homepage_config'] as const;
 const RATE_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_BACKUP_SIZE = Number(process.env.BACKUP_MAX_SIZE) || 2 * 1024 * 1024 * 1024; // 2GB
 
@@ -52,6 +57,8 @@ export class BackupService {
     private apiIntegrationModel: Model<ApiIntegrationDocument>,
     @InjectModel(OAuthProvider.name)
     private oauthProviderModel: Model<OAuthProviderDocument>,
+    @InjectModel(HomepageConfig.name)
+    private homepageConfigModel: Model<HomepageConfigDocument>,
   ) {}
 
   private getUploadsPath(): string {
@@ -66,6 +73,7 @@ export class BackupService {
       albums: this.albumModel,
       apiintegrations: this.apiIntegrationModel,
       oauthproviders: this.oauthProviderModel,
+      homepage_config: this.homepageConfigModel,
     };
   }
 
@@ -116,11 +124,19 @@ export class BackupService {
     const checksums: NonNullable<BackupMetadata['checksums']> = {};
 
     for (const col of COLLECTIONS) {
-      const data = await this.exportCollection(col);
+      const data = await this.exportCollection(col as any);
       counts[col] = data.length;
       const json = JSON.stringify(data, null, 2);
       const buf = Buffer.from(json, 'utf8');
       checksums[`database/${col}.json`] = this.sha256(buf);
+      archive.append(json, { name: `database/${col}.json` });
+    }
+
+    for (const col of EXTRA_COLLECTIONS) {
+      const data = await this.getModels()[col].find().lean().exec();
+      const json = JSON.stringify(data, null, 2);
+      const buf = Buffer.from(json, 'utf8');
+      checksums[`database/${col}.json` as keyof typeof checksums] = this.sha256(buf);
       archive.append(json, { name: `database/${col}.json` });
     }
 
@@ -161,11 +177,18 @@ export class BackupService {
     const checksums: NonNullable<BackupMetadata['checksums']> = {};
 
     for (const col of COLLECTIONS) {
-      const data = await this.exportCollection(col);
+      const data = await this.exportCollection(col as any);
       counts[col] = data.length;
       const json = JSON.stringify(data, null, 2);
       const buf = Buffer.from(json, 'utf8');
       checksums[`database/${col}.json`] = this.sha256(buf);
+      archive.append(json, { name: `database/${col}.json` });
+    }
+    for (const col of EXTRA_COLLECTIONS) {
+      const data = await this.getModels()[col].find().lean().exec();
+      const json = JSON.stringify(data, null, 2);
+      const buf = Buffer.from(json, 'utf8');
+      checksums[`database/${col}.json` as keyof typeof checksums] = this.sha256(buf);
       archive.append(json, { name: `database/${col}.json` });
     }
     const metadata: BackupMetadata = {
@@ -255,7 +278,8 @@ export class BackupService {
         const chunks: Buffer[] = [];
         stream.on('data', (c: Buffer) => chunks.push(c));
         stream.on('end', () => {
-          extracted.set(header.name, Buffer.concat(chunks));
+          const key = header.name.replace(/^\.\//, '');
+          extracted.set(key, Buffer.concat(chunks));
           next();
         });
         stream.resume();
@@ -284,6 +308,8 @@ export class BackupService {
       'oauthproviders',
     ];
 
+    const extraOrder = [...EXTRA_COLLECTIONS];
+
     const restored: RestoreResult['restored'] = {
       users: 0,
       posts: 0,
@@ -297,23 +323,59 @@ export class BackupService {
     for (const col of order) {
       await models[col].deleteMany({}).exec();
     }
+    for (const col of extraOrder) {
+      await models[col].deleteMany({}).exec();
+    }
 
     for (const col of order) {
       const name = `database/${col}.json`;
       const buf = extracted.get(name);
       if (!buf) continue;
       const data = JSON.parse(buf.toString('utf8'));
-      const n = await this.importCollection(col, data);
+      const n = await this.importCollection(col as any, data);
       restored[col] = n;
+    }
+    for (const col of extraOrder) {
+      const name = `database/${col}.json`;
+      const buf = extracted.get(name);
+      if (!buf) continue;
+      const data = JSON.parse(buf.toString('utf8'));
+      if (data?.length > 0) {
+        await models[col].insertMany(data);
+      }
     }
 
     const uploadsPath = this.getUploadsPath();
+    const imagesPath = path.join(uploadsPath, 'images');
+    const avatarsPath = path.join(uploadsPath, 'avatars');
 
-    if (fs.existsSync(uploadsPath)) {
-      fs.rmSync(uploadsPath, { recursive: true });
+    const rmOpts = { recursive: true, maxRetries: 5, retryDelay: 200 };
+    const clearDirContents = (dirPath: string) => {
+      if (!fs.existsSync(dirPath)) return;
+      for (const name of fs.readdirSync(dirPath)) {
+        const full = path.join(dirPath, name);
+        const stat = fs.statSync(full);
+        if (stat.isDirectory()) {
+          try {
+            fs.rmSync(full, rmOpts);
+          } catch (err: any) {
+            if (err?.code === 'EBUSY') clearDirContents(full);
+            else throw err;
+          }
+        } else fs.unlinkSync(full);
+      }
+    };
+    try {
+      if (fs.existsSync(imagesPath)) fs.rmSync(imagesPath, rmOpts);
+      if (fs.existsSync(avatarsPath)) fs.rmSync(avatarsPath, rmOpts);
+    } catch (err: any) {
+      if (err?.code === 'EBUSY') {
+        clearDirContents(imagesPath);
+        clearDirContents(avatarsPath);
+      } else throw err;
     }
-    fs.mkdirSync(path.join(uploadsPath, 'images'), { recursive: true });
-    fs.mkdirSync(path.join(uploadsPath, 'avatars'), { recursive: true });
+    fs.mkdirSync(imagesPath, { recursive: true });
+    fs.mkdirSync(avatarsPath, { recursive: true });
 
     for (const [entryPath, content] of extracted) {
       if (!entryPath.startsWith('uploads/') || entryPath === 'uploads/')

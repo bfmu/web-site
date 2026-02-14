@@ -7,6 +7,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
@@ -21,6 +22,8 @@ const MAX_BACKUP_SIZE = Number(process.env.BACKUP_MAX_SIZE) || 2 * 1024 * 1024 *
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin')
 export class BackupController {
+  private readonly logger = new Logger(BackupController.name);
+
   constructor(private readonly backupService: BackupService) {}
 
   @Post('create')
@@ -47,6 +50,7 @@ export class BackupController {
   async validate(
     @UploadedFile() file: Express.Multer.File,
   ): Promise<{ valid: boolean; metadata?: any; warnings: string[]; error?: string }> {
+    this.logger.log('validate called, file=' + (file ? `${file.originalname} ${file.size}b` : 'null'));
     if (!file) {
       throw new BadRequestException('No se proporcionó ningún archivo.');
     }
@@ -66,6 +70,7 @@ export class BackupController {
   async restore(
     @UploadedFile() file: Express.Multer.File,
   ): Promise<{ success: boolean; restored: any; preRestoreBackupPath?: string; error?: string }> {
+    this.logger.log('restore called, file=' + (file ? `${file.originalname} ${file.size}b` : 'null'));
     if (!file) {
       throw new BadRequestException('No se proporcionó ningún archivo.');
     }

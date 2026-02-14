@@ -714,6 +714,8 @@ export async function validateBackup(file: File): Promise<ValidationResult> {
   return response.json();
 }
 
+const RESTORE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutos
+
 /**
  * Restaurar sitio desde archivo de backup.
  * Crea un backup automático antes de restaurar.
@@ -726,16 +728,33 @@ export async function restoreBackup(file: File): Promise<RestoreResult> {
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ message: 'Error al restaurar backup' }));
-    throw new ApiException(err.message || `Error ${response.status}`, response.status, err);
+  if (typeof window !== 'undefined' && import.meta.env.DEV) {
+    console.log('[Backup] restoreBackup: POST', url, 'token=', !!token, 'fileSize=', file.size);
   }
 
-  return response.json();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), RESTORE_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ message: 'Error al restaurar backup' }));
+      throw new ApiException(err.message || `Error ${response.status}`, response.status, err);
+    }
+
+    return response.json();
+  } catch (e: unknown) {
+    if (e instanceof Error && e.name === 'AbortError') {
+      throw new ApiException('La restauración tardó demasiado. Por favor, inténtalo de nuevo.', 408);
+    }
+    throw e;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }

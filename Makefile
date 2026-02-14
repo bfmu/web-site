@@ -1,6 +1,6 @@
 # Makefile para facilitar el uso de Docker Compose
 
-.PHONY: up down logs restart clean build ps up-prod down-prod shell-backend shell-frontend shell-mongo
+.PHONY: up down logs restart clean build rebuild ps up-prod down-prod shell-backend shell-frontend shell-mongo
 
 # Levantar todos los servicios
 up:
@@ -27,6 +27,11 @@ logs-frontend:
 
 logs-mongo:
 	docker-compose -f docker-compose.dev.yml logs -f mongodb
+
+# Detener, reconstruir e iniciar
+rebuild:
+	docker-compose -f docker-compose.dev.yml down
+	docker-compose -f docker-compose.dev.yml up -d --build
 
 # Reiniciar servicios
 restart:

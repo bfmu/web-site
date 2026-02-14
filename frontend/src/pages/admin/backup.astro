@@ -68,20 +68,14 @@ import AdminLayout from '@components/admin/AdminLayout.astro';
           <input
             id="restore-file"
             type="file"
-            accept=".tar.gz"
+            accept=".tar.gz,application/gzip"
             class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 dark:file:bg-indigo-900/20 dark:file:text-indigo-300 hover:file:bg-indigo-100 dark:hover:file:bg-indigo-900/30"
           />
         </div>
         <button
-          id="validate-backup-btn"
-          type="button"
-          class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-        >
-          Validar
-        </button>
-        <button
           id="restore-backup-btn"
           type="button"
+          disabled
           class="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span id="restore-btn-text">Restaurar</span>
@@ -94,9 +88,12 @@ import AdminLayout from '@components/admin/AdminLayout.astro';
         </button>
       </div>
 
-      <div id="validation-result" class="hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4 mt-4">
-        <h4 class="font-medium text-gray-900 dark:text-white mb-2">Resultado de validación</h4>
-        <pre id="validation-content" class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap font-mono"></pre>
+      <div id="validation-result" class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4 mt-4 min-h-[80px]">
+        <h4 class="font-medium text-gray-900 dark:text-white mb-2">Estado</h4>
+        <div id="validation-status" class="text-sm text-gray-500 dark:text-gray-400">
+          Selecciona un archivo .tar.gz para validar automáticamente
+        </div>
+        <pre id="validation-content" class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap font-mono mt-2 hidden"></pre>
       </div>
     </div>
 
@@ -144,10 +141,11 @@ import AdminLayout from '@components/admin/AdminLayout.astro';
         Información del Backup
       </h3>
       <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-        <li>• Base de datos: 6 colecciones (users, posts, media, albums, apiintegrations, oauthproviders)</li>
-        <li>• Archivos: uploads/images y uploads/avatars</li>
+        <li>• <strong>Base de datos:</strong> users, posts, media, albums, apiintegrations (Spotify), oauthproviders (Google/GitHub), homepage_config</li>
+        <li>• <strong>Archivos:</strong> uploads/images y uploads/avatars</li>
+        <li>• <strong>Spotify y OAuth:</strong> Solo se incluyen si los configuraste desde el panel Admin (Configuración). Si usaste variables de entorno (.env), no están en el backup.</li>
+        <li>• <strong>Clave de cifrado:</strong> usa la misma ENCRYPTION_KEY en la nueva instancia, o los secrets (Spotify, OAuth) no se descifrarán.</li>
         <li>• Tamaño máximo: 2GB (configurable con BACKUP_MAX_SIZE)</li>
-        <li>• En la nueva instancia, configura las mismas variables de entorno (sobre todo ENCRYPTION_KEY) antes de restaurar.</li>
       </ul>
     </div>
   </div>
@@ -167,11 +165,11 @@ import AdminLayout from '@components/admin/AdminLayout.astro';
   const createText = document.getElementById('create-backup-text');
   const createSpinner = document.getElementById('create-backup-spinner');
   const restoreFile = document.getElementById('restore-file') as HTMLInputElement | null;
-  const validateBtn = document.getElementById('validate-backup-btn');
   const restoreBtn = document.getElementById('restore-backup-btn') as HTMLButtonElement | null;
   const restoreBtnText = document.getElementById('restore-btn-text');
   const restoreBtnSpinner = document.getElementById('restore-btn-spinner');
   const validationResult = document.getElementById('validation-result');
+  const validationStatus = document.getElementById('validation-status');
   const validationContent = document.getElementById('validation-content');
   const restoreModal = document.getElementById('restore-confirm-modal');
   const restoreCancelBtn = document.getElementById('restore-cancel-btn');
@@ -194,6 +192,67 @@ import AdminLayout from '@components/admin/AdminLayout.astro';
     restoreBtnSpinner?.classList.toggle('hidden', !loading);
   }
 
+  function setRestoreEnabled(enabled: boolean) {
+    if (restoreBtn) restoreBtn.disabled = !enabled;
+  }
+
+  function showValidationStatus(status: string, isError: boolean) {
+    if (validationStatus) {
+      validationStatus.textContent = status;
+      validationStatus.className = 'text-sm ' + (isError ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-600 dark:text-gray-400');
+    }
+  }
+
+  async function runValidation(file: File) {
+    if (!file) {
+      setRestoreEnabled(false);
+      lastValidatedFile = null;
+      lastValidation = null;
+      showValidationStatus('Selecciona un archivo .tar.gz para validar automáticamente', false);
+      validationContent?.classList.add('hidden');
+      return;
+    }
+    setRestoreEnabled(false);
+    showValidationStatus('Validando…', false);
+    validationContent?.classList.add('hidden');
+    try {
+      const result = await validateBackup(file);
+      lastValidatedFile = file;
+      lastValidation = result;
+      if (validationContent) {
+        validationContent.textContent = JSON.stringify(
+          { valid: result.valid, metadata: result.metadata, warnings: result.warnings, error: result.error },
+          null,
+          2
+        );
+      }
+      if (result.valid) {
+        setRestoreEnabled(true);
+        showValidationStatus('✓ Backup válido. Puedes pulsar Restaurar.', false);
+        validationContent?.classList.remove('hidden');
+        showSuccess('Backup válido.');
+      } else {
+        const errMsg = result.error || 'Backup inválido.';
+        showValidationStatus('✗ ' + errMsg, true);
+        validationContent?.classList.remove('hidden');
+        showWarning(errMsg);
+        if (typeof window !== 'undefined' && !window.notyf) alert(errMsg);
+      }
+    } catch (e: any) {
+      lastValidation = null;
+      lastValidatedFile = null;
+      setRestoreEnabled(false);
+      const msg = e?.message || 'Error al validar.';
+      showValidationStatus('✗ ' + msg, true);
+      if (validationContent) {
+        validationContent.textContent = String(e?.stack || e);
+        validationContent.classList.remove('hidden');
+      }
+      showError(msg);
+      if (typeof window !== 'undefined' && !window.notyf) alert(msg);
+    }
+  }
+
   createBtn?.addEventListener('click', async () => {
     setCreateLoading(true);
     try {
@@ -212,29 +271,15 @@ import AdminLayout from '@components/admin/AdminLayout.astro';
     }
   });
 
-  validateBtn?.addEventListener('click', async () => {
+  restoreFile?.addEventListener('change', () => {
     const file = restoreFile?.files?.[0];
-    if (!file) {
-      showWarning('Selecciona un archivo .tar.gz.');
-      return;
-    }
-    try {
-      showInfo('Validando…');
-      const result = await validateBackup(file);
-      lastValidatedFile = file;
-      lastValidation = result;
-      if (validationResult && validationContent) {
-        validationResult.classList.remove('hidden');
-        validationContent.textContent = JSON.stringify(
-          { valid: result.valid, metadata: result.metadata, warnings: result.warnings, error: result.error },
-          null,
-          2
-        );
-      }
-      if (result.valid) showSuccess('Backup válido.');
-      else showWarning(result.error || 'Backup inválido.');
-    } catch (e: any) {
-      showError(e?.message || 'Error al validar.');
+    if (file) runValidation(file);
+    else {
+      lastValidatedFile = null;
+      lastValidation = null;
+      setRestoreEnabled(false);
+      showValidationStatus('Selecciona un archivo .tar.gz para validar automáticamente', false);
+      validationContent?.classList.add('hidden');
     }
   });
 
@@ -278,9 +323,12 @@ import AdminLayout from '@components/admin/AdminLayout.astro';
   });
 
   restoreConfirmBtn?.addEventListener('click', async () => {
-    closeRestoreModal();
     const file = restoreFile?.files?.[0];
-    if (!file) return;
+    closeRestoreModal();
+    if (!file) {
+      showWarning('No se encontró el archivo. Por favor, selecciona de nuevo el archivo .tar.gz.');
+      return;
+    }
     setRestoreLoading(true);
     try {
       const result = await restoreBackup(file);
@@ -288,10 +336,16 @@ import AdminLayout from '@components/admin/AdminLayout.astro';
         showSuccess('Restauración completada. Recargando…');
         setTimeout(() => window.location.reload(), 1500);
       } else {
-        showError(result.error || 'Error al restaurar.');
+        const errMsg = result.error || 'Error al restaurar.';
+        console.error('[Backup] Restore failed:', result);
+        showError(errMsg);
+        if (typeof window !== 'undefined' && !window.notyf) alert(errMsg);
       }
     } catch (e: any) {
-      showError(e?.message || 'Error al restaurar.');
+      const msg = e?.message || 'Error al restaurar.';
+      console.error('[Backup] Restore error:', e);
+      showError(msg);
+      if (typeof window !== 'undefined' && !window.notyf) alert(msg);
     } finally {
       setRestoreLoading(false);
     }

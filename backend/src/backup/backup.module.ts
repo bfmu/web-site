@@ -14,6 +14,10 @@ import {
   OAuthProvider,
   OAuthProviderSchema,
 } from '../settings/schemas/oauth-provider.schema';
+import {
+  HomepageConfig,
+  HomepageConfigSchema,
+} from '../homepage/schemas/homepage-config.schema';
 
 @Module({
   imports: [
@@ -24,6 +28,7 @@ import {
       { name: Album.name, schema: AlbumSchema },
       { name: ApiIntegration.name, schema: ApiIntegrationSchema },
       { name: OAuthProvider.name, schema: OAuthProviderSchema },
+      { name: HomepageConfig.name, schema: HomepageConfigSchema },
     ]),
   ],
   controllers: [BackupController],

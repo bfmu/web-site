@@ -9,6 +9,14 @@ import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  // Log de requests a backup para diagnóstico
+  app.use((req, res, next) => {
+    if (req.path?.startsWith('/api/backup')) {
+      console.log(`[Backup] ${req.method} ${req.path} - ${req.get('content-type') || 'no content-type'}`);
+    }
+    next();
+  });
+
   //configurar un prefijo para todas las rutas
   app.setGlobalPrefix('api');
 
