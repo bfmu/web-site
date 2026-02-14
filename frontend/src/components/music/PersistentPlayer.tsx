@@ -70,6 +70,8 @@ function clamp(min: number, val: number, max: number): number {
   return Math.max(min, Math.min(max, val));
 }
 
+const DRAG_THRESHOLD_PX = 5;
+
 export function PersistentPlayer() {
   const { trackId, trackInfo, isPlaying, isVisible, playerPosition, setPlayerPosition, setController, setPlaying, togglePlaying, savePosition, close } =
     usePlayerStore();
@@ -77,7 +79,7 @@ export function PersistentPlayer() {
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<EmbedController | null>(null);
   const lastPlaybackStartedAt = useRef(0);
-  const dragRef = useRef({ active: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 });
+  const dragRef = useRef<{ active: boolean; pending: boolean; startX: number; startY: number; startLeft: number; startTop: number; pointerId: number | null }>({ active: false, pending: false, startX: 0, startY: 0, startLeft: 0, startTop: 0, pointerId: null });
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -165,6 +167,32 @@ export function PersistentPlayer() {
     };
   }, [setController, setPlaying, savePosition]);
 
+  // Despertar el embed de Spotify cuando la pestaña vuelve de estar idle (evita que el botón play no responda)
+  const positionRef = useRef(position);
+  const durationRef = useRef(duration);
+  positionRef.current = position;
+  durationRef.current = duration;
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return;
+      const ctrl = controllerRef.current;
+      const { trackId: tid, isVisible } = usePlayerStore.getState();
+      if (!ctrl || !tid || !isVisible) return;
+      setTimeout(() => {
+        const pos = Math.floor(positionRef.current / 1000);
+        if (pos > 0 && durationRef.current > 0) {
+          try {
+            ctrl.seek(pos);
+          } catch {
+            /* ignorar */
+          }
+        }
+      }, 50);
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
   const handleTogglePlay = () => {
     const ctrl = controllerRef.current;
     if (!ctrl || !isReady) return;
@@ -194,47 +222,94 @@ export function PersistentPlayer() {
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    e.preventDefault();
     const container = playerContainerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
     const currentLeft = playerPosition?.x ?? rect.left;
     const currentTop = playerPosition?.y ?? rect.top;
     dragRef.current = {
-      active: true,
+      active: false,
+      pending: true,
       startX: e.clientX,
       startY: e.clientY,
       startLeft: currentLeft,
       startTop: currentTop,
+      pointerId: e.pointerId,
     };
-    setIsDragging(true);
-    container.setPointerCapture(e.pointerId);
+  };
+
+  const releaseDragState = () => {
+    const { pointerId, active } = dragRef.current;
+    const container = playerContainerRef.current;
+    dragRef.current.active = false;
+    dragRef.current.pending = false;
+    dragRef.current.pointerId = null;
+    setIsDragging(false);
+    if (active && container && pointerId != null) {
+      try {
+        container.releasePointerCapture(pointerId);
+      } catch {
+        /* ignorar si ya se liberó */
+      }
+    }
   };
 
   useEffect(() => {
     const onPointerMove = (e: PointerEvent) => {
-      if (!dragRef.current.active) return;
-      const { startX, startY, startLeft, startTop } = dragRef.current;
+      const { active, pending, startX, startY, startLeft, startTop, pointerId } = dragRef.current;
       const container = playerContainerRef.current;
       if (!container) return;
+
+      if (pending) {
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist >= DRAG_THRESHOLD_PX) {
+          dragRef.current.active = true;
+          dragRef.current.pending = false;
+          setIsDragging(true);
+          try {
+            container.setPointerCapture(pointerId ?? e.pointerId);
+          } catch {
+            /* fallback si pointerId es null */
+          }
+        } else {
+          return;
+        }
+      }
+
+      if (!dragRef.current.active) return;
       const rect = container.getBoundingClientRect();
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      const newX = clamp(0, startLeft + dx, window.innerWidth - rect.width);
-      const newY = clamp(0, startTop + dy, window.innerHeight - rect.height);
+      const dx = e.clientX - dragRef.current.startX;
+      const dy = e.clientY - dragRef.current.startY;
+      const newX = clamp(0, dragRef.current.startLeft + dx, window.innerWidth - rect.width);
+      const newY = clamp(0, dragRef.current.startTop + dy, window.innerHeight - rect.height);
       setPlayerPosition(newX, newY);
     };
-    const onPointerUp = () => {
-      dragRef.current.active = false;
-      setIsDragging(false);
-    };
     document.addEventListener("pointermove", onPointerMove);
-    document.addEventListener("pointerup", onPointerUp);
-    document.addEventListener("pointercancel", onPointerUp);
+    document.addEventListener("pointerup", releaseDragState);
+    document.addEventListener("pointercancel", releaseDragState);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden" && (dragRef.current.active || dragRef.current.pending)) {
+        releaseDragState();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    const handleWindowBlur = () => {
+      if (dragRef.current.active || dragRef.current.pending) {
+        releaseDragState();
+      }
+    };
+    window.addEventListener("blur", handleWindowBlur);
+
     return () => {
       document.removeEventListener("pointermove", onPointerMove);
-      document.removeEventListener("pointerup", onPointerUp);
-      document.removeEventListener("pointercancel", onPointerUp);
+      document.removeEventListener("pointerup", releaseDragState);
+      document.removeEventListener("pointercancel", releaseDragState);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleWindowBlur);
     };
   }, [setPlayerPosition]);
 

@@ -16,6 +16,14 @@
   transition: transform 300ms ease, opacity 300ms ease, height 300ms ease, box-shadow 200ms ease;
 }
 
+/* Persistent player - cursor grab en handle de arrastre (sobrescribe estilos del layout) */
+[data-player-drag-handle] {
+  cursor: grab !important;
+}
+[data-player-drag-handle]:active {
+  cursor: grabbing !important;
+}
+
 /* Persistent player - icono minimizado (barras de música) */
 @keyframes player-bar-bounce {
   0%, 100% { height: 4px; }
