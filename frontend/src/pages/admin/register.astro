@@ -119,55 +119,7 @@ import Layout from '@layouts/Layout.astro';
   </div>
 </Layout>
 
-<script>
-  import { register, isAuthenticated } from '../../lib/auth';
-
-  function getReturnUrl(): string {
-    const returnUrl = sessionStorage.getItem('returnUrl');
-    sessionStorage.removeItem('returnUrl');
-
-    if (!returnUrl || returnUrl.includes('/admin/login') || returnUrl.includes('/admin/register') || returnUrl.includes('/auth/')) {
-      return '/';
-    }
-
-    return returnUrl;
-  }
-
-  if (isAuthenticated()) {
-    window.location.href = getReturnUrl();
-  }
-
-  const form = document.getElementById('register-form') as HTMLFormElement;
-  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const name = (document.getElementById('name') as HTMLInputElement).value.trim();
-    const email = (document.getElementById('email') as HTMLInputElement).value;
-    const password = (document.getElementById('password') as HTMLInputElement).value;
-    const passwordConfirm = (document.getElementById('password-confirm') as HTMLInputElement).value;
-
-    const { showError, showWarning } = await import('../../lib/notifications');
-
-    if (password !== passwordConfirm) {
-      showError('Las contraseñas no coinciden');
-      return;
-    }
-
-    if (password.length < 6) {
-      showWarning('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-
-    submitBtn.disabled = true;
-
-    try {
-      await register({ email, password, name });
-      window.location.href = getReturnUrl();
-    } catch (error: unknown) {
-      showError(error instanceof Error ? error.message : 'Error al registrarse');
-      submitBtn.disabled = false;
-    }
-  });
+<script data-swup-reload-script>
+  import { initRegisterPage } from '../../lib/register-init';
+  initRegisterPage();
 </script>

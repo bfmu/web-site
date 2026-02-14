@@ -189,53 +189,7 @@ const intervalMs = Math.max(2000, Math.min(30000, carouselIntervalSeconds * 1000
   }
 </style>
 
-<script>
-  // @ts-nocheck — script mínimo para carrusel, sin React
-  function initHeroCarousel(hero) {
-    const slides = hero.querySelectorAll('.hero__slide');
-    const dots = hero.querySelectorAll('.hero__dot');
-    const count = slides.length;
-    if (count <= 1) return;
-
-    const intervalMs = Number(hero.dataset.intervalMs) || 5500;
-    let current = 0;
-    let timer = null;
-
-    function goTo(i) {
-      current = (i + count) % count;
-      slides.forEach((s, j) => s.classList.toggle('is-active', j === current));
-      dots.forEach((d, j) => d.classList.toggle('is-active', j === current));
-    }
-
-    function next() {
-      goTo(current + 1);
-    }
-
-    function startTimer() {
-      stopTimer();
-      timer = setInterval(next, intervalMs);
-    }
-
-    function stopTimer() {
-      if (timer) {
-        clearInterval(timer);
-        timer = null;
-      }
-    }
-
-    dots.forEach((dot, i) => {
-      dot.addEventListener('click', () => {
-        goTo(i);
-        startTimer();
-      });
-    });
-
-    startTimer();
-  }
-
-  document.querySelectorAll('[data-hero]').forEach(initHeroCarousel);
-
-  document.addEventListener('astro:page-load', () => {
-    document.querySelectorAll('[data-hero]').forEach(initHeroCarousel);
-  });
+<script data-swup-reload-script>
+  import { initHeroPage } from '../../lib/hero-init';
+  initHeroPage();
 </script>

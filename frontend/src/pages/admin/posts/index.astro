@@ -358,28 +358,8 @@ const visiblePages = getVisiblePages(pagination.pages, pagination.page);
   </div>
 </AdminLayout>
 
-<script>
-  // Manejar eliminación de posts
-  document.addEventListener('click', async (e) => {
-    const target = e.target as HTMLElement;
-    if (target.dataset.action === 'delete') {
-      e.preventDefault();
-      const slug = target.dataset.slug;
-      if (!slug) return;
-
-      if (!confirm(`¿Estás seguro de que quieres eliminar este post?`)) {
-        return;
-      }
-
-      try {
-        const { deletePost } = await import('../../../lib/admin-api');
-        await deletePost(slug);
-        window.location.reload();
-      } catch (error: any) {
-        const { showError } = await import('../../../lib/notifications');
-        showError(`Error al eliminar: ${error.message}`);
-      }
-    }
-  });
+<script data-swup-reload-script>
+  import { initPostsPage } from '../../../lib/posts-init';
+  initPostsPage();
 </script>
 
