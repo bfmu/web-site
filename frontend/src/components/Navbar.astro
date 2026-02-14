@@ -416,8 +416,9 @@ function setupUserMenu() {
             const { logout } = await import('../lib/auth');
             await logout();
             
-            // Limpiar y redirigir
-            window.location.href = '/';
+            // Navegar con Swup (sin recargar) tras breve delay para que se vea la notificación
+            const { navigateTo } = await import('../lib/navigation');
+            setTimeout(() => navigateTo('/'), 800);
         } catch (error) {
             console.error('Error al cerrar sesión:', error);
             
@@ -434,10 +435,9 @@ function setupUserMenu() {
             localStorage.removeItem('refreshToken');
             localStorage.removeItem('user');
             
-            // Redirigir después de un breve delay para que se vea la notificación
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 1500);
+            // Navegar con Swup tras delay para que se vea la notificación
+            const { navigateTo } = await import('../lib/navigation');
+            setTimeout(() => navigateTo('/'), 1500);
         }
     });
 

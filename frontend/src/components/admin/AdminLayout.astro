@@ -1,7 +1,6 @@
 ---
 import Layout from '@layouts/Layout.astro';
 import AdminThemeSwitch from '@components/admin/AdminThemeSwitch.svelte';
-import NotificationProvider from '@components/NotificationProvider.astro';
 import { getUser } from '../../lib/auth';
 
 interface Props {
@@ -20,8 +19,6 @@ if (typeof window !== 'undefined') {
 ---
 
 <Layout title={title}>
-  <NotificationProvider />
-  
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- Sidebar -->
     <aside
@@ -424,7 +421,7 @@ if (typeof window !== 'undefined') {
 </Layout>
 
 <script data-swup-reload-script>
-  import { logout, getUser, isAuthenticated, isAdmin } from '../../lib/auth';
+  import { getUser, isAuthenticated, isAdmin } from '../../lib/auth';
   import { navigateTo } from '../../lib/navigation';
   import { initAdmin } from '../../lib/admin-init';
 
@@ -451,102 +448,8 @@ if (typeof window !== 'undefined') {
     }
   }
 
-  // Toggle sidebar en mobile
-  const sidebar = document.getElementById('admin-sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
-  const toggleBtn = document.getElementById('sidebar-toggle');
-
-  function openSidebar() {
-    sidebar?.classList.remove('-translate-x-full');
-    overlay?.classList.remove('opacity-0');
-    overlay?.style.setProperty('pointer-events', 'auto');
-  }
-
-  function closeSidebar() {
-    sidebar?.classList.add('-translate-x-full');
-    overlay?.classList.add('opacity-0');
-    overlay?.style.setProperty('pointer-events', 'none');
-  }
-
-  toggleBtn?.addEventListener('click', () => {
-    if (sidebar?.classList.contains('-translate-x-full')) {
-      openSidebar();
-    } else {
-      closeSidebar();
-    }
-  });
-
-  overlay?.addEventListener('click', closeSidebar);
-
-  // Logout modal
-  const logoutBtn = document.getElementById('logout-btn');
-  const logoutModal = document.getElementById('logout-modal');
-  const logoutConfirmBtn = document.getElementById('logout-confirm-btn');
-  const logoutCancelBtn = document.getElementById('logout-cancel-btn');
-
-  // Abrir modal de confirmación
-  logoutBtn?.addEventListener('click', () => {
-    logoutModal?.classList.remove('hidden');
-    logoutModal?.classList.add('flex');
-  });
-
-  // Cancelar logout
-  logoutCancelBtn?.addEventListener('click', () => {
-    logoutModal?.classList.add('hidden');
-    logoutModal?.classList.remove('flex');
-  });
-
-  // Confirmar logout
-  logoutConfirmBtn?.addEventListener('click', async () => {
-    // Cerrar modal
-    logoutModal?.classList.add('hidden');
-    logoutModal?.classList.remove('flex');
-
-    try {
-      // Mostrar notificación de procesamiento
-      const { showInfo } = await import('../../lib/notifications');
-      showInfo('Cerrando sesión...');
-      
-      await logout();
-      
-      // Redirigir a la página principal (transición Swup sin recarga)
-      setTimeout(() => {
-        navigateTo('/');
-      }, 800);
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-      
-      // Mostrar error
-      try {
-        const { showError } = await import('../../lib/notifications');
-        showError('Error al cerrar sesión, pero se limpió la sesión local');
-      } catch {
-        // Si no se puede cargar las notificaciones, solo limpiar
-      }
-      
-      // Redirigir a la página principal de todas formas después de un delay
-      setTimeout(() => {
-        navigateTo('/');
-      }, 1500);
-    }
-  });
-
-  // Cerrar modal al hacer click fuera de él
-  logoutModal?.addEventListener('click', (e) => {
-    if (e.target === logoutModal) {
-      logoutModal.classList.add('hidden');
-      logoutModal.classList.remove('flex');
-    }
-  });
-
-  // Cerrar sidebar al hacer click en un link (mobile)
-  document.querySelectorAll('#admin-sidebar a').forEach((link) => {
-    link.addEventListener('click', () => {
-      if (window.innerWidth < 1024) {
-        closeSidebar();
-      }
-    });
-  });
+  // Los event listeners (logout, sidebar) se configuran en admin-init.ts
+  // para funcionar tanto en carga directa como en transiciones Swup.
 </script>
 
 <style>

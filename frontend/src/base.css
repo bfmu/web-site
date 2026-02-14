@@ -270,7 +270,13 @@
   line-height: 1.5em;
 }
 
-/* Success notification - Light Mode */
+/* Notificaciones - adaptadas al tema (variables CSS heredan light/dark) */
+.notyf__toast {
+  border-radius: var(--radius-large, 8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Success - Light */
 .notyf__toast--success {
   background: #10b981;
   color: white;
@@ -284,7 +290,7 @@
   background: #10b981;
 }
 
-/* Error notification - Light Mode */
+/* Error - Light */
 .notyf__toast--error {
   background: #ef4444;
   color: white;
@@ -298,7 +304,7 @@
   background: #ef4444;
 }
 
-/* Warning notification - Light Mode */
+/* Warning - Light */
 .notyf-warning {
   background: #fef3c7 !important;
   border-left: 4px solid #f59e0b !important;
@@ -309,9 +315,9 @@
   background: #f59e0b;
 }
 
-/* Info notification - Light Mode */
+/* Info - Light */
 .notyf-info {
-  background: #dbeafe !important;
+  background: #eff6ff !important;
   border-left: 4px solid #3b82f6 !important;
   color: #1e40af !important;
 }
@@ -320,7 +326,11 @@
   background: #3b82f6;
 }
 
-/* Dark Mode Styles */
+/* Dark mode - adaptación automática al tema */
+html.dark .notyf__toast {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
 html.dark .notyf__toast--success {
   background: #065f46 !important;
   color: #d1fae5 !important;

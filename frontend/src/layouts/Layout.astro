@@ -1,5 +1,6 @@
 ---
 import GlobalStyles from '@components/GlobalStyles.astro'
+import NotificationProvider from '@components/NotificationProvider.astro'
 import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/500.css'
 import '@fontsource/roboto/700.css'
@@ -176,6 +177,7 @@ const bannerOffset =
 		  data-overlayscrollbars-initialize
 	>
 		<ConfigCarrier></ConfigCarrier>
+		<NotificationProvider />
 		<GlobalStyles>
 		<div id="swup-app" class="transition-swup-fade">
 			<slot />
@@ -244,6 +246,7 @@ import {
 } from 'overlayscrollbars';
 import { siteConfig } from '../config';
 import { initAdmin } from '../lib/admin-init';
+import { initLoginForm } from '../lib/login-init';
 import {getHue, getStoredTheme, setHue, setTheme} from "../utils/setting-utils";
 import {pathsEqual, url} from "../utils/url-utils";
 import {
@@ -373,17 +376,23 @@ function init() {
 	loadHue();
 	initCustomScrollbar();
 	showBanner();
+	// Cargar OAuth providers en login (full page reload y Swup)
+	if (window.location.pathname.replace(/\/$/, '') === '/admin/login') {
+		import('../lib/login-init').then(({ loadOAuthProviders }) => loadOAuthProviders());
+	}
 }
 
 /* Load settings when entering the site */
 init();
 initAdmin();
+initLoginForm();
 
 /* Load settings before swapping */
 /* astro:after-swap event happened before swap animation */
 document.addEventListener('astro:after-swap', () => {
 	init();
 	initAdmin();
+	initLoginForm();
 });
 
 const setup = () => {
@@ -420,6 +429,18 @@ const setup = () => {
 	window.swup.hooks.on('content:replace', () => {
 		initAdmin()
 		setTimeout(() => { (window as any).initScrollReveal?.(); }, 50)
+		// Login page: cargar OAuth providers y redirigir si ya autenticado
+		if (window.location.pathname.replace(/\/$/, '') === '/admin/login') {
+			import('../lib/login-init').then(({ loadOAuthProviders }) => loadOAuthProviders());
+			import('../lib/auth').then(({ isAuthenticated }) => {
+				if (isAuthenticated()) {
+					const returnUrl = sessionStorage.getItem('returnUrl');
+					sessionStorage.removeItem('returnUrl');
+					const dest = !returnUrl || /\/admin\/(login|register)|auth/.test(returnUrl) ? '/' : returnUrl;
+					import('../lib/navigation').then(({ navigateTo }) => navigateTo(dest));
+				}
+			});
+		}
 	})
 	window.swup.hooks.on('visit:start', (visit: {to: {url: string}}) => {
 		// change banner height immediately when a link is clicked

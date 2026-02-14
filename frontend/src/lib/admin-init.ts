@@ -1,14 +1,129 @@
 /**
  * Inicialización del panel admin. Se llama al cargar páginas /admin/* para
- * mostrar elementos admin-only (sidebar, header) según el rol del usuario.
- * Se ejecuta tanto en carga directa como tras transiciones Swup.
+ * mostrar elementos admin-only (sidebar, header) según el rol del usuario
+ * y configurar event listeners (logout, sidebar). Se ejecuta tanto en carga
+ * directa como tras transiciones Swup.
  */
-import { getUser, isAdmin } from './auth';
+import { getUser, isAdmin, logout } from './auth';
 import { getBackendResourceUrl } from './env';
+import { navigateTo } from './navigation';
+
+let adminListenersAttached = false;
+
+function setupAdminEventListeners(): void {
+  if (adminListenersAttached) return;
+  adminListenersAttached = true;
+
+  document.addEventListener('click', (e) => {
+    if (!window.location.pathname.startsWith('/admin')) return;
+
+    const target = e.target as HTMLElement;
+
+    if (target.closest('#logout-btn')) {
+      e.preventDefault();
+      const modal = document.getElementById('logout-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+      return;
+    }
+
+    if (target.closest('#logout-cancel-btn')) {
+      e.preventDefault();
+      const modal = document.getElementById('logout-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+      return;
+    }
+
+    if (target.closest('#logout-confirm-btn')) {
+      e.preventDefault();
+      const modal = document.getElementById('logout-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+      (async () => {
+        try {
+          const { showInfo } = await import('./notifications');
+          showInfo('Cerrando sesión...');
+          await logout();
+          setTimeout(() => navigateTo('/'), 800);
+        } catch (error) {
+          console.error('Error al cerrar sesión:', error);
+          try {
+            const { showError } = await import('./notifications');
+            showError('Error al cerrar sesión, pero se limpió la sesión local');
+          } catch {
+            // ignore
+          }
+          setTimeout(() => navigateTo('/'), 1500);
+        }
+      })();
+      return;
+    }
+
+    if (target.closest('#sidebar-overlay')) {
+      const sidebar = document.getElementById('admin-sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      if (sidebar) sidebar.classList.add('-translate-x-full');
+      if (overlay) {
+        overlay.classList.add('opacity-0');
+        overlay.style.setProperty('pointer-events', 'none');
+      }
+      return;
+    }
+
+    if (target.closest('#sidebar-toggle')) {
+      e.preventDefault();
+      const sidebar = document.getElementById('admin-sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      if (sidebar) {
+        if (sidebar.classList.contains('-translate-x-full')) {
+          sidebar.classList.remove('-translate-x-full');
+          if (overlay) {
+            overlay.classList.remove('opacity-0');
+            overlay.style.setProperty('pointer-events', 'auto');
+          }
+        } else {
+          sidebar.classList.add('-translate-x-full');
+          if (overlay) {
+            overlay.classList.add('opacity-0');
+            overlay.style.setProperty('pointer-events', 'none');
+          }
+        }
+      }
+      return;
+    }
+
+    if (target.closest('#admin-sidebar a') && window.innerWidth < 1024) {
+      const sidebar = document.getElementById('admin-sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      if (sidebar) sidebar.classList.add('-translate-x-full');
+      if (overlay) {
+        overlay.classList.add('opacity-0');
+        overlay.style.setProperty('pointer-events', 'none');
+      }
+    }
+
+    if (target.id === 'logout-modal') {
+      const modal = document.getElementById('logout-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+  });
+}
 
 export function initAdmin(): void {
   if (typeof window === 'undefined') return;
   if (!window.location.pathname.startsWith('/admin')) return;
+
+  setupAdminEventListeners();
 
   const currentUser = getUser();
   const userIsAdmin = currentUser && isAdmin();
