@@ -6,6 +6,7 @@ import {
   type MediaQuery,
 } from '../../lib/admin-api';
 import { getBackendResourceUrl } from '../../lib/env';
+import { showError } from '@/lib/notifications';
 
 interface ImageLibraryModalProps {
   isOpen: boolean;

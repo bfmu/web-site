@@ -1,25 +1,5 @@
 ---
-// Provider de Notyf con detección de tema dinámico
+import { Toaster } from './Toaster';
 ---
 
-<div id="notification-container"></div>
-
-<script>
-  import { Notyf } from 'notyf';
-
-  // Crear instancia de Notyf
-  const notyf = new Notyf({
-    duration: 3000,
-    position: {
-      x: 'right',
-      y: 'bottom',
-    },
-    dismissible: true,
-    ripple: true,
-  });
-
-  // Hacer notyf global para acceso desde otros componentes
-  if (typeof window !== 'undefined') {
-    window.notyf = notyf;
-  }
-</script>
+<Toaster client:load />
