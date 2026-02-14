@@ -30,6 +30,12 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface RegisterCredentials {
+  email: string;
+  password: string;
+  name: string;
+}
+
 const TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
 const USER_KEY = 'user';
@@ -127,6 +133,29 @@ export function isAdmin(): boolean {
 export function isEditor(): boolean {
   const user = getUser();
   return user?.role === 'admin' || user?.role === 'editor';
+}
+
+/**
+ * Registro con email, contraseña y nombre
+ */
+export async function register(credentials: RegisterCredentials): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE}/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(credentials),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Error al registrarse' }));
+    throw new Error(error.message || 'Error al registrarse');
+  }
+
+  const data: AuthResponse = await response.json();
+  setTokens(data.tokens);
+  setUser(data.user);
+  return data;
 }
 
 /**
@@ -288,7 +317,7 @@ function saveReturnUrl(): void {
   const currentUrl = window.location.pathname;
   
   // No guardar si ya estamos en páginas de auth
-  if (!currentUrl.includes('/admin/login') && !currentUrl.includes('/auth/')) {
+  if (!currentUrl.includes('/admin/login') && !currentUrl.includes('/admin/register') && !currentUrl.includes('/auth/')) {
     sessionStorage.setItem('returnUrl', currentUrl);
   }
 }

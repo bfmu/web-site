@@ -326,6 +326,37 @@ export class AuthService {
     };
   }
 
+  // Crear usuario desde el panel admin (solo admins)
+  async createUser(
+    createUserDto: { email: string; password: string; name: string; role: 'admin' | 'editor' | 'user' },
+    adminEmail: string,
+  ): Promise<{ user: Partial<User>; message: string }> {
+    const { email, password, name, role } = createUserDto;
+
+    const existingUser = await this.userModel.findOne({ email });
+    if (existingUser) {
+      throw new ConflictException('Un usuario con este email ya existe');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const user = await this.userModel.create({
+      email,
+      password: hashedPassword,
+      name,
+      provider: 'local',
+      role,
+      isActive: true,
+    });
+
+    console.log(`👤 ${adminEmail} creó usuario: ${email} (rol: ${role})`);
+
+    return {
+      user: this.sanitizeUser(user),
+      message: `Usuario ${email} creado exitosamente`,
+    };
+  }
+
   // Listar todos los usuarios (solo para admins)
   async getAllUsers(): Promise<Partial<User>[]> {
     const users = await this.userModel

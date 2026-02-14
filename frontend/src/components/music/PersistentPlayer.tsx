@@ -106,6 +106,18 @@ export function PersistentPlayer() {
           };
           setController(ctrlForStore);
 
+          // Si hay estado persistido (trackId, isVisible), cargar la pista al rehidratar
+          const { trackId: persistedTrackId, savedPositions } = usePlayerStore.getState();
+          if (persistedTrackId) {
+            const uri = `spotify:track:${persistedTrackId}`;
+            EmbedController.loadUri(uri);
+            const savedPos = savedPositions[persistedTrackId];
+            if (savedPos && savedPos > 0) {
+              EmbedController.seek(Math.floor(savedPos / 1000));
+            }
+            EmbedController.play();
+          }
+
           EmbedController.addListener("playback_started", () => {
             lastPlaybackStartedAt.current = Date.now();
             setPlaying(true);

@@ -30,6 +30,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
@@ -210,6 +211,19 @@ export class AuthController {
   @ApiOperation({ summary: 'Listar todos los usuarios (solo admins)' })
   async getAllUsers(@CurrentUser() currentUser: any) {
     return this.authService.getAllUsers();
+  }
+
+  @Post('users')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Crear usuario (solo admins)' })
+  @ApiResponse({ status: 201, description: 'Usuario creado exitosamente' })
+  async createUser(
+    @Body() createUserDto: CreateUserDto,
+    @CurrentUser() currentUser: any,
+  ) {
+    return this.authService.createUser(createUserDto, currentUser.email);
   }
 
   @Post('change-role')
