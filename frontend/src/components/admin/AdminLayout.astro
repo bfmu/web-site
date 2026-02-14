@@ -392,14 +392,6 @@ if (typeof window !== 'undefined') {
             <AdminThemeSwitch client:load></AdminThemeSwitch>
           </div>
           <a
-            id="view-site-link"
-            href="/admin/view-site"
-            class="hidden rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 flex items-center h-11"
-            title="Ver sitio dentro del dashboard"
-          >
-            Ver Sitio
-          </a>
-          <a
             id="go-to-site-link"
             href="/"
             class="hidden rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 flex items-center gap-1.5 h-11"
@@ -424,111 +416,39 @@ if (typeof window !== 'undefined') {
       </header>
 
       <!-- Page content -->
-      <main class="p-4 lg:p-6" class:list={[
-        {
-          'p-0': Astro.url.pathname === '/admin/view-site',
-        },
-      ]}>
+      <main class="p-4 lg:p-6">
         <slot />
       </main>
     </div>
   </div>
 </Layout>
 
-<script>
+<script data-swup-reload-script>
   import { logout, getUser, isAuthenticated, isAdmin } from '../../lib/auth';
-  import { getBackendResourceUrl } from '../../lib/env';
+  import { navigateTo } from '../../lib/navigation';
+  import { initAdmin } from '../../lib/admin-init';
 
   // Verificar autenticación en el cliente y redirigir si es necesario
   if (!isAuthenticated()) {
-    window.location.href = '/admin/login';
+    navigateTo('/admin/login');
+    // initAdmin no se ejecuta si hay redirect
+  } else {
+    initAdmin();
   }
 
-  // Obtener usuario actual
+  // Si el usuario NO es admin ni editor, solo puede ver su perfil
   const currentUser = getUser();
   const userIsAdmin = currentUser && isAdmin();
   const userIsEditor = currentUser && currentUser.role === 'editor';
   const hasAdminAccess = userIsAdmin || userIsEditor;
-
-  // Mostrar elementos admin-only si el usuario tiene acceso
-  if (hasAdminAccess) {
-    // Mostrar todos los elementos con data-admin-only
-    const adminElements = document.querySelectorAll('[data-admin-only="true"]');
-    adminElements.forEach((element) => {
-      element.classList.remove('hidden');
-    });
-  }
-
-  // Si el usuario NO es admin ni editor, solo puede ver su perfil
   if (currentUser && !hasAdminAccess) {
     const currentPath = window.location.pathname;
-    
-    // Si no está en la página de perfil, redirigir allí
     if (currentPath !== '/admin/profile') {
-      // Importar y usar notificación
       import('../../lib/notifications').then(({ showWarning }) => {
         showWarning('No tienes permisos para acceder al panel de administración.');
       });
-      window.location.href = '/admin/profile';
+      navigateTo('/admin/profile');
     }
-  }
-
-  // Mostrar "Ver Sitio" e "Ir al Sitio" solo para administradores (solo en el header)
-  const viewSiteLink = document.getElementById('view-site-link');
-  const goToSiteLink = document.getElementById('go-to-site-link');
-  const servicesLink = document.getElementById('services-link');
-  const backupLink = document.getElementById('backup-link');
-  
-  if (userIsAdmin) {
-    if (viewSiteLink) {
-      viewSiteLink.classList.remove('hidden');
-    }
-    if (goToSiteLink) {
-      goToSiteLink.classList.remove('hidden');
-    }
-    if (servicesLink) {
-      servicesLink.classList.remove('hidden');
-    }
-    if (backupLink) {
-      backupLink.classList.remove('hidden');
-    }
-  }
-
-  // Cargar información del usuario en el cliente
-  const user = getUser();
-  const userInfo = document.getElementById('user-info');
-  if (user && userInfo) {
-    // Construir URL completa del avatar
-    function getAvatarUrl(avatar: string | undefined): string {
-      if (!avatar || avatar === '/default-avatar.svg') {
-        return '/default-avatar.svg';
-      }
-      if (avatar.startsWith('http')) {
-        return avatar;
-      }
-      if (avatar.startsWith('/uploads/')) {
-        return getBackendResourceUrl(avatar);
-      }
-      return avatar;
-    }
-
-    const avatarUrl = getAvatarUrl(user.avatar);
-    userInfo.innerHTML = `
-      <img 
-        src="${avatarUrl}" 
-        alt="${user.name}" 
-        class="h-8 w-8 rounded-full object-cover border border-gray-200 dark:border-gray-700"
-        onerror="this.src='/default-avatar.svg'"
-      />
-      <div class="flex-1 min-w-0">
-        <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
-          ${user.name}
-        </p>
-        <p class="truncate text-xs text-gray-500 dark:text-gray-400">
-          ${user.email}
-        </p>
-      </div>
-    `;
   }
 
   // Toggle sidebar en mobile
@@ -589,9 +509,9 @@ if (typeof window !== 'undefined') {
       
       await logout();
       
-      // Redirigir a la página principal después de un breve delay
+      // Redirigir a la página principal (transición Swup sin recarga)
       setTimeout(() => {
-        window.location.href = '/';
+        navigateTo('/');
       }, 800);
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
@@ -606,7 +526,7 @@ if (typeof window !== 'undefined') {
       
       // Redirigir a la página principal de todas formas después de un delay
       setTimeout(() => {
-        window.location.href = '/';
+        navigateTo('/');
       }, 1500);
     }
   });
