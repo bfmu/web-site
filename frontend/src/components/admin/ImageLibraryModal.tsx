@@ -59,6 +59,7 @@ export function ImageLibraryModal({
       setMedia(response.media);
     } catch (error) {
       console.error('Error loading media:', error);
+      showError('Error al cargar medios');
     } finally {
       setLoading(false);
     }

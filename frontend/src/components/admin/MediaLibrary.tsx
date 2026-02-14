@@ -10,6 +10,7 @@ import {
   type MediaQuery,
 } from '../../lib/admin-api';
 import { getBackendResourceUrl } from '../../lib/env';
+import { showSuccess, showError } from '@/lib/notifications';
 
 export default function MediaLibrary() {
   const [media, setMedia] = useState<MediaFile[]>([]);
@@ -33,7 +34,6 @@ export default function MediaLibrary() {
   const [editData, setEditData] = useState<Partial<MediaFile>>({});
   const [usageInfo, setUsageInfo] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     loadMedia();
@@ -47,7 +47,7 @@ export default function MediaLibrary() {
       setPagination(response.pagination);
     } catch (error: any) {
       console.error('Error loading media:', error);
-      setMessage({ type: 'error', text: 'Error al cargar medios' });
+      showError('Error al cargar medios');
     } finally {
       setLoading(false);
     }
@@ -62,22 +62,21 @@ export default function MediaLibrary() {
       setUsageInfo(usage);
 
       if (usage.inUse) {
-        setMessage({
-          type: 'error',
-          text: `No se puede eliminar: la imagen está en uso en ${usage.usedInPosts.length} post(s) y ${usage.usedInAlbums.length} álbum(es)`,
-        });
+        showError(
+          `No se puede eliminar: la imagen está en uso en ${usage.usedInPosts.length} post(s) y ${usage.usedInAlbums.length} álbum(es)`,
+        );
         setShowDeleteModal(false);
         return;
       }
 
       await deleteMedia(selectedMedia._id);
-      setMessage({ type: 'success', text: 'Imagen eliminada correctamente' });
+      showSuccess('Imagen eliminada correctamente');
       setShowDeleteModal(false);
       setSelectedMedia(null);
       loadMedia();
     } catch (error: any) {
       console.error('Error deleting media:', error);
-      setMessage({ type: 'error', text: error.message || 'Error al eliminar imagen' });
+      showError(error.message || 'Error al eliminar imagen');
     }
   };
 
@@ -86,14 +85,14 @@ export default function MediaLibrary() {
 
     try {
       await renameMedia(selectedMedia._id, newFilename.trim());
-      setMessage({ type: 'success', text: 'Imagen renombrada correctamente' });
+      showSuccess('Imagen renombrada correctamente');
       setShowRenameModal(false);
       setSelectedMedia(null);
       setNewFilename('');
       loadMedia();
     } catch (error: any) {
       console.error('Error renaming media:', error);
-      setMessage({ type: 'error', text: error.message || 'Error al renombrar imagen' });
+      showError(error.message || 'Error al renombrar imagen');
     }
   };
 
@@ -102,14 +101,14 @@ export default function MediaLibrary() {
 
     try {
       await updateMedia(selectedMedia._id, editData);
-      setMessage({ type: 'success', text: 'Metadata actualizada correctamente' });
+      showSuccess('Metadata actualizada correctamente');
       setShowEditModal(false);
       setSelectedMedia(null);
       setEditData({});
       loadMedia();
     } catch (error: any) {
       console.error('Error updating media:', error);
-      setMessage({ type: 'error', text: error.message || 'Error al actualizar metadata' });
+      showError(error.message || 'Error al actualizar metadata');
     }
   };
 
@@ -122,11 +121,11 @@ export default function MediaLibrary() {
       await uploadMedia(file, {
         isPublic: filters.isPublic === true,
       });
-      setMessage({ type: 'success', text: 'Imagen subida correctamente' });
+      showSuccess('Imagen subida correctamente');
       loadMedia();
     } catch (error: any) {
       console.error('Error uploading media:', error);
-      setMessage({ type: 'error', text: error.message || 'Error al subir imagen' });
+      showError(error.message || 'Error al subir imagen');
     } finally {
       setUploading(false);
       if (e.target) e.target.value = '';
@@ -189,19 +188,6 @@ export default function MediaLibrary() {
           />
         </label>
       </div>
-
-      {/* Mensajes */}
-      {message && (
-        <div
-          className={`rounded-md p-4 ${
-            message.type === 'success'
-              ? 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-              : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-          }`}
-        >
-          {message.text}
-        </div>
-      )}
 
       {/* Grid de imágenes */}
       {loading ? (

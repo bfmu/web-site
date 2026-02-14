@@ -141,16 +141,13 @@ import Layout from '@layouts/Layout.astro';
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
   const refresh = urlParams.get('refresh');
-  const errorMessage = document.getElementById('error-message') as HTMLDivElement;
 
   if (token && refresh) {
     handleOAuthCallback(token, refresh)
       .then(() => navigateTo(getReturnUrl()))
-      .catch((err) => {
-        if (errorMessage) {
-          errorMessage.textContent = err instanceof Error ? err.message : 'Error al procesar autenticación';
-          errorMessage.classList.remove('hidden');
-        }
+      .catch(async (err) => {
+        const { showError } = await import('../../lib/notifications');
+        showError(err instanceof Error ? err.message : 'Error al procesar autenticación');
       });
   }
 </script>

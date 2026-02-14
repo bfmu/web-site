@@ -139,7 +139,6 @@ import Layout from '@layouts/Layout.astro';
 
   const form = document.getElementById('register-form') as HTMLFormElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-  const errorMessage = document.getElementById('error-message') as HTMLDivElement;
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -149,17 +148,15 @@ import Layout from '@layouts/Layout.astro';
     const password = (document.getElementById('password') as HTMLInputElement).value;
     const passwordConfirm = (document.getElementById('password-confirm') as HTMLInputElement).value;
 
-    errorMessage.classList.add('hidden');
+    const { showError, showWarning } = await import('../../lib/notifications');
 
     if (password !== passwordConfirm) {
-      errorMessage.textContent = 'Las contraseñas no coinciden';
-      errorMessage.classList.remove('hidden');
+      showError('Las contraseñas no coinciden');
       return;
     }
 
     if (password.length < 6) {
-      errorMessage.textContent = 'La contraseña debe tener al menos 6 caracteres';
-      errorMessage.classList.remove('hidden');
+      showWarning('La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
@@ -169,8 +166,7 @@ import Layout from '@layouts/Layout.astro';
       await register({ email, password, name });
       window.location.href = getReturnUrl();
     } catch (error: unknown) {
-      errorMessage.textContent = error instanceof Error ? error.message : 'Error al registrarse';
-      errorMessage.classList.remove('hidden');
+      showError(error instanceof Error ? error.message : 'Error al registrarse');
       submitBtn.disabled = false;
     }
   });

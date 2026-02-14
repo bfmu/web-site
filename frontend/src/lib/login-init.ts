@@ -36,21 +36,17 @@ export function initLoginForm(): void {
     const emailInput = form.querySelector<HTMLInputElement>('input[name="email"], #email');
     const passwordInput = form.querySelector<HTMLInputElement>('input[name="password"], #password');
     const submitBtn = form.querySelector<HTMLButtonElement>('#submit-btn');
-    const errorMessage = form.querySelector<HTMLDivElement>('#error-message');
 
     const email = emailInput?.value?.trim();
     const password = passwordInput?.value;
 
     if (!email || !password) {
-      if (errorMessage) {
-        errorMessage.textContent = 'Email y contraseña son requeridos';
-        errorMessage.classList.remove('hidden');
-      }
+      const { showError } = await import('./notifications');
+      showError('Email y contraseña son requeridos');
       return;
     }
 
     if (submitBtn) submitBtn.disabled = true;
-    if (errorMessage) errorMessage.classList.add('hidden');
 
     try {
       await login({ email, password });
@@ -60,10 +56,8 @@ export function initLoginForm(): void {
       setTimeout(() => navigateTo(dest), 500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
-      if (errorMessage) {
-        errorMessage.textContent = msg;
-        errorMessage.classList.remove('hidden');
-      }
+      const { showError } = await import('./notifications');
+      showError(msg);
       if (submitBtn) submitBtn.disabled = false;
       console.error('[login] Error:', err);
     }
@@ -96,6 +90,8 @@ export async function loadOAuthProviders(): Promise<void> {
     oauthButtons.classList.add('hidden');
     oauthError.textContent = 'Error al cargar opciones de login';
     oauthError.classList.remove('hidden');
+    const { showError } = await import('./notifications');
+    showError('Error al cargar opciones de login');
   }
 }
 

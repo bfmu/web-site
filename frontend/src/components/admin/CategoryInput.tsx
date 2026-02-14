@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { getCategories } from '../../lib/admin-api';
+import { showError } from '@/lib/notifications';
 
 interface CategoryInputProps {
   value?: string;
@@ -40,6 +41,7 @@ export function CategoryInput({ value = '', onChange, label = 'Categoría' }: Ca
       }
     } catch (error) {
       console.error('Error loading categories:', error);
+      showError('Error al cargar categorías');
     }
   };
 

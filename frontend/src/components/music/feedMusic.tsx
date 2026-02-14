@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getBackendUrl } from "../../lib/env";
 import { usePlayerStore } from "./playerStore";
+import { showError } from "@/lib/notifications";
 
 const backendUrl = getBackendUrl();
 
@@ -72,6 +73,7 @@ export const FeedMusic = () => {
           loading: false,
           error: error.message,
         }));
+        showError('Error al cargar datos de Spotify');
       }
     }
 

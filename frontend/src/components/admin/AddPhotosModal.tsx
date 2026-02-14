@@ -7,6 +7,7 @@ import {
   type Album,
 } from '../../lib/admin-api';
 import { getBackendResourceUrl } from '../../lib/env';
+import { showSuccess, showError } from '@/lib/notifications';
 
 interface AddPhotosModalProps {
   isOpen: boolean;
@@ -35,7 +36,6 @@ export function AddPhotosModal({
     alt: '',
     description: '',
   });
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
@@ -74,6 +74,7 @@ export function AddPhotosModal({
       setHasMore(response.pagination.page < response.pagination.pages);
     } catch (error) {
       console.error('Error loading media:', error);
+      showError('Error al cargar medios');
     } finally {
       setLoading(false);
     }
@@ -107,18 +108,16 @@ export function AddPhotosModal({
   const handleAddSelected = async () => {
     if (selectedIds.size === 0) return;
 
+    const count = selectedIds.size;
     try {
       setAdding(true);
-      setMessage(null);
       const updatedAlbum = await addImagesToAlbumBatch(album.slug, Array.from(selectedIds));
       onSuccess(updatedAlbum);
       setSelectedIds(new Set());
-      setMessage({ type: 'success', text: `${selectedIds.size} imagen(es) agregada(s) al álbum` });
-      setTimeout(() => {
-        onClose();
-      }, 800);
+      showSuccess(`${count} imagen(es) agregada(s) al álbum`);
+      setTimeout(() => onClose(), 800);
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Error al agregar imágenes' });
+      showError(error.message || 'Error al agregar imágenes');
     } finally {
       setAdding(false);
     }
@@ -147,16 +146,14 @@ export function AddPhotosModal({
 
     try {
       setUploading(true);
-      setMessage(null);
       const result = await uploadMedia(uploadFile, uploadMetadata);
       const updatedAlbum = await addImagesToAlbumBatch(album.slug, [result._id]);
       onSuccess(updatedAlbum);
-      setMessage({ type: 'success', text: 'Imagen subida y agregada al álbum' });
+      showSuccess('Imagen subida y agregada al álbum');
       handleClearFile();
       loadMedia(1, true);
-      setTimeout(() => setMessage(null), 3000);
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Error al subir imagen' });
+      showError(error.message || 'Error al subir imagen');
     } finally {
       setUploading(false);
     }
@@ -210,19 +207,6 @@ export function AddPhotosModal({
             Subir nueva
           </button>
         </div>
-
-        {/* Message */}
-        {message && (
-          <div
-            className={`mx-5 mt-3 rounded-lg p-3 text-sm ${
-              message.type === 'success'
-                ? 'bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                : 'bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5">

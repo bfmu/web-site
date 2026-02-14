@@ -4,6 +4,7 @@ import { updateHomepageConfig, type HomepageSectionConfig } from '../../lib/admi
 import { ImageLibraryModal } from './ImageLibraryModal';
 import { getBackendResourceUrl } from '../../lib/env';
 import { DEFAULT_HOMEPAGE_SECTIONS } from '../home/componentRegistry';
+import { showSuccess, showError } from '@/lib/notifications';
 
 const SECTION_LABELS: Record<string, string> = {
   hero: 'Hero (banner principal)',
@@ -18,7 +19,6 @@ export function HomepageEditor() {
   const [sections, setSections] = useState<HomepageSectionConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [openSection, setOpenSection] = useState<string | null>('hero');
   const [imageModalFor, setImageModalFor] = useState<{ sectionId: string; field: string; appendToArray?: boolean } | null>(null);
 
@@ -37,6 +37,7 @@ export function HomepageEditor() {
       }
     } catch (e) {
       console.error(e);
+      showError('Error al cargar configuración');
       setSections(DEFAULT_HOMEPAGE_SECTIONS);
     } finally {
       setLoading(false);
@@ -81,7 +82,6 @@ export function HomepageEditor() {
 
   const handleSave = async () => {
     setSaving(true);
-    setMessage(null);
     try {
       const payload = sections.map((s, i) => ({
         id: s.id,
@@ -90,9 +90,9 @@ export function HomepageEditor() {
         config: s.config ?? {},
       }));
       await updateHomepageConfig({ sections: payload });
-      setMessage({ type: 'success', text: 'Configuración guardada correctamente.' });
+      showSuccess('Configuración guardada correctamente.');
     } catch (e: any) {
-      setMessage({ type: 'error', text: e?.message ?? 'Error al guardar.' });
+      showError(e?.message ?? 'Error al guardar.');
     } finally {
       setSaving(false);
     }
@@ -120,18 +120,6 @@ export function HomepageEditor() {
 
   return (
     <div className="space-y-4">
-      {message && (
-        <div
-          className={`rounded-lg p-3 ${
-            message.type === 'success'
-              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200'
-              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200'
-          }`}
-        >
-          {message.text}
-        </div>
-      )}
-
       <div className="flex justify-end">
         <button
           type="button"

@@ -3,6 +3,7 @@ import { getUser, setUser } from '../../lib/auth';
 import { getProfile, updateProfile, uploadAvatar, changePassword } from '../../lib/admin-api';
 import { apiGet } from '../../lib/api';
 import { getBackendResourceUrl } from '../../lib/env';
+import { showSuccess, showError, showWarning } from '@/lib/notifications';
 
 export function ProfileEditor() {
   const [loading, setLoading] = useState(false);
@@ -11,14 +12,12 @@ export function ProfileEditor() {
   const [avatar, setAvatar] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  
+
   // Password change states
   const [loadingPassword, setLoadingPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -44,7 +43,7 @@ export function ProfileEditor() {
       setPreview(getAvatarUrl(avatarUrl));
     } catch (error) {
       console.error('Error al cargar perfil:', error);
-      setMessage({ type: 'error', text: 'Error al cargar el perfil' });
+      showError('Error al cargar el perfil');
     }
   };
 
@@ -53,13 +52,13 @@ export function ProfileEditor() {
     if (file) {
       // Validar tipo de archivo
       if (!file.type.match(/^image\/(jpg|jpeg|png|gif|webp)$/)) {
-        setMessage({ type: 'error', text: 'Solo se permiten imágenes (jpg, jpeg, png, gif, webp)' });
+        showWarning('Solo se permiten imágenes (jpg, jpeg, png, gif, webp)');
         return;
       }
 
       // Validar tamaño (5MB)
       if (file.size > 5 * 1024 * 1024) {
-        setMessage({ type: 'error', text: 'La imagen no puede ser mayor a 5MB' });
+        showWarning('La imagen no puede ser mayor a 5MB');
         return;
       }
 
@@ -77,7 +76,6 @@ export function ProfileEditor() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMessage(null);
 
     try {
       let avatarUrl = avatar;
@@ -108,13 +106,10 @@ export function ProfileEditor() {
 
       setAvatar(avatarUrl);
       setAvatarFile(null);
-      setMessage({ type: 'success', text: 'Perfil actualizado correctamente' });
+      showSuccess('Perfil actualizado correctamente');
     } catch (error: any) {
       console.error('Error al actualizar perfil:', error);
-      setMessage({
-        type: 'error',
-        text: error?.message || 'Error al actualizar el perfil',
-      });
+      showError(error?.message || 'Error al actualizar el perfil');
     } finally {
       setLoading(false);
     }
@@ -138,18 +133,17 @@ export function ProfileEditor() {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoadingPassword(true);
-    setPasswordMessage(null);
 
     // Validar que las contraseñas coincidan
     if (newPassword !== confirmPassword) {
-      setPasswordMessage({ type: 'error', text: 'Las contraseñas no coinciden' });
+      showError('Las contraseñas no coinciden');
       setLoadingPassword(false);
       return;
     }
 
     // Validar longitud mínima
     if (newPassword.length < 6) {
-      setPasswordMessage({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres' });
+      showError('La contraseña debe tener al menos 6 caracteres');
       setLoadingPassword(false);
       return;
     }
@@ -160,16 +154,13 @@ export function ProfileEditor() {
         newPassword,
       });
 
-      setPasswordMessage({ type: 'success', text: 'Contraseña actualizada correctamente' });
+      showSuccess('Contraseña actualizada correctamente');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
       console.error('Error al cambiar contraseña:', error);
-      setPasswordMessage({
-        type: 'error',
-        text: error?.message || 'Error al cambiar la contraseña',
-      });
+      showError(error?.message || 'Error al cambiar la contraseña');
     } finally {
       setLoadingPassword(false);
     }
@@ -189,18 +180,6 @@ export function ProfileEditor() {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
           Mi Perfil
         </h2>
-
-        {message && (
-          <div
-            className={`mb-4 rounded-md p-4 ${
-              message.type === 'success'
-                ? 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Avatar */}
@@ -322,18 +301,6 @@ export function ProfileEditor() {
             ? 'Actualiza tu contraseña actual' 
             : 'Establece una contraseña para poder iniciar sesión con email/password además de OAuth'}
         </p>
-
-        {passwordMessage && (
-          <div
-            className={`mb-4 rounded-md p-4 ${
-              passwordMessage.type === 'success'
-                ? 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-            }`}
-          >
-            {passwordMessage.text}
-          </div>
-        )}
 
         <form onSubmit={handlePasswordChange} className="space-y-4">
           {/* Contraseña actual (solo si ya tiene contraseña) */}

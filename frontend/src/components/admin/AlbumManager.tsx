@@ -12,6 +12,7 @@ import {
 } from '../../lib/admin-api';
 import { getBackendResourceUrl } from '../../lib/env';
 import { AddPhotosModal } from './AddPhotosModal';
+import { showSuccess, showError, showWarning } from '@/lib/notifications';
 
 type ViewMode = 'list' | 'album';
 
@@ -31,7 +32,6 @@ export default function AlbumManager() {
     description: '',
     isPublic: true,
   });
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [lastTitleForSlug, setLastTitleForSlug] = useState('');
   const [albumLoading, setAlbumLoading] = useState(false);
@@ -53,7 +53,7 @@ export default function AlbumManager() {
       setAlbums(response.albums);
     } catch (error: any) {
       console.error('Error loading albums:', error);
-      setMessage({ type: 'error', text: 'Error al cargar álbumes' });
+      showError('Error al cargar álbumes');
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,7 @@ export default function AlbumManager() {
 
   const handleCreate = async () => {
     if (!albumForm.title.trim()) {
-      setMessage({ type: 'error', text: 'El título es requerido' });
+      showWarning('El título es requerido');
       return;
     }
 
@@ -96,13 +96,13 @@ export default function AlbumManager() {
         ...albumForm,
         slug,
       });
-      setMessage({ type: 'success', text: 'Álbum creado correctamente' });
+      showSuccess('Álbum creado correctamente');
       setShowCreateModal(false);
       setAlbumForm({ slug: '', title: '', description: '', isPublic: true });
       loadAlbums();
     } catch (error: any) {
       console.error('Error creating album:', error);
-      setMessage({ type: 'error', text: error.message || 'Error al crear álbum' });
+      showError(error.message || 'Error al crear álbum');
     }
   };
 
@@ -113,14 +113,14 @@ export default function AlbumManager() {
 
     try {
       await updateAlbum(selectedAlbum.slug, albumForm);
-      setMessage({ type: 'success', text: 'Álbum actualizado correctamente' });
+      showSuccess('Álbum actualizado correctamente');
       setShowEditModal(false);
       const fresh = await getAlbum(selectedAlbum.slug);
       setSelectedAlbum(fresh);
       loadAlbums();
     } catch (error: any) {
       console.error('Error updating album:', error);
-      setMessage({ type: 'error', text: error.message || 'Error al actualizar álbum' });
+      showError(error.message || 'Error al actualizar álbum');
     }
   };
 
@@ -134,7 +134,7 @@ export default function AlbumManager() {
 
     try {
       await deleteAlbum(albumToDelete);
-      setMessage({ type: 'success', text: 'Álbum eliminado correctamente' });
+      showSuccess('Álbum eliminado correctamente');
       if (selectedAlbum?.slug === albumToDelete) {
         setViewMode('list');
         setSelectedAlbum(null);
@@ -142,7 +142,7 @@ export default function AlbumManager() {
       loadAlbums();
     } catch (error: any) {
       console.error('Error deleting album:', error);
-      setMessage({ type: 'error', text: error.message || 'Error al eliminar álbum' });
+      showError(error.message || 'Error al eliminar álbum');
     } finally {
       setShowDeleteModal(false);
       setAlbumToDelete(null);
@@ -165,12 +165,12 @@ export default function AlbumManager() {
 
     try {
       await removeImageFromAlbum(selectedAlbum.slug, mediaId);
-      setMessage({ type: 'success', text: 'Imagen removida del álbum' });
+      showSuccess('Imagen removida del álbum');
       refreshSelectedAlbum();
       loadAlbums();
     } catch (error: any) {
       console.error('Error removing image:', error);
-      setMessage({ type: 'error', text: error.message || 'Error al remover imagen' });
+      showError(error.message || 'Error al remover imagen');
     }
   };
 
@@ -179,18 +179,18 @@ export default function AlbumManager() {
 
     try {
       await setAlbumCover(selectedAlbum.slug, mediaId);
-      setMessage({ type: 'success', text: 'Portada establecida' });
+      showSuccess('Portada establecida');
       refreshSelectedAlbum();
       loadAlbums();
     } catch (error: any) {
       console.error('Error setting cover:', error);
-      setMessage({ type: 'error', text: error.message || 'Error al establecer portada' });
+      showError(error.message || 'Error al establecer portada');
     }
   };
 
   const handleAddPhotosSuccess = (updatedAlbum: Album) => {
     setSelectedAlbum(updatedAlbum);
-    setMessage({ type: 'success', text: 'Fotos agregadas correctamente' });
+    showSuccess('Fotos agregadas correctamente');
     loadAlbums();
     refreshSelectedAlbum();
   };
@@ -282,19 +282,6 @@ export default function AlbumManager() {
             </button>
           </div>
         </div>
-
-        {/* Messages */}
-        {message && (
-          <div
-            className={`rounded-lg p-4 ${
-              message.type === 'success'
-                ? 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
 
         {/* Contenido del álbum */}
         {albumLoading ? (
@@ -482,19 +469,6 @@ export default function AlbumManager() {
           Crear Álbum
         </button>
       </div>
-
-      {/* Messages */}
-      {message && (
-        <div
-          className={`rounded-lg p-4 ${
-            message.type === 'success'
-              ? 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-              : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-          }`}
-        >
-          {message.text}
-        </div>
-      )}
 
       {/* Albums Grid */}
       {loading ? (
