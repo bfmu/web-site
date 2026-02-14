@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePlayerStore } from "./playerStore";
 
 declare global {
@@ -66,16 +66,23 @@ function formatTime(ms: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+function clamp(min: number, val: number, max: number): number {
+  return Math.max(min, Math.min(max, val));
+}
+
 export function PersistentPlayer() {
-  const { trackId, trackInfo, isPlaying, isVisible, setController, setPlaying, togglePlaying, savePosition, close } =
+  const { trackId, trackInfo, isPlaying, isVisible, playerPosition, setPlayerPosition, setController, setPlaying, togglePlaying, savePosition, close } =
     usePlayerStore();
   const embedWrapperRef = useRef<HTMLDivElement>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<EmbedController | null>(null);
   const lastPlaybackStartedAt = useRef(0);
+  const dragRef = useRef({ active: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 });
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isReady, setIsReady] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Crear controlador UNA VEZ al montar (con track placeholder) para tenerlo listo
   // antes del primer clic del usuario → play() puede ejecutarse en contexto de gesto
@@ -182,9 +189,76 @@ export function PersistentPlayer() {
   };
 
   const handleClose = () => {
-    // No destruir el controlador: lo reutilizamos para la siguiente canción
+    controllerRef.current?.pause();
     close();
   };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const container = playerContainerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const currentLeft = playerPosition?.x ?? rect.left;
+    const currentTop = playerPosition?.y ?? rect.top;
+    dragRef.current = {
+      active: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      startLeft: currentLeft,
+      startTop: currentTop,
+    };
+    setIsDragging(true);
+    container.setPointerCapture(e.pointerId);
+  };
+
+  useEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragRef.current.active) return;
+      const { startX, startY, startLeft, startTop } = dragRef.current;
+      const container = playerContainerRef.current;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      const newX = clamp(0, startLeft + dx, window.innerWidth - rect.width);
+      const newY = clamp(0, startTop + dy, window.innerHeight - rect.height);
+      setPlayerPosition(newX, newY);
+    };
+    const onPointerUp = () => {
+      dragRef.current.active = false;
+      setIsDragging(false);
+    };
+    document.addEventListener("pointermove", onPointerMove);
+    document.addEventListener("pointerup", onPointerUp);
+    document.addEventListener("pointercancel", onPointerUp);
+    return () => {
+      document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerup", onPointerUp);
+      document.removeEventListener("pointercancel", onPointerUp);
+    };
+  }, [setPlayerPosition]);
+
+  // Ajustar posición cuando se expande para que no quede fuera del viewport
+  useLayoutEffect(() => {
+    if (isCollapsed) return;
+    const container = playerContainerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const margin = 16;
+    let left = rect.left;
+    let top = rect.top;
+    if (left < margin) left = margin;
+    if (top < margin) top = margin;
+    if (left + rect.width > window.innerWidth - margin) left = window.innerWidth - rect.width - margin;
+    if (top + rect.height > window.innerHeight - margin) top = window.innerHeight - rect.height - margin;
+    if (left !== rect.left || top !== rect.top) {
+      setPlayerPosition(left, top);
+    }
+  }, [isCollapsed, setPlayerPosition]);
+
+  const positionStyle: React.CSSProperties = playerPosition
+    ? { left: playerPosition.x, top: playerPosition.y }
+    : { right: 16, bottom: 16 };
 
   return (
     <>
@@ -196,13 +270,31 @@ export function PersistentPlayer() {
       />
       {isVisible && trackId && (
         <div
-          className="fixed bottom-0 left-0 right-0 z-40 px-2 pb-2 md:px-4 md:pb-4"
+          ref={playerContainerRef}
+          className={`fixed z-40 ${isCollapsed ? "w-fit" : "w-[min(calc(100vw-2rem),36rem)]"}`}
+          style={positionStyle}
           role="region"
           aria-label="Reproductor de música"
         >
           <div
-            className={`mx-auto flex max-w-[var(--page-width)] items-center rounded-2xl border border-white/10 bg-[var(--card-bg)] px-2 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] dark:border-white/10 dark:bg-[var(--card-bg)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.4)] sm:px-3 md:px-4 ${isCollapsed ? "w-fit gap-2 sm:gap-3 md:gap-4" : "w-full justify-between gap-2"}`}
+            className={`flex items-center rounded-2xl border border-white/10 bg-[var(--card-bg)] px-2 py-2 shadow-[0_4px_20px_rgba(0,0,0,0.15)] dark:border-white/10 dark:bg-[var(--card-bg)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] sm:px-3 md:px-4 ${isCollapsed ? "w-fit gap-2 sm:gap-3 md:gap-4" : "w-full justify-between gap-2"} ${isDragging ? "cursor-grabbing" : "cursor-default"}`}
           >
+            {/* Handle de arrastre - hover muestra cursor de manita para arrastrar */}
+            <div
+              data-player-drag-handle
+              onPointerDown={handlePointerDown}
+              className={`flex shrink-0 touch-none select-none items-center justify-center rounded p-1 cursor-grab active:cursor-grabbing text-[var(--meta-divider)] hover:text-[var(--primary)] dark:text-gray-400 dark:hover:text-neutral-50 ${isDragging ? "!cursor-grabbing" : ""}`}
+              aria-label="Arrastrar reproductor"
+            >
+              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <circle cx="9" cy="6" r="1.5" />
+                <circle cx="15" cy="6" r="1.5" />
+                <circle cx="9" cy="12" r="1.5" />
+                <circle cx="15" cy="12" r="1.5" />
+                <circle cx="9" cy="18" r="1.5" />
+                <circle cx="15" cy="18" r="1.5" />
+              </svg>
+            </div>
             {isCollapsed ? (
               <>
                 <button

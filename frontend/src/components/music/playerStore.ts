@@ -17,15 +17,23 @@ export interface SpotifyController {
   seek: (seconds: number) => void;
 }
 
+export interface PlayerPosition {
+  x: number;
+  y: number;
+}
+
 interface PlayerState {
   trackId: string | null;
   trackInfo: TrackInfo | null;
   isPlaying: boolean;
   isVisible: boolean;
+  /** Posición del reproductor flotante (null = por defecto esquina inferior derecha) */
+  playerPosition: PlayerPosition | null;
   /** Posición guardada por trackId (en ms) para reanudar donde iba */
   savedPositions: Record<string, number>;
   controller: SpotifyController | null;
   setController: (ctrl: SpotifyController | null) => void;
+  setPlayerPosition: (x: number, y: number) => void;
   playTrack: (trackId: string, trackInfo?: TrackInfo | null) => void;
   setPlaying: (playing: boolean) => void;
   togglePlaying: () => void;
@@ -40,10 +48,13 @@ export const usePlayerStore = create<PlayerState>()(
       trackInfo: null,
       isPlaying: false,
       isVisible: false,
+      playerPosition: null,
       savedPositions: {},
       controller: null,
 
       setController: (controller) => set({ controller }),
+
+      setPlayerPosition: (x, y) => set({ playerPosition: { x, y } }),
 
       playTrack: (trackId, trackInfo = null) => {
         const { controller, savedPositions } = get();
@@ -90,6 +101,7 @@ export const usePlayerStore = create<PlayerState>()(
         trackId: s.trackId,
         trackInfo: s.trackInfo,
         isVisible: s.isVisible,
+        playerPosition: s.playerPosition,
         savedPositions: s.savedPositions,
       }),
     }
