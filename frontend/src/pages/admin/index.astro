@@ -89,6 +89,7 @@ try {
             recentPosts.map((post) => (
               <a
                 href={`/admin/posts/${post.slug}`}
+                data-no-swup
                 class="block px-6 py-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <div class="flex items-center justify-between">
@@ -140,6 +141,7 @@ try {
             mostViewed.map((post) => (
               <a
                 href={`/admin/posts/${post.slug}`}
+                data-no-swup
                 class="block px-6 py-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <div class="flex items-center justify-between">
@@ -174,6 +176,7 @@ try {
       <div class="flex flex-wrap gap-3">
         <a
           href="/admin/posts/new"
+          data-no-swup
           class="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
         >
           <svg

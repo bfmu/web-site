@@ -9,6 +9,7 @@ import { getBackendResourceUrl } from './env';
 import { navigateTo } from './navigation';
 
 let adminListenersAttached = false;
+let adminHeaderUserMenuInitialized = false;
 
 function setupAdminEventListeners(): void {
   if (adminListenersAttached) return;
@@ -22,6 +23,8 @@ function setupAdminEventListeners(): void {
     if (target.closest('#logout-btn')) {
       e.preventDefault();
       const modal = document.getElementById('logout-modal');
+      const userDropdown = document.getElementById('admin-header-user-dropdown');
+      if (userDropdown) userDropdown.classList.add('hidden');
       if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
@@ -116,6 +119,13 @@ function setupAdminEventListeners(): void {
         modal.classList.remove('flex');
       }
     }
+
+    // Cerrar menú de usuario del header al hacer click fuera
+    const dropdown = document.getElementById('admin-header-user-dropdown');
+    const userBtn = document.getElementById('admin-header-user-btn');
+    if (dropdown && userBtn && !userBtn.contains(target) && !dropdown.contains(target)) {
+      dropdown.classList.add('hidden');
+    }
   });
 }
 
@@ -123,6 +133,7 @@ export function initAdmin(): void {
   if (typeof window === 'undefined') return;
   if (!window.location.pathname.startsWith('/admin')) return;
 
+  adminHeaderUserMenuInitialized = false;
   setupAdminEventListeners();
 
   const currentUser = getUser();
@@ -146,30 +157,86 @@ export function initAdmin(): void {
     if (backupLink) backupLink.classList.remove('hidden');
   }
 
-  const userInfo = document.getElementById('user-info');
-  if (currentUser && userInfo) {
-    function getAvatarUrl(avatar: string | undefined): string {
-      if (!avatar || avatar === '/default-avatar.svg') return '/default-avatar.svg';
-      if (avatar.startsWith('http')) return avatar;
-      if (avatar.startsWith('/uploads/')) return getBackendResourceUrl(avatar);
-      return avatar;
-    }
-    const avatarUrl = getAvatarUrl(currentUser.avatar);
-    userInfo.innerHTML = `
-      <img 
-        src="${avatarUrl}" 
-        alt="${currentUser.name}" 
-        class="h-8 w-8 rounded-full object-cover border border-gray-200 dark:border-gray-700"
-        onerror="this.src='/default-avatar.svg'"
-      />
-      <div class="flex-1 min-w-0">
-        <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
-          ${currentUser.name}
-        </p>
-        <p class="truncate text-xs text-gray-500 dark:text-gray-400">
-          ${currentUser.email}
-        </p>
-      </div>
-    `;
+  function getAvatarUrl(avatar: string | undefined): string {
+    if (!avatar || avatar === '/default-avatar.svg') return '/default-avatar.svg';
+    if (avatar.startsWith('http')) return avatar;
+    if (avatar.startsWith('/uploads/')) return getBackendResourceUrl(avatar);
+    return avatar;
   }
+
+  if (currentUser) {
+    const avatarEl = document.getElementById('admin-header-avatar') as HTMLImageElement | null;
+    const nameEl = document.getElementById('admin-header-user-name');
+    const emailEl = document.getElementById('admin-header-user-email');
+    if (avatarEl) {
+      avatarEl.src = getAvatarUrl(currentUser.avatar);
+      avatarEl.alt = currentUser.name;
+      avatarEl.onerror = function () {
+        this.src = '/default-avatar.svg';
+        this.onerror = null;
+      };
+    }
+    if (nameEl) nameEl.textContent = currentUser.name;
+    if (emailEl) emailEl.textContent = currentUser.email;
+  }
+
+  setupAdminHeaderUserMenu();
+}
+
+function setupAdminHeaderUserMenu(): void {
+  const userBtn = document.getElementById('admin-header-user-btn');
+  const dropdown = document.getElementById('admin-header-user-dropdown');
+  const menuContainer = document.getElementById('admin-header-user-menu');
+
+  if (!userBtn || !dropdown || !menuContainer) return;
+  if (adminHeaderUserMenuInitialized) return;
+  adminHeaderUserMenuInitialized = true;
+
+  let hideTimeout: number | null = null;
+
+  function cancelHide(): void {
+    if (hideTimeout !== null) {
+      clearTimeout(hideTimeout);
+      hideTimeout = null;
+    }
+  }
+
+  function showDropdown(): void {
+    dropdown.classList.remove('hidden');
+  }
+
+  function hideDropdown(): void {
+    dropdown.classList.add('hidden');
+  }
+
+  function scheduleHide(): void {
+    cancelHide();
+    hideTimeout = window.setTimeout(() => {
+      hideDropdown();
+      hideTimeout = null;
+    }, 150);
+  }
+
+  userBtn.addEventListener('mouseenter', () => {
+    cancelHide();
+    showDropdown();
+  });
+
+  menuContainer.addEventListener('mouseenter', () => {
+    cancelHide();
+    showDropdown();
+  });
+
+  menuContainer.addEventListener('mouseleave', scheduleHide);
+
+  userBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    cancelHide();
+    if (dropdown.classList.contains('hidden')) {
+      showDropdown();
+    } else {
+      hideDropdown();
+    }
+  });
 }

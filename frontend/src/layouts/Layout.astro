@@ -387,6 +387,9 @@ function init() {
 init();
 initAdmin();
 initLoginForm();
+if (/^\/posts\/[^/]+(\/)?$/.test(window.location.pathname)) {
+	import('../lib/post-view-init').then(({ initPostViewPage }) => requestAnimationFrame(() => initPostViewPage()));
+}
 
 /* Load settings before swapping */
 /* astro:after-swap event happened before swap animation */
@@ -394,6 +397,9 @@ document.addEventListener('astro:after-swap', () => {
 	init();
 	initAdmin();
 	initLoginForm();
+	if (/^\/posts\/[^/]+(\/)?$/.test(window.location.pathname)) {
+		import('../lib/post-view-init').then(({ initPostViewPage }) => requestAnimationFrame(() => initPostViewPage()));
+	}
 });
 
 const setup = () => {
@@ -468,6 +474,12 @@ const setup = () => {
 		if (window.location.pathname.replace(/\/$/, '').endsWith('/admin/posts')) {
 			import('../lib/posts-init').then(({ initPostsPage }) => {
 				requestAnimationFrame(() => initPostsPage());
+			});
+		}
+		// Post individual: botón editar para admin/editor
+		if (/^\/posts\/[^/]+(\/)?$/.test(window.location.pathname)) {
+			import('../lib/post-view-init').then(({ initPostViewPage }) => {
+				requestAnimationFrame(() => initPostViewPage());
 			});
 		}
 	})

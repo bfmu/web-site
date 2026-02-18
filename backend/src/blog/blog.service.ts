@@ -292,9 +292,10 @@ export class BlogService {
   }
 }
 
-// Helpers
-function stripMarkdown(md: string): string {
-  return md
+// Helpers - strip HTML and/or Markdown to plain text
+function stripToPlainText(content: string): string {
+  return String(content || '')
+    .replace(/<[^>]*>/g, ' ')
     .replace(/`{1,3}[^`]*`{1,3}/g, ' ')
     .replace(/!\[[^\]]*\]\([^\)]*\)/g, ' ')
     .replace(/\[[^\]]*\]\([^\)]*\)/g, ' ')
@@ -304,19 +305,19 @@ function stripMarkdown(md: string): string {
 }
 
 function generateExcerpt(content: string, maxLen: number = 160): string {
-  const plain = stripMarkdown(content);
+  const plain = stripToPlainText(content);
   if (plain.length <= maxLen) return plain;
   return plain.slice(0, maxLen).trimEnd() + '…';
 }
 
 function estimateReadingMinutes(content: string): number {
-  const text = stripMarkdown(content);
+  const text = stripToPlainText(content);
   const rt = (readingTimeLib as any)(text);
   return Math.max(1, Math.round(rt.minutes));
 }
 
 function countWords(content: string): number {
-  const text = stripMarkdown(content);
+  const text = stripToPlainText(content);
   return rtWordCount(text);
 }
 

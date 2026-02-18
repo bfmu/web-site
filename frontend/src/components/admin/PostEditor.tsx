@@ -1,13 +1,15 @@
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
-import Placeholder from '@tiptap/extension-placeholder';
-import Underline from '@tiptap/extension-underline';
-import { TextStyle } from '@tiptap/extension-text-style';
-import Color from '@tiptap/extension-color';
-import { useEffect, useState } from 'react';
+import { filterSuggestionItems } from '@blocknote/core/extensions';
+import {
+  useCreateBlockNote,
+  useEditorChange,
+  SuggestionMenuController,
+  getDefaultReactSlashMenuItems,
+} from '@blocknote/react';
+import { BlockNoteView } from '@blocknote/mantine';
+import '@blocknote/mantine/style.css';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ImageLibraryModal } from './ImageLibraryModal';
+import { uploadImage } from '@/lib/admin-api';
 
 interface PostEditorProps {
   content: string;
@@ -15,262 +17,164 @@ interface PostEditorProps {
   placeholder?: string;
 }
 
-export function PostEditor({ content, onChange, placeholder = 'Escribe tu contenido aquí...' }: PostEditorProps) {
-  const [showImageModal, setShowImageModal] = useState(false);
-  
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3],
-        },
-      }),
-      Image.configure({
-        HTMLAttributes: {
-          class: 'max-w-full rounded-lg',
-        },
-      }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: 'text-indigo-600 underline hover:text-indigo-800',
-        },
-      }),
-      Placeholder.configure({
-        placeholder,
-      }),
-      Underline,
-      TextStyle,
-      Color,
-    ],
-    content,
-    onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
-    },
-    editorProps: {
-      attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[400px] p-4 dark:prose-invert',
-      },
-    },
+function isHTML(str: string): boolean {
+  const trimmed = str?.trim() ?? '';
+  return trimmed.startsWith('<') || /<[a-z][\s\S]*>/i.test(trimmed);
+}
+
+function useIsDarkMode(): boolean {
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof document === 'undefined') return false;
+    return document.documentElement.classList.contains('dark');
   });
 
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content);
+    const el = document.documentElement;
+    const observer = new MutationObserver(() => {
+      setIsDark(el.classList.contains('dark'));
+    });
+    observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  return isDark;
+}
+
+export function PostEditor({
+  content,
+  onChange,
+  placeholder = 'Escribe tu contenido aquí...',
+}: PostEditorProps) {
+  const [showImageModal, setShowImageModal] = useState(false);
+  const hasLoadedInitial = useRef(false);
+  const isDark = useIsDarkMode();
+
+  const editor = useCreateBlockNote(
+    {
+      uploadFile: async (file: File) => {
+        const result = await uploadImage(file);
+        return result.url;
+      },
+    },
+    []
+  );
+
+  // Load initial content from props (HTML or Markdown)
+  useEffect(() => {
+    if (!editor || hasLoadedInitial.current) return;
+
+    const trimmed = content?.trim() ?? '';
+    if (!trimmed) {
+      hasLoadedInitial.current = true;
+      return;
     }
-  }, [content, editor]);
+
+    const loadContent = async () => {
+      try {
+        const blocks = isHTML(trimmed)
+          ? await editor.tryParseHTMLToBlocks(trimmed)
+          : await editor.tryParseMarkdownToBlocks(trimmed);
+
+        if (blocks && blocks.length > 0) {
+          editor.replaceBlocks(editor.document, blocks);
+        }
+      } catch (err) {
+        console.warn('BlockNote: could not parse initial content', err);
+      } finally {
+        hasLoadedInitial.current = true;
+      }
+    };
+
+    loadContent();
+  }, [editor, content]);
+
+  // Persist changes to HTML
+  useEditorChange(
+    async () => {
+      if (!editor || !hasLoadedInitial.current) return;
+
+      try {
+        const html = await editor.blocksToHTMLLossy(editor.document);
+        onChange(html);
+      } catch (err) {
+        console.warn('BlockNote: could not export to HTML', err);
+      }
+    },
+    editor
+  );
+
+  const handleImageSelect = (url: string) => {
+    if (!editor) return;
+
+    const imageBlock = { type: 'image' as const, props: { url, caption: '' } };
+
+    try {
+      const targetBlock =
+        editor.getSelection()?.blocks?.[0] ??
+        editor.getTextCursorPosition().block ??
+        editor.document[0];
+      if (targetBlock) {
+        editor.insertBlocks([imageBlock], targetBlock, 'after');
+      }
+    } catch {
+      const first = editor.document[0];
+      if (first) editor.insertBlocks([imageBlock], first, 'after');
+    }
+  };
+
+  const getSlashMenuItems = useMemo(
+    () => async (query: string) => {
+      const defaultItems = getDefaultReactSlashMenuItems(editor);
+      const libraryItem = {
+        title: 'Imagen desde librería',
+        onItemClick: () => setShowImageModal(true),
+        subtext: 'Seleccionar de recursos ya cargados',
+        aliases: ['imagen', 'libreria', 'biblioteca', 'library', 'media'],
+        icon: (
+          <svg width={18} height={18} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        ),
+      };
+      return filterSuggestionItems(
+        [...defaultItems, libraryItem],
+        query
+      );
+    },
+    [editor]
+  );
 
   if (!editor) {
-    return <div className="h-96 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />;
+    return (
+      <div className="h-96 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
+    );
   }
 
-  const toggleBold = () => editor.chain().focus().toggleBold().run();
-  const toggleItalic = () => editor.chain().focus().toggleItalic().run();
-  const toggleUnderline = () => editor.chain().focus().toggleUnderline().run();
-  const toggleHeading = (level: 1 | 2 | 3) => editor.chain().focus().toggleHeading({ level }).run();
-  const toggleBulletList = () => editor.chain().focus().toggleBulletList().run();
-  const toggleOrderedList = () => editor.chain().focus().toggleOrderedList().run();
-  const toggleBlockquote = () => editor.chain().focus().toggleBlockquote().run();
-  const toggleCode = () => editor.chain().focus().toggleCode().run();
-  const toggleCodeBlock = () => editor.chain().focus().toggleCodeBlock().run();
-  const setLink = () => {
-    const url = window.prompt('URL del enlace:');
-    if (url) {
-      editor.chain().focus().setLink({ href: url }).run();
-    }
-  };
-  const unsetLink = () => editor.chain().focus().unsetLink().run();
-  const insertImage = () => {
-    setShowImageModal(true);
-  };
-  
-  const handleImageSelect = (url: string) => {
-    editor.chain().focus().setImage({ src: url }).run();
-  };
-
   return (
-    <div className="rounded-lg border border-gray-300 dark:border-gray-600">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-gray-300 bg-gray-50 p-2 dark:border-gray-600 dark:bg-gray-800">
-        <button
-          type="button"
-          onClick={toggleBold}
-          className={`rounded px-2 py-1 text-sm font-semibold transition-colors ${
-            editor.isActive('bold')
-              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
-              : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'
-          }`}
-          title="Negrita (Ctrl+B)"
+    <div className="post-editor">
+      <div className="post-editor__inner">
+        <BlockNoteView
+          editor={editor}
+          theme={isDark ? 'dark' : 'light'}
+          data-placeholder={placeholder}
+          slashMenu={false}
         >
-          <strong>B</strong>
-        </button>
-        <button
-          type="button"
-          onClick={toggleItalic}
-          className={`rounded px-2 py-1 text-sm italic transition-colors ${
-            editor.isActive('italic')
-              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
-              : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'
-          }`}
-          title="Cursiva (Ctrl+I)"
-        >
-          <em>I</em>
-        </button>
-        <button
-          type="button"
-          onClick={toggleUnderline}
-          className={`rounded px-2 py-1 text-sm underline transition-colors ${
-            editor.isActive('underline')
-              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
-              : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'
-          }`}
-          title="Subrayado (Ctrl+U)"
-        >
-          <u>U</u>
-        </button>
-
-        <div className="mx-1 h-6 w-px bg-gray-300 dark:bg-gray-600" />
-
-        <button
-          type="button"
-          onClick={() => toggleHeading(1)}
-          className={`rounded px-2 py-1 text-sm font-semibold transition-colors ${
-            editor.isActive('heading', { level: 1 })
-              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
-              : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'
-          }`}
-          title="Título 1"
-        >
-          H1
-        </button>
-        <button
-          type="button"
-          onClick={() => toggleHeading(2)}
-          className={`rounded px-2 py-1 text-sm font-semibold transition-colors ${
-            editor.isActive('heading', { level: 2 })
-              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
-              : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'
-          }`}
-          title="Título 2"
-        >
-          H2
-        </button>
-        <button
-          type="button"
-          onClick={() => toggleHeading(3)}
-          className={`rounded px-2 py-1 text-sm font-semibold transition-colors ${
-            editor.isActive('heading', { level: 3 })
-              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
-              : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'
-          }`}
-          title="Título 3"
-        >
-          H3
-        </button>
-
-        <div className="mx-1 h-6 w-px bg-gray-300 dark:bg-gray-600" />
-
-        <button
-          type="button"
-          onClick={toggleBulletList}
-          className={`rounded px-2 py-1 text-sm transition-colors ${
-            editor.isActive('bulletList')
-              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
-              : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'
-          }`}
-          title="Lista con viñetas"
-        >
-          • Lista
-        </button>
-        <button
-          type="button"
-          onClick={toggleOrderedList}
-          className={`rounded px-2 py-1 text-sm transition-colors ${
-            editor.isActive('orderedList')
-              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
-              : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'
-          }`}
-          title="Lista numerada"
-        >
-          1. Lista
-        </button>
-        <button
-          type="button"
-          onClick={toggleBlockquote}
-          className={`rounded px-2 py-1 text-sm transition-colors ${
-            editor.isActive('blockquote')
-              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
-              : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'
-          }`}
-          title="Cita"
-        >
-          " Cita
-        </button>
-
-        <div className="mx-1 h-6 w-px bg-gray-300 dark:bg-gray-600" />
-
-        <button
-          type="button"
-          onClick={toggleCode}
-          className={`rounded px-2 py-1 text-sm font-mono transition-colors ${
-            editor.isActive('code')
-              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
-              : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'
-          }`}
-          title="Código inline"
-        >
-          {'</>'}
-        </button>
-        <button
-          type="button"
-          onClick={toggleCodeBlock}
-          className={`rounded px-2 py-1 text-sm font-mono transition-colors ${
-            editor.isActive('codeBlock')
-              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
-              : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'
-          }`}
-          title="Bloque de código"
-        >
-          {'{ }'}
-        </button>
-
-        <div className="mx-1 h-6 w-px bg-gray-300 dark:bg-gray-600" />
-
-        <button
-          type="button"
-          onClick={editor.isActive('link') ? unsetLink : setLink}
-          className={`rounded px-2 py-1 text-sm transition-colors ${
-            editor.isActive('link')
-              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
-              : 'text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'
-          }`}
-          title="Enlace"
-        >
-          🔗
-        </button>
-        <button
-          type="button"
-          onClick={insertImage}
-          className="rounded px-2 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
-          title="Insertar imagen"
-        >
-          🖼️
-        </button>
+          <SuggestionMenuController
+            triggerCharacter="/"
+            getItems={getSlashMenuItems}
+          />
+        </BlockNoteView>
       </div>
 
-      {/* Editor */}
-      <div className="bg-white dark:bg-gray-900">
-        <EditorContent editor={editor} />
-      </div>
-
-      {/* Image Library Modal */}
       <ImageLibraryModal
         isOpen={showImageModal}
         onClose={() => setShowImageModal(false)}
-        onSelect={handleImageSelect}
+        onSelect={(url) => {
+          handleImageSelect(url);
+          setShowImageModal(false);
+        }}
         allowUpload={true}
       />
     </div>
   );
 }
-

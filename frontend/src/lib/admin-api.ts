@@ -261,11 +261,27 @@ export async function getMostViewedPosts(limit: number = 10): Promise<BlogPost[]
 }
 
 /**
+ * Strip HTML/Markdown to plain text for word counting
+ */
+function stripToPlainText(content: string): string {
+  if (!content?.trim()) return '';
+  return content
+    .trim()
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/[#>*_~`\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
  * Calcular tiempo de lectura estimado
  */
 export function calculateReadingTime(content: string): number {
   const wordsPerMinute = 200;
-  const words = content.trim().split(/\s+/).filter(Boolean).length;
+  const text = stripToPlainText(content);
+  const words = text.split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.ceil(words / wordsPerMinute));
 }
 
