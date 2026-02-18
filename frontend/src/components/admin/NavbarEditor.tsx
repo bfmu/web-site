@@ -40,6 +40,7 @@ export function NavbarEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingChildId, setEditingChildId] = useState<string | null>(null);
   const [showAddExternal, setShowAddExternal] = useState(false);
   const [customName, setCustomName] = useState('');
   const [customUrl, setCustomUrl] = useState('');
@@ -115,8 +116,69 @@ export function NavbarEditor() {
           i === parentIdx ? { ...l, children: newChildren } : l,
         );
       });
+    } else if (activeChild && overTop !== null) {
+      // Child dropped on top-level item: PROMOTE (sacarlo) - move to top-level
+      setLinks((prev) => {
+        const srcParentIdx = activeChild.parentIdx;
+        if (
+          srcParentIdx < 0 || srcParentIdx >= prev.length ||
+          overTop < 0 || overTop >= prev.length ||
+          activeChild.childIdx >= (prev[srcParentIdx].children ?? []).length
+        )
+          return prev;
+        const srcChildren = [...(prev[srcParentIdx].children ?? [])];
+        const [moved] = srcChildren.splice(activeChild.childIdx, 1);
+        if (!moved) return prev;
+        const withoutChild = prev.map((l, i) =>
+          i === srcParentIdx ? { ...l, children: srcChildren.length ? srcChildren : undefined } : l,
+        );
+        return [
+          ...withoutChild.slice(0, overTop),
+          moved,
+          ...withoutChild.slice(overTop),
+        ];
+      });
+    } else if (activeChild && overChild && activeChild.parentIdx !== overChild.parentIdx) {
+      // Child dropped on child of different parent: move to that parent
+      setLinks((prev) => {
+        const srcParentIdx = activeChild.parentIdx;
+        const dstParentIdx = overChild.parentIdx;
+        if (
+          srcParentIdx < 0 || srcParentIdx >= prev.length ||
+          dstParentIdx < 0 || dstParentIdx >= prev.length
+        )
+          return prev;
+        const srcChildren = [...(prev[srcParentIdx].children ?? [])];
+        const [moved] = srcChildren.splice(activeChild.childIdx, 1);
+        const dstChildren = [...(prev[dstParentIdx].children ?? [])];
+        dstChildren.splice(overChild.childIdx + 1, 0, moved);
+        return prev.map((l, i) => {
+          if (i === srcParentIdx) return { ...l, children: srcChildren.length ? srcChildren : undefined };
+          if (i === dstParentIdx) return { ...l, children: dstChildren };
+          return l;
+        });
+      });
+    } else if (activeTop !== null && overTop !== null && activeTop !== overTop) {
+      // Top-level dropped on another top-level: NEST (create submenu)
+      setLinks((prev) => {
+        if (
+          activeTop < 0 ||
+          activeTop >= prev.length ||
+          overTop < 0 ||
+          overTop >= prev.length
+        )
+          return prev;
+        const moved = prev[activeTop];
+        const droppedOn = prev[overTop];
+        const withoutMoved = prev.filter((_, i) => i !== activeTop);
+        return withoutMoved.map((l) =>
+          l === droppedOn
+            ? { ...l, children: [...(l.children ?? []), moved] }
+            : l,
+        );
+      });
     } else if (activeTop !== null && overTop !== null) {
-      // Reorder top-level items
+      // Same-level reorder
       setLinks((prev) => {
         if (
           activeTop < 0 ||
@@ -211,6 +273,25 @@ export function NavbarEditor() {
           : l,
       ),
     );
+  };
+
+  const promoteChild = (parentIndex: number, childIndex: number) => {
+    setLinks((prev) => {
+      const children = [...(prev[parentIndex].children ?? [])];
+      const [moved] = children.splice(childIndex, 1);
+      if (!moved) return prev;
+      const newLinks = prev.map((l, i) =>
+        i === parentIndex
+          ? { ...l, children: children.length ? children : undefined }
+          : l,
+      );
+      const insertIdx = Math.min(parentIndex + 1, newLinks.length);
+      return [
+        ...newLinks.slice(0, insertIdx),
+        moved,
+        ...newLinks.slice(insertIdx),
+      ];
+    });
   };
 
   if (loading) {
@@ -321,8 +402,11 @@ export function NavbarEditor() {
         {/* Lista ordenable de enlaces */}
         <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 lg:col-span-2 dark:border-gray-700 dark:bg-gray-800">
           <h3 className="font-medium text-gray-900 dark:text-white">
-            Enlaces del navbar (arrastra para reordenar)
+            Enlaces del navbar
           </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Arrastra desde cualquier parte del ítem. Suelta sobre otro para submenú, o sobre uno principal para sacarlo.
+          </p>
           <DndContext
             sensors={sensors}
             collisionDetection={closestCorners}
@@ -350,7 +434,10 @@ export function NavbarEditor() {
                     onAddSubmenu={() => addSubmenu(index)}
                     onUpdateChild={(ci, u) => updateChild(index, ci, u)}
                     onRemoveChild={(ci) => removeChild(index, ci)}
+                    onPromoteChild={(ci) => promoteChild(index, ci)}
                     onAddChild={(c) => addChildLink(index, c)}
+                    editingChildId={editingChildId}
+                    setEditingChildId={setEditingChildId}
                     availablePages={availablePages}
                   />
                 ))}
@@ -375,7 +462,10 @@ function SortableLinkItem({
   onAddSubmenu,
   onUpdateChild,
   onRemoveChild,
+  onPromoteChild,
   onAddChild,
+  editingChildId,
+  setEditingChildId,
   availablePages,
 }: {
   id: string;
@@ -389,7 +479,10 @@ function SortableLinkItem({
   onAddSubmenu: () => void;
   onUpdateChild: (ci: number, u: Partial<NavBarLink>) => void;
   onRemoveChild: (ci: number) => void;
+  onPromoteChild: (ci: number) => void;
   onAddChild: (c: NavBarLink) => void;
+  editingChildId: string | null;
+  setEditingChildId: (id: string | null) => void;
   availablePages: Array<{ path: string; i18nKey: I18nKey | null; suggestedName: string }>;
 }) {
   const {
@@ -406,6 +499,8 @@ function SortableLinkItem({
     transition,
   };
 
+  const stopDrag = (e: React.PointerEvent) => e.stopPropagation();
+
   return (
     <div
       ref={setNodeRef}
@@ -416,27 +511,25 @@ function SortableLinkItem({
           : 'border-gray-200 bg-white dark:bg-gray-800'
       }`}
     >
-      <div className="flex items-center gap-2 p-3">
-        <button
-          type="button"
-          className="cursor-grab touch-none text-gray-400 hover:text-gray-600"
-          {...attributes}
-          {...listeners}
-          aria-label="Arrastrar"
-        >
-          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M7 2a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V4a2 2 0 012-2h2zm6 0a2 2 0 012 2v12a2 2 0 01-2 2h-2a2 2 0 01-2-2V4a2 2 0 012-2h2z" />
-          </svg>
-        </button>
+      <div
+        className="flex cursor-grab items-center gap-2 p-3 active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        <svg className="h-5 w-5 flex-shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+          <path d="M7 2a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V4a2 2 0 012-2h2zm6 0a2 2 0 012 2v12a2 2 0 01-2 2h-2a2 2 0 01-2-2V4a2 2 0 012-2h2z" />
+        </svg>
         {isEditing ? (
-          <LinkEditForm
-            link={link}
-            onSave={(u) => {
-              onUpdate(u);
-              onDoneEdit();
-            }}
-            onCancel={onDoneEdit}
-          />
+          <div className="flex-1" onPointerDown={stopDrag}>
+            <LinkEditForm
+              link={link}
+              onSave={(u) => {
+                onUpdate(u);
+                onDoneEdit();
+              }}
+              onCancel={onDoneEdit}
+            />
+          </div>
         ) : (
           <>
             <div className="flex-1">
@@ -446,7 +539,7 @@ function SortableLinkItem({
                 {link.external && ' [ext]'}
               </span>
             </div>
-            <div className="flex gap-1">
+            <div className="flex flex-1 justify-end gap-1" onPointerDown={stopDrag}>
               <button
                 type="button"
                 onClick={onEdit}
@@ -472,7 +565,7 @@ function SortableLinkItem({
           </>
         )}
       </div>
-      {link.children && link.children.length > 0 && (
+      {Array.isArray(link.children) && (
         <div className="border-t border-gray-200 px-4 py-2 dark:border-gray-600">
           <p className="mb-2 text-xs font-medium text-gray-500">
             Sub-items (arrastra para reordenar)
@@ -483,7 +576,12 @@ function SortableLinkItem({
                 key={`item-${index}-c${ci}`}
                 id={`item-${index}-c${ci}`}
                 child={child}
+                isEditing={editingChildId === `item-${index}-c${ci}`}
+                onEdit={() => setEditingChildId(`item-${index}-c${ci}`)}
+                onDoneEdit={() => setEditingChildId(null)}
+                onUpdate={(u) => onUpdateChild(ci, u)}
                 onRemove={() => onRemoveChild(ci)}
+                onPromote={() => onPromoteChild(ci)}
               />
             ))}
             <select
@@ -518,11 +616,21 @@ function SortableLinkItem({
 function SortableChildItem({
   id,
   child,
+  isEditing,
+  onEdit,
+  onDoneEdit,
+  onUpdate,
   onRemove,
+  onPromote,
 }: {
   id: string;
   child: NavBarLink;
+  isEditing: boolean;
+  onEdit: () => void;
+  onDoneEdit: () => void;
+  onUpdate: (u: Partial<NavBarLink>) => void;
   onRemove: () => void;
+  onPromote: () => void;
 }) {
   const {
     attributes,
@@ -538,35 +646,63 @@ function SortableChildItem({
     transition,
   };
 
+  const stopDrag = (e: React.PointerEvent) => e.stopPropagation();
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-2 rounded py-1.5 pl-2 ${
+      className={`flex cursor-grab items-center gap-2 rounded py-1.5 pl-2 active:cursor-grabbing ${
         isDragging
           ? 'bg-indigo-100/50 dark:bg-gray-600'
           : 'bg-gray-50 dark:bg-gray-700/50'
       }`}
+      {...attributes}
+      {...listeners}
     >
-      <button
-        type="button"
-        className="cursor-grab touch-none text-gray-400 hover:text-gray-600"
-        {...attributes}
-        {...listeners}
-        aria-label="Arrastrar"
-      >
-        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M7 2a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V4a2 2 0 012-2h2zm6 0a2 2 0 012 2v12a2 2 0 01-2 2h-2a2 2 0 01-2-2V4a2 2 0 012-2h2z" />
-        </svg>
-      </button>
-      <span className="flex-1 text-sm">{child.name}</span>
-      <button
-        type="button"
-        onClick={onRemove}
-        className="text-xs text-red-600 hover:underline"
-      >
-        Quitar
-      </button>
+      <svg className="h-4 w-4 flex-shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+        <path d="M7 2a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V4a2 2 0 012-2h2zm6 0a2 2 0 012 2v12a2 2 0 01-2 2h-2a2 2 0 01-2-2V4a2 2 0 012-2h2z" />
+      </svg>
+      {isEditing ? (
+        <div className="flex-1" onPointerDown={stopDrag}>
+          <LinkEditForm
+            link={child}
+            onSave={(u) => {
+              onUpdate(u);
+              onDoneEdit();
+            }}
+            onCancel={onDoneEdit}
+          />
+        </div>
+      ) : (
+        <>
+          <span className="flex-1 text-sm">{child.name}</span>
+          <div className="flex gap-1" onPointerDown={stopDrag}>
+            <button
+              type="button"
+              onClick={onEdit}
+              className="rounded px-2 py-1 text-xs text-indigo-600 hover:bg-indigo-50"
+            >
+              Editar
+            </button>
+            <button
+              type="button"
+              onClick={onPromote}
+              className="rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
+              title="Sacar a nivel principal"
+            >
+              Sacar
+            </button>
+            <button
+              type="button"
+              onClick={onRemove}
+              className="text-xs text-red-600 hover:underline"
+            >
+              Quitar
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
