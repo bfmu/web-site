@@ -366,6 +366,26 @@ export async function updateHomepageConfig(data: {
   return apiPut<HomepageConfigResponse>('homepage', data);
 }
 
+// ==================== NAVBAR API ====================
+
+export interface NavBarLink {
+  name: string;
+  url: string;
+  external?: boolean;
+  openInNewTab?: boolean;
+  children?: NavBarLink[];
+}
+
+export interface NavbarConfigResponse {
+  links: NavBarLink[];
+}
+
+export async function updateNavbarConfig(data: {
+  links: NavBarLink[];
+}): Promise<NavbarConfigResponse> {
+  return apiPut<NavbarConfigResponse>('navbar', data);
+}
+
 // ==================== MEDIA API ====================
 
 export interface MediaFile {

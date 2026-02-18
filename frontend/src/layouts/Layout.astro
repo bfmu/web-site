@@ -248,6 +248,7 @@ import {
 import { siteConfig } from '../config';
 import { initAdmin } from '../lib/admin-init';
 import { initLoginForm } from '../lib/login-init';
+import { syncAuthSessionCookieIfNeeded } from '../lib/auth';
 import {getHue, getStoredTheme, setHue, setTheme} from "../utils/setting-utils";
 import {pathsEqual, url} from "../utils/url-utils";
 import {
@@ -384,16 +385,23 @@ function init() {
 }
 
 /* Load settings when entering the site */
+syncAuthSessionCookieIfNeeded();
 init();
 initAdmin();
 initLoginForm();
 import('../lib/analytics-track').then(({ trackPageView }) => trackPageView());
+/* Navbar: asegurar init en página principal (p.ej. tras reload) por si el script del Navbar corre antes de estar listo */
+import('../lib/navbar-init').then(({ initNavbar }) => {
+	requestAnimationFrame(() => initNavbar());
+	window.addEventListener('load', () => initNavbar(), { once: true });
+});
 
-/* OAuth/bfcache: actualizar Navbar cuando (1) venimos de callback OAuth (_oauth=1) o
+/* OAuth/bfcache: sincronizar cookie y actualizar Navbar cuando (1) venimos de callback OAuth (_oauth=1) o
    (2) la página se restauró desde bfcache (persisted). */
 window.addEventListener('pageshow', (event) => {
 	const fromOAuth = new URLSearchParams(window.location.search).get('_oauth') === '1';
 	if (event.persisted || fromOAuth) {
+		syncAuthSessionCookieIfNeeded();
 		import('../lib/navbar-init').then(({ initNavbar }) => initNavbar());
 		if (fromOAuth) {
 			history.replaceState(null, '', window.location.pathname + window.location.hash);
@@ -407,6 +415,7 @@ if (/^\/posts\/[^/]+(\/)?$/.test(window.location.pathname)) {
 /* Load settings before swapping */
 /* astro:after-swap event happened before swap animation */
 document.addEventListener('astro:after-swap', () => {
+	syncAuthSessionCookieIfNeeded();
 	init();
 	initAdmin();
 	initLoginForm();
@@ -447,6 +456,7 @@ const setup = () => {
 	})
 	window.swup.hooks.on('content:replace', init)
 	window.swup.hooks.on('content:replace', () => {
+		syncAuthSessionCookieIfNeeded();
 		initAdmin()
 		import('../lib/analytics-track').then(({ trackPageView }) => trackPageView())
 		setTimeout(() => { (window as any).initScrollReveal?.(); }, 50)

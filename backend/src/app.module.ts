@@ -9,6 +9,7 @@ import { SettingsModule } from './settings/settings.module';
 import { BackupModule } from './backup/backup.module';
 import { HealthModule } from './health/health.module';
 import { HomepageModule } from './homepage/homepage.module';
+import { NavbarModule } from './navbar/navbar.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
@@ -27,6 +28,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     BackupModule,
     HealthModule,
     HomepageModule,
+    NavbarModule,
     AnalyticsModule,
   ],
   controllers: [],
