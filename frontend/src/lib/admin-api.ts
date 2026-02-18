@@ -80,6 +80,21 @@ export interface Stats {
   tagsCount: number;
 }
 
+export interface AnalyticsStats {
+  totalPageViews: number;
+  uniqueVisitors: number;
+  viewsToday: number;
+  topPages: { path: string; count: number }[];
+  topLocations: { country: string; city?: string; count: number }[];
+  recentVisits: {
+    ip: string;
+    country?: string;
+    city?: string;
+    path: string;
+    createdAt: string;
+  }[];
+}
+
 /**
  * Obtener todos los posts con filtros
  */
@@ -246,6 +261,13 @@ export async function getStats(): Promise<Stats> {
       tagsCount: 0,
     };
   }
+}
+
+/**
+ * Obtener estadísticas de analytics (visitas, IP, ubicación, páginas)
+ */
+export async function getAnalyticsStats(): Promise<AnalyticsStats> {
+  return apiGet<AnalyticsStats>('analytics/stats');
 }
 
 /**

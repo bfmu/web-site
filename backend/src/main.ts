@@ -9,6 +9,9 @@ import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  // Trust proxy para que req.ip use X-Forwarded-For (nginx)
+  app.set('trust proxy', 1);
+
   // Log de requests a backup para diagnóstico
   app.use((req, res, next) => {
     if (req.path?.startsWith('/api/backup')) {

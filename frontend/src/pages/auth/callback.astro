@@ -132,10 +132,12 @@
       // Procesar los tokens
       handleOAuthCallback(token, refresh)
         .then(() => {
-          // Redirigir a returnUrl después de un breve delay
+          // Redirigir a returnUrl. ?_oauth=1 evita bfcache y fuerza actualización del Navbar al llegar
+          const dest = getReturnUrl();
+          const sep = dest.includes('?') ? '&' : '?';
           setTimeout(() => {
-            window.location.href = getReturnUrl();
-          }, 500);
+            window.location.replace(dest + sep + '_oauth=1');
+          }, 300);
         })
         .catch((error) => {
           console.error('Error en OAuth callback:', error);

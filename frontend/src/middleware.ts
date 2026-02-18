@@ -1,25 +1,36 @@
 /**
  * Middleware para proteger rutas del admin
- * Solo usuarios autenticados pueden acceder, y solo administradores pueden ver ciertas funciones
+ * Solo usuarios autenticados pueden acceder.
+ * Sin cookie de sesión = 404 (no mostrar información ni hacer peticiones al backend)
  */
 
 import { defineMiddleware } from 'astro:middleware';
+
+const AUTH_SESSION_COOKIE = 'auth_session';
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { url } = context;
 
   // Solo proteger rutas que empiecen con /admin
   if (url.pathname.startsWith('/admin')) {
-    // Permitir acceso a /admin/login sin autenticación
-    if (url.pathname === '/admin/login' || url.pathname.startsWith('/admin/login')) {
+    // Permitir acceso a /admin/login y /admin/register sin autenticación
+    if (
+      url.pathname === '/admin/login' ||
+      url.pathname.startsWith('/admin/login') ||
+      url.pathname === '/admin/register' ||
+      url.pathname.startsWith('/admin/register')
+    ) {
       return next();
     }
 
-    // En SSR, no podemos verificar localStorage (window no existe)
-    // Permitimos el acceso en SSR y la protección se hace en el cliente
-    // El backend también rechazará requests no autorizados con JWT
-    // La verificación en el cliente se hace en AdminLayout.astro
-    // Los usuarios normales no deberían poder acceder al admin - esto se verifica en el cliente
+    // Verificar cookie de sesión (establecida al hacer login desde el cliente)
+    const cookieHeader = context.request.headers.get('cookie') || '';
+    const hasAuthSession = cookieHeader.includes(`${AUTH_SESSION_COOKIE}=`);
+
+    // Sin cookie = no autenticado → retornar 404 sin renderizar nada
+    if (!hasAuthSession) {
+      return context.rewrite('/404');
+    }
   }
 
   return next();

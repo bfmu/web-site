@@ -118,19 +118,20 @@ import Layout from '@layouts/Layout.astro';
 </Layout>
 
 <script data-swup-reload-script lang="ts">
-  import { handleOAuthCallback, isAuthenticated } from '../../lib/auth';
+  import { handleOAuthCallback, isAuthenticated, syncAuthSessionCookieIfNeeded } from '../../lib/auth';
   import { loadOAuthProviders } from '../../lib/login-init';
   import { navigateTo } from '../../lib/navigation';
 
-  function getReturnUrl(): string {
+  function getReturnUrl() {
     const returnUrl = sessionStorage.getItem('returnUrl');
     sessionStorage.removeItem('returnUrl');
     if (!returnUrl || /\/admin\/(login|register)|auth/.test(returnUrl)) return '/';
     return returnUrl;
   }
 
-  // Si ya está autenticado, redirigir (full page load a /admin/login)
+  // Si ya está autenticado, sincronizar cookie (por si tenía sesión antigua sin cookie) y redirigir
   if (isAuthenticated()) {
+    syncAuthSessionCookieIfNeeded();
     navigateTo(getReturnUrl());
   }
 

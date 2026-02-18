@@ -387,6 +387,19 @@ function init() {
 init();
 initAdmin();
 initLoginForm();
+import('../lib/analytics-track').then(({ trackPageView }) => trackPageView());
+
+/* OAuth/bfcache: actualizar Navbar cuando (1) venimos de callback OAuth (_oauth=1) o
+   (2) la página se restauró desde bfcache (persisted). */
+window.addEventListener('pageshow', (event) => {
+	const fromOAuth = new URLSearchParams(window.location.search).get('_oauth') === '1';
+	if (event.persisted || fromOAuth) {
+		import('../lib/navbar-init').then(({ initNavbar }) => initNavbar());
+		if (fromOAuth) {
+			history.replaceState(null, '', window.location.pathname + window.location.hash);
+		}
+	}
+});
 if (/^\/posts\/[^/]+(\/)?$/.test(window.location.pathname)) {
 	import('../lib/post-view-init').then(({ initPostViewPage }) => requestAnimationFrame(() => initPostViewPage()));
 }
@@ -435,6 +448,7 @@ const setup = () => {
 	window.swup.hooks.on('content:replace', init)
 	window.swup.hooks.on('content:replace', () => {
 		initAdmin()
+		import('../lib/analytics-track').then(({ trackPageView }) => trackPageView())
 		setTimeout(() => { (window as any).initScrollReveal?.(); }, 50)
 		// Login page: cargar OAuth providers y redirigir si ya autenticado
 		if (window.location.pathname.replace(/\/$/, '') === '/admin/login') {
@@ -461,9 +475,7 @@ const setup = () => {
 			});
 		}
 		// Navbar: reinicializar tras Swup (páginas con MainLayout)
-		import('../lib/navbar-init').then(({ initNavbar }) => {
-			requestAnimationFrame(() => initNavbar());
-		});
+		import('../lib/navbar-init').then(({ initNavbar }) => initNavbar());
 		// Hero: carrusel en página principal
 		if (pathsEqual(window.location.pathname, url('/'))) {
 			import('../lib/hero-init').then(({ initHeroPage }) => {
@@ -522,6 +534,8 @@ const setup = () => {
 			heightExtend.classList.remove('hidden')
 		}
 		(window as any).initScrollReveal?.();
+		// Actualizar Navbar tras transición (p.ej. después de login sin full reload)
+		import('../lib/navbar-init').then(({ initNavbar }) => initNavbar());
 	});
 	window.swup.hooks.on('visit:end', (visit: {to: {url: string}}) => {
 		setTimeout(() => {

@@ -39,6 +39,7 @@ export interface RegisterCredentials {
 const TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
 const USER_KEY = 'user';
+const AUTH_SESSION_COOKIE = 'auth_session';
 
 const API_BASE = `${getBackendApiUrl()}/auth`;
 
@@ -50,12 +51,41 @@ function isClient(): boolean {
 }
 
 /**
+ * Establecer cookie de sesión para que el middleware pueda verificar auth en SSR
+ */
+function setAuthSessionCookie(): void {
+  if (!isClient()) return;
+  // 24h - el middleware solo verifica existencia, no valida el JWT
+  document.cookie = `${AUTH_SESSION_COOKIE}=1; path=/; max-age=86400; SameSite=Lax`;
+}
+
+/**
+ * Sincronizar cookie si hay tokens (para usuarios que tenían sesión antes de implementar cookies)
+ * Llamar desde /admin/login cuando isAuthenticated() es true
+ */
+export function syncAuthSessionCookieIfNeeded(): void {
+  if (!isClient()) return;
+  if (getAccessToken() && getUser()) {
+    setAuthSessionCookie();
+  }
+}
+
+/**
+ * Eliminar cookie de sesión (al cerrar sesión)
+ */
+function clearAuthSessionCookie(): void {
+  if (!isClient()) return;
+  document.cookie = `${AUTH_SESSION_COOKIE}=; path=/; max-age=0`;
+}
+
+/**
  * Guardar tokens en localStorage
  */
 export function setTokens(tokens: AuthTokens): void {
   if (!isClient()) return;
   localStorage.setItem(TOKEN_KEY, tokens.accessToken);
   localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
+  setAuthSessionCookie();
 }
 
 /**
@@ -82,6 +112,7 @@ export function clearTokens(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  clearAuthSessionCookie();
 }
 
 /**
