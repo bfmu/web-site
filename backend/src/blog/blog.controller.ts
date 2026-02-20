@@ -148,9 +148,40 @@ export class BlogController {
 
   @Get('tags')
   @ApiOperation({ summary: 'Obtener todos los tags' })
+  @ApiQuery({
+    name: 'withCount',
+    required: false,
+    type: Boolean,
+    description: 'Incluir conteo de posts por tag',
+  })
   @ApiResponse({ status: 200, description: 'Lista de tags' })
-  async getTags() {
+  async getTags(@Query('withCount') withCount?: string) {
+    if (withCount === 'true') {
+      return this.blogService.getTagsWithCount();
+    }
     return this.blogService.getTags();
+  }
+
+  @Delete('tags/:tag')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Eliminar una etiqueta de todos los posts (solo admin)' })
+  @ApiParam({ name: 'tag', description: 'Nombre de la etiqueta a eliminar' })
+  @ApiResponse({ status: 200, description: 'Etiqueta eliminada' })
+  async removeTag(@Param('tag') tag: string) {
+    return this.blogService.removeTagFromAllPosts(tag);
+  }
+
+  @Delete('categories/:category')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Eliminar una categoría de todos los posts (solo admin)' })
+  @ApiParam({ name: 'category', description: 'Nombre de la categoría a eliminar' })
+  @ApiResponse({ status: 200, description: 'Categoría eliminada' })
+  async removeCategory(@Param('category') category: string) {
+    return this.blogService.removeCategoryFromAllPosts(category);
   }
 
   @Get('validate-slug/:slug')

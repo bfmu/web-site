@@ -166,10 +166,31 @@ export async function getCategories(withCount: boolean = false): Promise<string[
 }
 
 /**
- * Obtener tags
+ * Obtener tags (para autocompletado en formularios)
  */
 export async function getTags(): Promise<string[]> {
   return apiGet<string[]>('blog/tags');
+}
+
+/**
+ * Obtener tags con conteo de posts (para administración)
+ */
+export async function getTagsWithCount(): Promise<Array<{ name: string; count: number }>> {
+  return apiGet<Array<{ name: string; count: number }>>('blog/tags?withCount=true');
+}
+
+/**
+ * Eliminar una etiqueta de todos los posts
+ */
+export async function deleteTag(tag: string): Promise<{ modifiedCount: number }> {
+  return apiDelete<{ modifiedCount: number }>(`blog/tags/${encodeURIComponent(tag)}`);
+}
+
+/**
+ * Eliminar una categoría de todos los posts
+ */
+export async function deleteCategory(category: string): Promise<{ modifiedCount: number }> {
+  return apiDelete<{ modifiedCount: number }>(`blog/categories/${encodeURIComponent(category)}`);
 }
 
 /**

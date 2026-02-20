@@ -34,10 +34,10 @@ export function initPostViewPage(): void {
     `;
     link.title = 'Editar post';
 
-    // Navegación directa para evitar Swup y cargar estilos correctamente
+    // Usar Swup para transición sin recargar (preserva el reproductor y estado)
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      window.location.assign(link.href);
+      import('./navigation').then(({ navigateTo }) => navigateTo(link.href));
     });
 
     container.appendChild(link);

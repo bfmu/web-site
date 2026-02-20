@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
@@ -214,6 +214,49 @@ export class BlogService {
   async getTags(): Promise<string[]> {
     const tags = await this.postModel.distinct('tags').exec();
     return tags.filter((tag) => tag && tag.trim() !== '');
+  }
+
+  async getTagsWithCount(): Promise<{ name: string; count: number }[]> {
+    const tags = await this.postModel
+      .aggregate([
+        { $unwind: '$tags' },
+        { $match: { tags: { $exists: true, $ne: '' } } },
+        { $group: { _id: '$tags', count: { $sum: 1 } } },
+        { $project: { name: '$_id', count: 1, _id: 0 } },
+        { $sort: { name: 1 } },
+      ])
+      .exec();
+    return tags.filter((t) => t.name && t.name.trim() !== '');
+  }
+
+  /**
+   * Elimina una etiqueta de todos los posts que la usan.
+   * La etiqueta desaparecerá del frontend al no estar asociada a ningún post.
+   */
+  async removeTagFromAllPosts(tag: string): Promise<{ modifiedCount: number }> {
+    const decoded = decodeURIComponent(tag.trim());
+    if (!decoded) {
+      throw new BadRequestException('Tag name is required');
+    }
+    const result = await this.postModel
+      .updateMany({ tags: decoded }, { $pull: { tags: decoded } })
+      .exec();
+    return { modifiedCount: result.modifiedCount };
+  }
+
+  /**
+   * Elimina una categoría de todos los posts que la usan (la deja vacía).
+   * Útil para "eliminar" categorías no deseadas.
+   */
+  async removeCategoryFromAllPosts(category: string): Promise<{ modifiedCount: number }> {
+    const decoded = decodeURIComponent(category.trim());
+    if (!decoded) {
+      throw new BadRequestException('Category name is required');
+    }
+    const result = await this.postModel
+      .updateMany({ category: decoded }, { $set: { category: '' } })
+      .exec();
+    return { modifiedCount: result.modifiedCount };
   }
 
   async getRecentPosts(limit: number = 5): Promise<Post[]> {
