@@ -1,27 +1,27 @@
 FROM node:lts AS base
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Instala las dependencias de producción
 FROM base AS prod-deps
-RUN npm install --production
+RUN pnpm install --prod
 
 # Instala las dependencias de desarrollo
 FROM base AS build-deps
-RUN npm install --production=false
+RUN pnpm install
 
 # Construye la aplicación
 FROM build-deps AS build
 COPY . .
 
-# Configura las variables de entorno en la etapa de construcción
 ARG PUBLIC_WEB_SITE_URL
 ENV PUBLIC_WEB_SITE_URL=${PUBLIC_WEB_SITE_URL}
 ARG PUBLIC_BACKEND_URL
 ENV PUBLIC_BACKEND_URL=${PUBLIC_BACKEND_URL}
 
-RUN npm run build
+RUN pnpm run build
 FROM base AS runtime
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
