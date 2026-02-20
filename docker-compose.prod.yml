@@ -62,7 +62,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    args:
+      args:
         - PUBLIC_WEB_SITE_URL=${PUBLIC_WEB_SITE_URL}
         - PUBLIC_BACKEND_URL=${PUBLIC_BACKEND_URL}
     container_name: website-frontend
