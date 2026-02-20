@@ -138,10 +138,7 @@ export default function MediaLibrary() {
     return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
   };
 
-  const getImageUrl = (media: MediaFile): string => {
-    if (media.url.startsWith('http')) return media.url;
-    return getBackendResourceUrl(media.url);
-  };
+  const getImageUrl = (media: MediaFile): string => getBackendResourceUrl(media.url);
 
   return (
     <div className="space-y-6">
@@ -208,7 +205,9 @@ export default function MediaLibrary() {
                   alt={item.alt || item.originalName}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/default-avatar.svg';
+                    const img = e.target as HTMLImageElement;
+                    img.onerror = null;
+                    img.src = '/default-avatar.svg';
                   }}
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">

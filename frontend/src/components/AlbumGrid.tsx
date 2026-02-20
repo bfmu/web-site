@@ -71,7 +71,9 @@ export default function AlbumGrid({ images, albumTitle }: AlbumGridProps) {
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                 loading="lazy"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/default-avatar.svg';
+                  const img = e.target as HTMLImageElement;
+                  img.onerror = null;
+                  img.src = '/default-avatar.svg';
                 }}
               />
               {/* Overlay con descripción si existe */}

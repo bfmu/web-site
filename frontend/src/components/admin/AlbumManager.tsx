@@ -195,10 +195,7 @@ export default function AlbumManager() {
     refreshSelectedAlbum();
   };
 
-  const getImageUrl = (url: string): string => {
-    if (url.startsWith('http')) return url;
-    return getBackendResourceUrl(url);
-  };
+  const getImageUrl = (url: string): string => getBackendResourceUrl(url);
 
   // Vista dentro del álbum (navegación)
   if (viewMode === 'album' && selectedAlbum) {
@@ -338,7 +335,9 @@ export default function AlbumManager() {
                       alt={image?.alt || 'Imagen'}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/default-avatar.svg';
+                        const img = e.target as HTMLImageElement;
+                        img.onerror = null;
+                        img.src = '/default-avatar.svg';
                       }}
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all rounded-lg flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
@@ -503,7 +502,9 @@ export default function AlbumManager() {
                     alt={album.title}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/default-avatar.svg';
+                      const img = e.target as HTMLImageElement;
+                      img.onerror = null;
+                      img.src = '/default-avatar.svg';
                     }}
                   />
                   <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">

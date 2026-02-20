@@ -43,6 +43,19 @@ const EXTRA_COLLECTIONS = ['homepage_config'] as const;
 const RATE_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_BACKUP_SIZE = Number(process.env.BACKUP_MAX_SIZE) || 2 * 1024 * 1024 * 1024; // 2GB
 
+/** Convierte URLs absolutas que apuntan a /uploads/ en rutas relativas (domínio-agnóstico) */
+function toRelativePath(val: unknown): string {
+  if (val == null || typeof val !== 'string') return val as string;
+  if (!val.startsWith('http')) return val;
+  try {
+    const u = new URL(val);
+    if (u.pathname.startsWith('/uploads/')) return u.pathname;
+  } catch {
+    // URL inválida, mantener original
+  }
+  return val;
+}
+
 @Injectable()
 export class BackupService {
   private lastCreateAt = 0;
@@ -99,6 +112,50 @@ export class BackupService {
 
   private sha256(buf: Buffer): string {
     return crypto.createHash('sha256').update(buf).digest('hex');
+  }
+
+  /** Normaliza URLs absolutas a rutas relativas para que funcionen en cualquier dominio */
+  private normalizeDataForRestore(
+    col: (typeof COLLECTIONS)[number] | (typeof EXTRA_COLLECTIONS)[number],
+    data: any[],
+  ): any[] {
+    if (!data || !Array.isArray(data)) return data;
+    const imageFields = ['imageUrl', 'imageUrls', 'avatar'];
+
+    return data.map((doc) => {
+      const d = { ...doc };
+      switch (col) {
+        case 'media':
+          if (d.url) d.url = toRelativePath(d.url);
+          break;
+        case 'albums':
+          if (d.coverImage) d.coverImage = toRelativePath(d.coverImage);
+          break;
+        case 'posts':
+          if (d.image) d.image = toRelativePath(d.image);
+          break;
+        case 'users':
+          if (d.avatar) d.avatar = toRelativePath(d.avatar);
+          break;
+        case 'homepage_config':
+          if (Array.isArray(d.sections)) {
+            d.sections = d.sections.map((sec: any) => {
+              if (!sec?.config || typeof sec.config !== 'object') return sec;
+              const cfg = { ...sec.config };
+              if (cfg.imageUrl) cfg.imageUrl = toRelativePath(cfg.imageUrl);
+              if (Array.isArray(cfg.imageUrls)) {
+                cfg.imageUrls = cfg.imageUrls.map((u: any) => toRelativePath(u));
+              }
+              for (const f of imageFields) {
+                if (cfg[f]) cfg[f] = toRelativePath(cfg[f]);
+              }
+              return { ...sec, config: cfg };
+            });
+          }
+          break;
+      }
+      return d;
+    });
   }
 
   async createBackup(destination: Writable): Promise<void> {
@@ -331,7 +388,8 @@ export class BackupService {
       const name = `database/${col}.json`;
       const buf = extracted.get(name);
       if (!buf) continue;
-      const data = JSON.parse(buf.toString('utf8'));
+      let data = JSON.parse(buf.toString('utf8'));
+      data = this.normalizeDataForRestore(col as any, data);
       const n = await this.importCollection(col as any, data);
       restored[col] = n;
     }
@@ -339,8 +397,9 @@ export class BackupService {
       const name = `database/${col}.json`;
       const buf = extracted.get(name);
       if (!buf) continue;
-      const data = JSON.parse(buf.toString('utf8'));
+      let data = JSON.parse(buf.toString('utf8'));
       if (data?.length > 0) {
+        data = this.normalizeDataForRestore(col as any, data);
         await models[col].insertMany(data);
       }
     }

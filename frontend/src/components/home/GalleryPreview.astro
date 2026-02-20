@@ -30,7 +30,6 @@ try {
 
 function getImageUrl(url: string | undefined): string {
   if (!url) return '/default-avatar.svg';
-  if (url.startsWith('http')) return url;
   return getBackendResourceUrl(url);
 }
 ---

@@ -254,7 +254,6 @@ function Field({
 
 function heroImageUrl(url: string): string {
   if (!url) return '';
-  if (url.startsWith('http')) return url;
   return getBackendResourceUrl(url.startsWith('/') ? url : `/${url}`);
 }
 
@@ -302,7 +301,11 @@ function HeroFields({
                   src={heroImageUrl(url)}
                   alt=""
                   className="h-full w-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).src = '/default-avatar.svg'; }}
+                  onError={(e) => {
+                  const img = e.target as HTMLImageElement;
+                  img.onerror = null;
+                  img.src = '/default-avatar.svg';
+                }}
                 />
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1">
                   <button

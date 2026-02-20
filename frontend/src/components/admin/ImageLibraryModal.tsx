@@ -115,18 +115,12 @@ export function ImageLibraryModal({
 
   const handleSelectFromLibrary = () => {
     if (selectedImage) {
-      const fullUrl = selectedImage.url.startsWith('http')
-        ? selectedImage.url
-        : getBackendResourceUrl(selectedImage.url);
-      onSelect(fullUrl);
+      onSelect(getBackendResourceUrl(selectedImage.url));
       onClose();
     }
   };
 
-  const getImageUrl = (media: MediaFile): string => {
-    if (media.url.startsWith('http')) return media.url;
-    return getBackendResourceUrl(media.url);
-  };
+  const getImageUrl = (media: MediaFile): string => getBackendResourceUrl(media.url);
 
   if (!isOpen) return null;
 
@@ -219,7 +213,9 @@ export function ImageLibraryModal({
                         alt={item.alt || item.originalName}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/default-avatar.svg';
+                          const img = e.target as HTMLImageElement;
+                          img.onerror = null;
+                          img.src = '/default-avatar.svg';
                         }}
                       />
                     </div>

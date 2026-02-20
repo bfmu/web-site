@@ -125,7 +125,9 @@ export default function InstagramModal({
             }`}
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
-              (e.target as HTMLImageElement).src = '/default-avatar.svg';
+              const img = e.target as HTMLImageElement;
+              img.onerror = null;
+              img.src = '/default-avatar.svg';
               setImageLoaded(true);
             }}
           />

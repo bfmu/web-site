@@ -57,9 +57,19 @@ export function getBackendApiUrl(): string {
 
 /**
  * Construye una URL completa para un recurso del backend (ej: imágenes en /uploads/...)
+ * Si recibe una URL absoluta que apunta a nuestros uploads, extrae el path y rebuild con el dominio actual.
  */
 export function getBackendResourceUrl(path: string): string {
-  if (path.startsWith('http')) return path;
+  if (!path) return path;
+  if (path.startsWith('http')) {
+    try {
+      const u = new URL(path);
+      if (u.pathname.startsWith('/uploads/')) path = u.pathname;
+      else return path;
+    } catch {
+      return path;
+    }
+  }
   const base = getBackendUrl().replace(/\/$/, '');
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   return `${base}${cleanPath}`;

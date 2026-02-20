@@ -159,10 +159,7 @@ export function AddPhotosModal({
     }
   };
 
-  const getImageUrl = (m: MediaFile): string => {
-    if (m.url.startsWith('http')) return m.url;
-    return getBackendResourceUrl(m.url);
-  };
+  const getImageUrl = (m: MediaFile): string => getBackendResourceUrl(m.url);
 
   if (!isOpen) return null;
 
@@ -279,7 +276,9 @@ export function AddPhotosModal({
                           alt={item.alt || item.originalName}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/default-avatar.svg';
+                            const img = e.target as HTMLImageElement;
+                            img.onerror = null;
+                            img.src = '/default-avatar.svg';
                           }}
                         />
                         {selectedIds.has(item._id) && (

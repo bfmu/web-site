@@ -23,7 +23,6 @@ const coverUrl = album.coverImage || (album.images && album.images.length > 0 &&
 // Construir URL completa de la imagen
 function getImageUrl(imgUrl: string | undefined): string {
   if (!imgUrl) return '/default-avatar.svg';
-  if (imgUrl.startsWith('http')) return imgUrl;
   return getBackendResourceUrl(imgUrl);
 }
 
@@ -37,7 +36,7 @@ const albumUrl = url(`/gallery/${album.slug}`);
         alt={album.title}
         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         loading="lazy"
-        onerror="this.src='/default-avatar.svg'"
+        onerror="this.onerror=null; this.src='/default-avatar.svg'"
     />
     <!-- Overlay con información -->
     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">

@@ -119,15 +119,7 @@ export function ProfileEditor() {
     if (!url || url === '/default-avatar.png' || url === '/default-avatar.svg') {
       return '/default-avatar.svg';
     }
-    if (url.startsWith('http')) return url;
-    if (url.startsWith('/uploads/')) {
-      return getBackendResourceUrl(url);
-    }
-    if (url.startsWith('/')) {
-      // Para rutas absolutas que no sean uploads, usar directamente
-      return url;
-    }
-    return url;
+    return getBackendResourceUrl(url);
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -190,7 +182,9 @@ export function ProfileEditor() {
                 alt="Avatar"
                 className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/default-avatar.svg';
+                  const img = e.target as HTMLImageElement;
+                  img.onerror = null;
+                  img.src = '/default-avatar.svg';
                 }}
               />
             </div>

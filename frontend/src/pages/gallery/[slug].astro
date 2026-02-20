@@ -31,10 +31,7 @@ const processedImages = images.map((img: any) => {
   const image = typeof img === 'string' ? null : img;
   if (!image) return null;
   
-  let imageUrl = image.url;
-  if (!imageUrl.startsWith('http')) {
-    imageUrl = getBackendResourceUrl(image.url);
-  }
+  const imageUrl = getBackendResourceUrl(image.url);
   
   return {
     id: image._id || image.id,

@@ -145,7 +145,9 @@ export default function AlbumCarousel({ images, albumTitle }: AlbumCarouselProps
             className="w-full h-full object-contain"
             loading="lazy"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = '/default-avatar.svg';
+              const img = e.target as HTMLImageElement;
+              img.onerror = null;
+              img.src = '/default-avatar.svg';
             }}
           />
         </a>
