@@ -107,16 +107,15 @@ const bannerOffset =
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		
-		<!-- Favicon estándar -->
-		<link rel="icon" type="image/png" href={url('/favicon/favicon-light-32.png')} sizes="32x32" />
-		<link rel="icon" type="image/png" href={url('/favicon/favicon-light-128.png')} sizes="128x128" />
-		<link rel="apple-touch-icon" href={url('/favicon/favicon-light-180.png')} sizes="180x180" />
+		<!-- Favicon principal (SVG - compatible con todos los navegadores modernos) -->
+		<link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
+		<link rel="apple-touch-icon" href={url('/favicon.svg')} sizes="180x180" />
 		
-		<!-- Favicons con tema -->
+		<!-- Favicons adicionales desde config -->
 		{favicons.map(favicon => (
 			<link 
 				rel="icon"
-				type="image/png"
+				type={favicon.src.endsWith('.svg') ? 'image/svg+xml' : 'image/png'}
 				href={favicon.src.startsWith('/') ? url(favicon.src) : favicon.src}
 				sizes={favicon.sizes}
 				media={favicon.theme ? `(prefers-color-scheme: ${favicon.theme})` : undefined}

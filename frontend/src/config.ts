@@ -29,43 +29,9 @@ export const siteConfig: SiteConfig = {
     depth: 2, // Maximum heading depth to show in the table, from 1 to 3
   },
   favicon: [
-    // Favicon estándar
     {
-      src: '/favicon/favicon-light-32.png',
+      src: '/favicon.svg',
       sizes: '32x32',
-    },
-    {
-      src: '/favicon/favicon-light-128.png',
-      sizes: '128x128',
-    },
-    {
-      src: '/favicon/favicon-light-180.png',
-      sizes: '180x180',
-    },
-    {
-      src: '/favicon/favicon-light-192.png',
-      sizes: '192x192',
-    },
-    // Favicons para dark mode
-    {
-      src: '/favicon/favicon-dark-32.png',
-      theme: 'dark',
-      sizes: '32x32',
-    },
-    {
-      src: '/favicon/favicon-dark-128.png',
-      theme: 'dark',
-      sizes: '128x128',
-    },
-    {
-      src: '/favicon/favicon-dark-180.png',
-      theme: 'dark',
-      sizes: '180x180',
-    },
-    {
-      src: '/favicon/favicon-dark-192.png',
-      theme: 'dark',
-      sizes: '192x192',
     },
   ],
 };
