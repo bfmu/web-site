@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { usePlayerStore } from "./playerStore";
 
 declare global {
@@ -14,7 +14,7 @@ declare global {
 }
 
 interface EmbedController {
-  loadUri: (uri: string) => void;
+  loadUri: (uri: string, preferVideo?: boolean, startAt?: number) => void;
   play: () => void;
   pause: () => void;
   resume: () => void;
@@ -71,6 +71,15 @@ function clamp(min: number, val: number, max: number): number {
 }
 
 const DRAG_THRESHOLD_PX = 5;
+const SAVE_POSITION_DEBOUNCE_MS = 1500;
+
+function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): T {
+  let timeout: ReturnType<typeof setTimeout>;
+  return ((...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), ms);
+  }) as T;
+}
 
 export function PersistentPlayer() {
   const { trackId, trackInfo, isPlaying, isVisible, playerPosition, setPlayerPosition, setController, setPlaying, togglePlaying, savePosition, close } =
@@ -85,6 +94,23 @@ export function PersistentPlayer() {
   const [duration, setDuration] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+
+  const savePositionDebounced = useMemo(
+    () => debounce((tid: string, pos: number) => savePosition(tid, pos), SAVE_POSITION_DEBOUNCE_MS),
+    [savePosition]
+  );
+
+  // Mostrar posición guardada al rehidratar mientras llega el primer playback_update
+  const savedPositions = usePlayerStore((s) => s.savedPositions);
+  const savedPos = trackId ? (savedPositions[trackId] ?? 0) : 0;
+  const hasInitializedPosition = useRef(false);
+  useEffect(() => {
+    if (trackId && savedPos > 0 && !hasInitializedPosition.current) {
+      hasInitializedPosition.current = true;
+      setPosition(savedPos);
+    }
+    if (!trackId) hasInitializedPosition.current = false;
+  }, [trackId, savedPos]);
 
   // Crear controlador UNA VEZ al montar (con track placeholder) para tenerlo listo
   // antes del primer clic del usuario → play() puede ejecutarse en contexto de gesto
@@ -107,7 +133,13 @@ export function PersistentPlayer() {
           controllerRef.current = EmbedController;
 
           const ctrlForStore = {
-            loadUri: (u: string) => EmbedController.loadUri(u),
+            loadUri: (u: string, startAt?: number) => {
+              if (startAt != null && startAt > 0) {
+                EmbedController.loadUri(u, false, startAt);
+              } else {
+                EmbedController.loadUri(u);
+              }
+            },
             play: () => EmbedController.play(),
             pause: () => EmbedController.pause(),
             togglePlay: () => EmbedController.togglePlay(),
@@ -115,16 +147,14 @@ export function PersistentPlayer() {
           };
           setController(ctrlForStore);
 
-          // Si hay estado persistido (trackId, isVisible), cargar la pista al rehidratar
-          const { trackId: persistedTrackId, savedPositions } = usePlayerStore.getState();
+          // Rehidratar: cargar pista donde iba usando startAt (evita reinicio al recargar)
+          const { trackId: persistedTrackId, savedPositions, isPlaying: wasPlaying } = usePlayerStore.getState();
           if (persistedTrackId) {
             const uri = `spotify:track:${persistedTrackId}`;
-            EmbedController.loadUri(uri);
-            const savedPos = savedPositions[persistedTrackId];
-            if (savedPos && savedPos > 0) {
-              EmbedController.seek(Math.floor(savedPos / 1000));
-            }
-            EmbedController.play();
+            const savedPos = savedPositions[persistedTrackId] ?? 0;
+            const startAt = savedPos > 0 ? Math.floor(savedPos / 1000) : undefined;
+            ctrlForStore.loadUri(uri, startAt);
+            if (wasPlaying) EmbedController.play();
           }
 
           EmbedController.addListener("playback_started", () => {
@@ -145,7 +175,7 @@ export function PersistentPlayer() {
             }
             if (e.data?.position !== undefined) {
               setPosition(e.data.position);
-              if (tid) savePosition(tid, e.data.position);
+              if (tid) savePositionDebounced(tid, e.data.position);
             }
             if (e.data?.duration !== undefined) setDuration(e.data.duration);
             setIsReady(true);
@@ -167,31 +197,9 @@ export function PersistentPlayer() {
     };
   }, [setController, setPlaying, savePosition]);
 
-  // Despertar el embed de Spotify cuando la pestaña vuelve de estar idle (evita que el botón play no responda)
-  const positionRef = useRef(position);
-  const durationRef = useRef(duration);
-  positionRef.current = position;
-  durationRef.current = duration;
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState !== "visible") return;
-      const ctrl = controllerRef.current;
-      const { trackId: tid, isVisible } = usePlayerStore.getState();
-      if (!ctrl || !tid || !isVisible) return;
-      setTimeout(() => {
-        const pos = Math.floor(positionRef.current / 1000);
-        if (pos > 0 && durationRef.current > 0) {
-          try {
-            ctrl.seek(pos);
-          } catch {
-            /* ignorar */
-          }
-        }
-      }, 50);
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, []);
+  // No hacer seek al volver a la pestaña: la posición local (positionRef) queda desactualizada
+  // cuando la pestaña está en segundo plano (playback_update deja de dispararse), y hacer
+  // seek(pos) provoca un salto audible hacia atrás.
 
   const handleTogglePlay = () => {
     const ctrl = controllerRef.current;
@@ -211,9 +219,11 @@ export function PersistentPlayer() {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const pct = Math.max(0, Math.min(1, x / rect.width));
-    const seconds = Math.floor((pct * duration) / 1000);
+    const posMs = Math.floor(pct * duration);
+    const seconds = Math.floor(posMs / 1000);
     ctrl.seek(seconds);
-    setPosition(seconds * 1000);
+    setPosition(posMs);
+    if (trackId) savePosition(trackId, posMs);
   };
 
   const handleClose = () => {

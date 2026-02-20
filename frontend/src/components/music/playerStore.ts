@@ -10,7 +10,8 @@ export interface TrackInfo {
 }
 
 export interface SpotifyController {
-  loadUri: (uri: string) => void;
+  /** Carga una pista. startAt opcional (segundos) para reanudar donde iba. */
+  loadUri: (uri: string, startAtSeconds?: number) => void;
   play: () => void;
   pause: () => void;
   togglePlay: () => void;
@@ -64,15 +65,11 @@ export const usePlayerStore = create<PlayerState>()(
           isVisible: true,
           isPlaying: true,
         });
-        // Llamar loadUri + play en el mismo tick que el clic del usuario
-        // (contexto de gesto) para evitar bloqueo de autoplay del navegador
         if (controller) {
           const uri = `spotify:track:${trackId}`;
-          controller.loadUri(uri);
           const savedPos = savedPositions[trackId];
-          if (savedPos && savedPos > 0) {
-            controller.seek(Math.floor(savedPos / 1000));
-          }
+          const startAt = savedPos > 0 ? Math.floor(savedPos / 1000) : undefined;
+          controller.loadUri(uri, startAt);
           controller.play();
         }
       },
@@ -101,6 +98,7 @@ export const usePlayerStore = create<PlayerState>()(
         trackId: s.trackId,
         trackInfo: s.trackInfo,
         isVisible: s.isVisible,
+        isPlaying: s.isPlaying,
         playerPosition: s.playerPosition,
         savedPositions: s.savedPositions,
       }),
