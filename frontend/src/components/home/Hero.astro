@@ -1,0 +1,195 @@
+---
+import bannerImage from '@/assets/images/DSC_2453.jpg';
+import { getBackendResourceUrl } from '@/lib/env';
+
+interface Props {
+  config?: Record<string, unknown>;
+}
+
+const { config = {} } = Astro.props;
+
+const title = (config.title as string) ?? 'Desarrollo, Fotografía y Reflexión';
+const subtitle = (config.subtitle as string) ?? 'Desarrollo soluciones. Capturo momentos. Reflexiono sobre historias. Aquí es donde todo converge.';
+const ctaText = (config.ctaText as string) ?? 'Explorar';
+const ctaHref = (config.ctaHref as string) ?? '#explore';
+const carouselIntervalSeconds = typeof config.carouselIntervalSeconds === 'number' ? config.carouselIntervalSeconds : 5.5;
+const heightVh = typeof config.heightVh === 'number' ? Math.max(30, Math.min(100, config.heightVh)) : 70;
+
+const defaultBannerUrl = typeof bannerImage === 'string' ? bannerImage : bannerImage.src;
+
+function resolveUrl(url: string): string {
+  if (!url || !(url.startsWith('http') || url.startsWith('/'))) return '';
+  return url.startsWith('/uploads/') ? getBackendResourceUrl(url) : url;
+}
+
+const imageUrlLegacy = config.imageUrl as string | undefined;
+const imageUrlsRaw = (config.imageUrls as string[] | undefined) ?? [];
+
+let imageUrls: string[];
+if (imageUrlsRaw.length > 0) {
+  imageUrls = imageUrlsRaw.map(resolveUrl).filter(Boolean);
+} else if (imageUrlLegacy && (imageUrlLegacy.startsWith('http') || imageUrlLegacy.startsWith('/'))) {
+  imageUrls = [resolveUrl(imageUrlLegacy)];
+} else {
+  imageUrls = [];
+}
+
+const slides = imageUrls.length > 0 ? imageUrls : [defaultBannerUrl];
+const intervalMs = Math.max(2000, Math.min(30000, carouselIntervalSeconds * 1000));
+---
+
+<section
+  class="hero"
+  data-hero
+  data-interval-ms={intervalMs}
+  data-slides-count={slides.length}
+  style={`--hero-height: ${heightVh}vh;`}
+>
+  <div class="hero__bg" aria-hidden="true">
+    {slides.map((url, i) => (
+      <div
+        class:list={['hero__slide', { 'is-active': i === 0 }]}
+        style={`background-image: url(${url})`}
+        data-slide-index={i}
+      />
+    ))}
+  </div>
+
+  <div class="hero__overlay">
+    <h1 class="hero__title">{title}</h1>
+    <p class="hero__subtitle">{subtitle}</p>
+    <a href={ctaHref} class="hero__cta">{ctaText}</a>
+  </div>
+
+  {slides.length > 1 && (
+    <div class="hero__dots" aria-label="Slides del carrusel">
+      {slides.map((_, i) => (
+        <button
+          type="button"
+          class:list={['hero__dot', { 'is-active': i === 0 }]}
+          aria-label={`Slide ${i + 1}`}
+          data-dot-index={i}
+        />
+      ))}
+    </div>
+  )}
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    width: 100%;
+    height: var(--hero-height, 70vh);
+    min-height: var(--hero-height, 70vh);
+    overflow: hidden;
+    border-radius: var(--radius-large, 1rem);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  }
+
+  .hero__bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hero__slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 0.7s ease;
+  }
+
+  .hero__slide.is-active {
+    opacity: 1;
+  }
+
+  .hero__overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: var(--radius-large, 1rem);
+  }
+
+  .hero__title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+    margin: 0;
+  }
+
+  @media (min-width: 768px) {
+    .hero__title {
+      font-size: 3.75rem;
+    }
+  }
+
+  .hero__subtitle {
+    font-size: 1.125rem;
+    color: rgba(255, 255, 255, 0.9);
+    max-width: 42rem;
+    margin: 1rem 0 0;
+  }
+
+  .hero__cta {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    background: var(--btn-regular-bg);
+    color: var(--btn-content);
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .hero__cta:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  }
+
+  .hero__dots {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+    z-index: 10;
+  }
+
+  .hero__dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.5);
+    transition: width 0.3s, background 0.3s;
+  }
+
+  .hero__dot.is-active {
+    width: 1.5rem;
+    background: white;
+  }
+</style>
+
+<script data-swup-reload-script>
+  import { initHeroPage } from '../../lib/hero-init';
+  initHeroPage();
+</script>

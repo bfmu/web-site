@@ -3,9 +3,22 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Trust proxy para que req.ip use X-Forwarded-For (nginx)
+  app.set('trust proxy', 1);
+
+  // Log de requests a backup para diagnóstico
+  app.use((req, res, next) => {
+    if (req.path?.startsWith('/api/backup')) {
+      console.log(`[Backup] ${req.method} ${req.path} - ${req.get('content-type') || 'no content-type'}`);
+    }
+    next();
+  });
 
   //configurar un prefijo para todas las rutas
   app.setGlobalPrefix('api');
@@ -34,9 +47,14 @@ async function bootstrap() {
     allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
+  // Servir archivos estáticos de uploads
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
+
   const configService = app.get(ConfigService);
 
-  const port = configService.get<number>('PORT') || 4000;
+  const port = configService.get<number>('PORT') || 3000;
 
   await app.listen(port);
 

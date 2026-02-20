@@ -1,0 +1,42 @@
+---
+interface Props {
+  config?: Record<string, unknown>;
+}
+
+const { config = {} } = Astro.props;
+
+const title = (config.title as string) ?? 'Explora mi contenido';
+const subtitle = (config.subtitle as string) ?? 'Descubre mis proyectos, ideas y pasiones a través de estas secciones.';
+
+const defaultItems = [
+  { titulo: '🎧 Música que me inspira', descripcion: 'Canciones y playlists que forman parte de mi día a día.', enlace: '/music/' },
+  { titulo: '🌟 Exploraciones artísticas', descripcion: 'Fotografía y momentos que inspiran.', enlace: '/gallery/' },
+  { titulo: '📝 Resúmenes y opiniones', descripcion: 'Libros que leo y reflexiones sobre ellos.', enlace: '/blogs/' },
+  { titulo: '📚 Guías y artículos', descripcion: 'Soluciones y optimización de procesos.', enlace: '/archive/' },
+  { titulo: '💻 Portafolio', descripcion: 'Proyectos destacados de desarrollo de software.', enlace: 'https://portfolio.bfmu.dev' },
+];
+
+const items = Array.isArray(config.items) && config.items.length > 0
+  ? (config.items as Array<{ titulo: string; descripcion: string; enlace: string }>)
+  : defaultItems;
+---
+
+<section class="w-full py-16 bg-[var(--card-bg)] text-center rounded-[var(--radius-large)] shadow-md">
+    <div class="max-w-5xl mx-auto px-6">
+        <h2 class="text-3xl font-bold text-[var(--primary)] dark:text-[var(--title-active)]">{title}</h2>
+        <p class="text-lg text-[var(--deep-text)] dark:text-white mt-4">{subtitle}</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-8 max-w-5xl mx-auto px-6">
+        {items.map((seccion, i) => (
+            <a
+                href={seccion.enlace}
+                class="seccion-card p-6 bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)] active:bg-[var(--btn-regular-bg-active)] text-[var(--btn-content)] rounded-lg text-lg font-semibold transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.02] border-2 border-transparent hover:border-[var(--primary)] block text-center"
+                style={`animation-delay: ${i * 80}ms`}
+            >
+                <h3 class="text-xl font-semibold text-[var(--primary)] dark:text-[var(--title-active)]">{seccion.titulo}</h3>
+                <p class="text-[var(--deep-text)] dark:text-white mt-2">{seccion.descripcion}</p>
+            </a>
+        ))}
+    </div>
+</section>

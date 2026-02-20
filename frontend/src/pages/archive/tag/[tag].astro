@@ -5,21 +5,23 @@ import { fetchPosts } from "@/utils/api-blog";
 import PostsArchive from "@/components/PostsArchive.jsx";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getBackendApiUrl } from "@/lib/env";
 
 // Puedes poner aquí tus filtros si quieres
-const params = { tag: Astro.params.tag as string, page: 1 };
+const params = { tag: Astro.params.tag as string, page: 1, draft: false };
 const res = await fetchPosts(params);
 const initialPosts = res.posts || res;
 const initialPagination = res.pagination;
-const apiUrl = import.meta.env.PUBLIC_API_URL;
-const fetchUrlBase = apiUrl.endsWith("/")
-  ? apiUrl + "api/blog"
-  : apiUrl + "/api/blog";
+const fetchUrlBase = `${getBackendApiUrl()}/blog`;
 ---
 
 <MainGridLayout
   title={i18n(I18nKey.archive)}
   description={i18n(I18nKey.archive)}
+  showProfile={false}
+  showCategories={true}
+  showTags={true}
+  showArchiveLink={true}
 >
   <!-- <ArchivePanel tags={[tag]} /> -->
   <PostsArchive

@@ -21,7 +21,7 @@ let search = async (keyword: string, isDesktop: boolean) => {
   let arr = []
   if (keyword) {
     try {
-      const res = await fetchPosts({ search: keyword, limit: 10 })
+      const res = await fetchPosts({ search: keyword, limit: 10, draft: false })
       const list = res.posts || res.docs || res
       arr = list.map((post: any) => ({
         url: getPostUrlBySlug(post.slug),

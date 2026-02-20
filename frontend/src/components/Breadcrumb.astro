@@ -1,0 +1,52 @@
+---
+import { Icon } from 'astro-icon/components'
+import { url } from '../utils/url-utils'
+
+interface Props {
+  items: Array<{ label: string; href?: string }>
+  class?: string
+}
+
+const { items, class: className } = Astro.props
+---
+
+<nav class:list={[className, "flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-6"]} aria-label="Breadcrumb">
+  {items.map((item, index) => {
+    if (index === 0) {
+      return item.href ? (
+        <a 
+          href={url(item.href)} 
+          class="hover:text-[var(--primary)] transition-colors font-medium"
+        >
+          {item.label}
+        </a>
+      ) : (
+        <span class="text-gray-900 dark:text-white font-semibold">
+          {item.label}
+        </span>
+      );
+    }
+    // Para items después del primero, necesitamos renderizar el separador y el item
+    // Usamos un div wrapper temporal
+    return (
+      <div class="flex items-center gap-2">
+        <Icon 
+          name="material-symbols:chevron-right-rounded" 
+          class="text-[1rem] text-gray-400 dark:text-gray-500"
+        />
+        {item.href ? (
+          <a 
+            href={url(item.href)} 
+            class="hover:text-[var(--primary)] transition-colors font-medium"
+          >
+            {item.label}
+          </a>
+        ) : (
+          <span class="text-gray-900 dark:text-white font-semibold">
+            {item.label}
+          </span>
+        )}
+      </div>
+    );
+  })}
+</nav>

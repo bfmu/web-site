@@ -1,0 +1,69 @@
+---
+import { fetchPublicAlbums } from '@utils/api-blog';
+import { getBackendResourceUrl } from '@/lib/env';
+
+interface Props {
+  config?: Record<string, unknown>;
+}
+
+const { config = {} } = Astro.props;
+
+const title = (config.title as string) ?? 'Galería';
+const ctaText = (config.ctaText as string) ?? 'Ver galería completa';
+const ctaHref = (config.ctaHref as string) ?? '/gallery/';
+const albumSlugs = (config.albumSlugs as string[] | undefined) ?? [];
+
+let albums: Array<{ slug: string; title: string; coverImage?: string; images?: unknown[] }> = [];
+try {
+  const res = await fetchPublicAlbums();
+  const all = res.albums ?? [];
+  if (albumSlugs.length > 0) {
+    albums = albumSlugs
+      .map((slug) => all.find((a: { slug: string }) => a.slug === slug))
+      .filter(Boolean) as typeof albums;
+  } else {
+    albums = all.slice(0, 2);
+  }
+} catch (e) {
+  console.error('[GalleryPreview] Error al obtener álbumes:', e);
+}
+
+function getImageUrl(url: string | undefined): string {
+  if (!url) return '/default-avatar.svg';
+  if (url.startsWith('http')) return url;
+  return getBackendResourceUrl(url);
+}
+---
+
+<section class="w-full py-16 bg-[var(--card-bg)] text-center rounded-[var(--radius-large)] shadow-md">
+    <div class="max-w-5xl mx-auto px-6">
+        <h2 class="text-3xl font-bold text-[var(--primary)] dark:text-[var(--title-active)]">{title}</h2>
+    </div>
+    {albums.length > 0 ? (
+      <div class="mt-8 max-w-5xl mx-auto px-6">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {albums.slice(0, 4).map((album) => {
+            const cover = album.coverImage ?? (Array.isArray(album.images) && album.images[0] && typeof album.images[0] === 'object' && album.images[0] !== null && 'url' in (album.images[0] as object))
+              ? ((album.images[0] as { url: string }).url)
+              : null;
+            const coverUrl = getImageUrl(cover ?? undefined);
+            return (
+              <a href={`/gallery/${album.slug}`} class="group block aspect-square rounded-lg overflow-hidden bg-[var(--btn-regular-bg)] transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">
+                <img src={coverUrl} alt={album.title} class="w-full h-full object-cover transition duration-300 group-hover:scale-105" loading="lazy" />
+              </a>
+            );
+          })}
+        </div>
+        <div class="mt-6 text-center">
+          <a href={ctaHref} class="inline-block px-6 py-3 bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)] text-[var(--btn-content)] rounded-lg font-semibold transition-all duration-300 hover:scale-105 hover:shadow-md">
+            {ctaText}
+          </a>
+        </div>
+      </div>
+    ) : (
+      <div class="mt-8 max-w-5xl mx-auto px-6">
+        <p class="text-[var(--deep-text)] dark:text-gray-400">No hay álbumes disponibles.</p>
+        <a href={ctaHref} class="mt-4 inline-block text-[var(--primary)] font-medium hover:underline">{ctaText}</a>
+      </div>
+    )}
+</section>

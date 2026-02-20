@@ -1,34 +1,26 @@
 ---
-import MainLayout from '@layouts/MainLayout.astro'
-import Hero from '@components/Hero.astro'
-import IntroPersonal from '@components/IntroPersonal.astro'
-import SeccionesGrid from '@components/SeccionesGrid.astro'
-import UltimosPosts from '@components/UltimosPosts.astro'
+import MainLayout from '@layouts/MainLayout.astro';
+import HomeSection from '@components/home/HomeSection.astro';
+import { fetchHomepageConfig } from '@/lib/api-homepage';
+import { DEFAULT_HOMEPAGE_SECTIONS } from '@components/home/componentRegistry';
+
+let sections = DEFAULT_HOMEPAGE_SECTIONS;
+try {
+  const data = await fetchHomepageConfig();
+  if (data?.sections?.length) {
+    sections = [...data.sections].filter((s) => s.enabled).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }
+} catch (e) {
+  console.error('[index] Error loading homepage config:', e);
+}
 ---
 
 <MainLayout>
-    <div class="relative max-w-[var(--page-width)] mx-auto pointer-events-auto">
-        <div id="main-grid" class="transition duration-700 w-full left-0 right-0 mx-auto gap-4 px-0 md:px-4 onload-animation">
-            
-            <!-- Hero Section -->
-            <section class="mb-12">
-                <Hero />
-            </section>
-
-            <!-- Introducción Personal -->
-            <section class="mb-12" id="explore">
-                <IntroPersonal />
-            </section>
-
-            <!-- Grid Interactivo con las Secciones del Sitio -->
-            <section class="mb-12" id="work">
-                <SeccionesGrid />
-            </section>
-
-            <!-- Últimos Artículos Publicados -->
-            <section class="mb-12">
-                <UltimosPosts />
-            </section>
-        </div>
+  <div class="relative max-w-[var(--page-width)] mx-auto pointer-events-auto">
+    <div id="main-grid" class="transition duration-700 w-full left-0 right-0 mx-auto gap-4 px-0 md:px-4 onload-animation">
+      {sections.map((section, index) => (
+        <HomeSection section={section} index={index} />
+      ))}
     </div>
+  </div>
 </MainLayout>

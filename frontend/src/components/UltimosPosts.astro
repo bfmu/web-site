@@ -1,8 +1,14 @@
 ---
 import { getPostUrlBySlug } from '@utils/url-utils'
 import { fetchRecentPosts } from '@utils/api-blog'
+import { getBackendResourceUrl } from '../lib/env'
 
-const ultimosPosts = await fetchRecentPosts(3)
+let ultimosPosts: Array<{ slug: string; title: string; description?: string; image?: string; published: string }> = []
+try {
+  ultimosPosts = await fetchRecentPosts(3)
+} catch (e) {
+  console.error('[UltimosPosts] Error al obtener posts recientes:', e)
+}
 ---
 
 <section class="w-full py-16 bg-[var(--card-bg)] text-center rounded-[var(--radius-large)] shadow-md">
@@ -14,10 +20,10 @@ const ultimosPosts = await fetchRecentPosts(3)
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 max-w-5xl mx-auto px-6">
-        {ultimosPosts.map((entry) => (
+        {ultimosPosts.length > 0 ? ultimosPosts.map((entry) => (
             <a href={getPostUrlBySlug(entry.slug)} class="relative group overflow-hidden rounded-[var(--radius-large)] shadow-md block bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)] transition">
                 {entry.image && (
-                    <img src={entry.image} alt={entry.title} class="w-full h-48 object-cover transition group-hover:scale-105" />
+                    <img src={entry.image.startsWith('/uploads/') ? getBackendResourceUrl(entry.image) : entry.image} alt={entry.title} class="w-full h-48 object-cover transition group-hover:scale-105" />
                 )}
                 <div class="p-6 text-left">
                     <h3 class="text-xl font-semibold text-[var(--primary)] dark:text-[var(--title-active)]">{entry.title}</h3>
@@ -26,6 +32,8 @@ const ultimosPosts = await fetchRecentPosts(3)
                 </div>
                 <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-10 transition"></div>
             </a>
-        ))}
+        )) : (
+            <p class="col-span-full text-[var(--deep-text)] dark:text-gray-400">No hay artículos recientes o la API no está disponible.</p>
+        )}
     </div>
 </section>

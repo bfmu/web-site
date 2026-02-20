@@ -3,6 +3,37 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Sonner toast - posicionamiento y compatibilidad con Swup (fuera de #swup-app) */
+[data-sonner-toaster] {
+  --offset-top: 20px;
+  --offset-bottom: 20px;
+  --offset-left: 20px;
+  --offset-right: 20px;
+  transition: transform 300ms ease, opacity 300ms ease;
+}
+
+[data-sonner-toast] {
+  transition: transform 300ms ease, opacity 300ms ease, height 300ms ease, box-shadow 200ms ease;
+}
+
+/* Persistent player - cursor grab en handle de arrastre (sobrescribe estilos del layout) */
+[data-player-drag-handle] {
+  cursor: grab !important;
+}
+[data-player-drag-handle]:active {
+  cursor: grabbing !important;
+}
+
+/* Persistent player - icono minimizado (barras de música) */
+@keyframes player-bar-bounce {
+  0%, 100% { height: 4px; }
+  50% { height: 16px; }
+}
+.player-bar {
+  display: inline-block;
+  animation: player-bar-bounce 0.6s ease-in-out infinite;
+}
+
 @layer components {
   .card-base {
     @apply rounded-[var(--radius-large)] overflow-hidden bg-[var(--card-bg)] transition;
@@ -248,3 +279,49 @@
 .collapsed {
   height: var(--collapsedHeight);
 }
+
+/* PostEditor - BlockNote */
+.post-editor {
+  overflow: visible;
+  border-radius: 0.75rem;
+  background: #fff;
+  border: 1px solid rgb(229 231 235 / 0.8);
+}
+
+.dark .post-editor {
+  background: rgb(17 24 39);
+  border-color: rgb(55 65 81 / 0.5);
+}
+
+.post-editor__inner {
+  position: relative;
+}
+
+.post-editor__inner .bn-container {
+  --bn-border-radius: 0.75rem;
+  --bn-font-family: inherit;
+}
+
+.post-editor__inner .bn-editor {
+  min-height: 450px;
+  padding: 2rem 0.5rem;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.post-editor__inner .bn-block-outer {
+  margin-top: 0;
+}
+
+.post-editor__inner .bn-block-content {
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+/* Menús BlockNote por encima del sidebar admin (z-40) - aplica también a portales */
+.bn-drag-handle-menu,
+.bn-side-menu,
+.bn-toolbar {
+  z-index: 100 !important;
+}
+

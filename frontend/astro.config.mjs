@@ -32,8 +32,9 @@ const oklchToHex = (str) => {
   });
 };
 
+// WEB_SITE_URL para links de compartir, sitemap, etc. Compatible con PUBLIC_BASE_URL.
 const runtimeConfig = {
-  baseUrl: process.env.PUBLIC_BASE_URL || "http://localhost:3000/",
+  baseUrl: process.env.PUBLIC_WEB_SITE_URL || process.env.WEB_SITE_URL || process.env.PUBLIC_BASE_URL || "http://localhost:4321/",
 };
 
 // https://astro.build/config
@@ -43,6 +44,10 @@ export default defineConfig({
   adapter: node({ mode: "standalone" }),
   base: "/",
   trailingSlash: "ignore",
+  server: {
+    host: true, // Escuchar en todas las interfaces (0.0.0.0)
+    port: 4321,
+  },
   integrations: [
     tailwind(),
     swup({
@@ -50,7 +55,7 @@ export default defineConfig({
       animationClass: "transition-swup-", // see https://swup.js.org/options/#animationselector
       // the default value `transition-` cause transition delay
       // when the Tailwind class `transition-all` is used
-      containers: ["main", "#toc"],
+      containers: ["#swup-app"],
       smoothScrolling: true,
       cache: true,
       preload: true,

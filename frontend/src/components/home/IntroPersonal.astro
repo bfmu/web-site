@@ -1,0 +1,66 @@
+---
+import { profileConfig } from '@/config';
+import { getBackendResourceUrl } from '@/lib/env';
+import { fetchPosts } from '@utils/api-blog';
+import { fetchPublicAlbums } from '@utils/api-blog';
+import profileAvatar from '@/assets/images/DSC_1024.jpg';
+
+interface Props {
+  config?: Record<string, unknown>;
+}
+
+const { config = {} } = Astro.props;
+
+const title = (config.title as string) ?? '¡Hola! Soy Bryan Muñoz';
+const bio = (config.bio as string) ?? 'Bienvenido a mi espacio digital, donde comparto mis proyectos, ideas y pasiones. Aquí podrás explorar mi portafolio de desarrollo, aprender con mis artículos técnicos, descubrir mis fotografías y reflexiones sobre libros y música. ¡Espero que encuentres algo que te inspire!';
+const ctaText = (config.ctaText as string) ?? 'Ver mi trabajo';
+const ctaHref = (config.ctaHref as string) ?? '#work';
+
+let avatarUrl: string;
+const configAvatar = config.avatarUrl as string | undefined;
+if (configAvatar && (configAvatar.startsWith('http') || configAvatar.startsWith('/'))) {
+  avatarUrl = configAvatar.startsWith('/uploads/') ? getBackendResourceUrl(configAvatar) : configAvatar;
+} else {
+  avatarUrl = typeof profileAvatar === 'string' ? profileAvatar : profileAvatar.src;
+}
+
+let postsCount = 0;
+let albumsCount = 0;
+try {
+  const [postsRes, albumsRes] = await Promise.all([
+    fetchPosts({ limit: 1, page: 1 }).catch(() => ({ pagination: { total: 0 } })),
+    fetchPublicAlbums().catch(() => ({ pagination: { total: 0 } })),
+  ]);
+  postsCount = postsRes.pagination?.total ?? 0;
+  albumsCount = albumsRes.pagination?.total ?? 0;
+} catch (_) {}
+---
+
+<section class="w-full py-16 bg-[var(--card-bg)] rounded-[var(--radius-large)] shadow-md">
+    <div class="max-w-4xl mx-auto px-6 flex flex-col md:flex-row md:items-center md:gap-10">
+        <div class="flex justify-center md:justify-start md:shrink-0">
+            <img
+                src={avatarUrl}
+                alt={title}
+                class="w-28 h-28 md:w-36 md:h-36 rounded-full object-cover border-4 border-[var(--btn-regular-bg)] shadow-lg"
+                loading="lazy"
+            />
+        </div>
+        <div class="text-center md:text-left mt-6 md:mt-0 flex-1">
+            <h2 class="text-3xl font-bold text-[var(--primary)] dark:text-[var(--title-active)]">{title}</h2>
+            <p class="text-lg text-[var(--deep-text)] dark:text-white mt-4">
+                {bio}
+            </p>
+            <div class="flex flex-wrap gap-4 justify-center md:justify-start mt-4 text-sm text-[var(--deep-text)] dark:text-gray-300">
+                <span>{postsCount} artículos</span>
+                <span>{albumsCount} álbumes</span>
+            </div>
+            <div class="mt-6">
+                <a href={ctaHref} class="intro-cta inline-flex items-center gap-2 px-6 py-3 bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)] active:bg-[var(--btn-regular-bg-active)] text-[var(--btn-content)] rounded-lg text-lg font-semibold transition-all duration-300 group">
+                    {ctaText}
+                    <span class="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>

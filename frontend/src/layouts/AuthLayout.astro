@@ -1,0 +1,54 @@
+---
+import Layout from './Layout.astro';
+import { siteConfig } from '../config';
+import { url } from '../utils/url-utils';
+
+interface Props {
+  title?: string;
+}
+
+const { title = 'Admin' } = Astro.props;
+const mainPanelTop = '5.5rem';
+---
+
+<Layout title={title} authPage={true}>
+  <!-- Navbar minimal para auth (misma estructura que MainLayout para Swup) -->
+  <div id="top-row" class="z-50 pointer-events-none relative transition-all duration-700 max-w-[var(--page-width)] px-0 md:px-4 mx-auto">
+    <div id="navbar-wrapper" class="pointer-events-auto sticky top-0 transition-all">
+      <div class="card-base overflow-visible max-w-[var(--page-width)] h-[4.5rem] rounded-t-none mx-auto flex items-center justify-between px-4">
+        <a href={url('/')} class="btn-plain scale-animation rounded-lg h-[3.25rem] px-5 font-bold active:scale-95">
+          <div class="flex flex-row text-[var(--primary)] items-center text-md">
+            <span class="text-xl font-bold mr-2">{siteConfig.title}</span>
+          </div>
+        </a>
+        <a
+          href="/"
+          class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-[var(--primary)] hover:opacity-90 transition-colors"
+        >
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Volver al Sitio
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sin banner para páginas auth -->
+  <!-- Main content: misma estructura que MainLayout para Swup -->
+  <!-- pointer-events-auto en main para que los inputs (email, password) puedan recibir focus y escritura -->
+  <div class="absolute w-full z-30 pointer-events-none" style={`top: ${mainPanelTop}`}>
+    <main class="transition-swup-fade pointer-events-auto">
+      <slot />
+    </main>
+  </div>
+
+  <!-- TOC vacío para consistencia con Swup -->
+  <div class="absolute w-full z-0">
+    <div class="relative max-w-[var(--page-width)] mx-auto">
+      <div id="toc-wrapper" class="hidden">
+        <div id="toc"></div>
+      </div>
+    </div>
+  </div>
+</Layout>

@@ -1,0 +1,25 @@
+---
+import AdminLayout from '@components/admin/AdminLayout.astro';
+import { PostForm } from '../../../components/admin/PostForm.tsx';
+import { getPost } from '../../../lib/admin-api';
+import type { BlogPost } from '../../../lib/admin-api';
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/admin/posts');
+}
+
+let post: BlogPost | null = null;
+try {
+  post = await getPost(slug);
+} catch (error) {
+  console.error('Error loading post:', error);
+  return Astro.redirect('/admin/posts');
+}
+---
+
+<AdminLayout title={`Editar: ${post.title}`}>
+  <PostForm client:only="react" post={post} />
+</AdminLayout>
+

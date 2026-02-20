@@ -4,6 +4,13 @@ import { SpotifyModule } from './spotify/spotify.module';
 import { ConfigModule } from '@nestjs/config';
 import { BlogModule } from './blog/blog.module';
 import { AuthModule } from './auth/auth.module';
+import { MediaModule } from './media/media.module';
+import { SettingsModule } from './settings/settings.module';
+import { BackupModule } from './backup/backup.module';
+import { HealthModule } from './health/health.module';
+import { HomepageModule } from './homepage/homepage.module';
+import { NavbarModule } from './navbar/navbar.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -16,6 +23,13 @@ import { AuthModule } from './auth/auth.module';
     SpotifyModule,
     BlogModule,
     AuthModule,
+    MediaModule,
+    SettingsModule,
+    BackupModule,
+    HealthModule,
+    HomepageModule,
+    NavbarModule,
+    AnalyticsModule,
   ],
   controllers: [],
   providers: [],

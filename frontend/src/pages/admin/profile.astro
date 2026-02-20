@@ -1,0 +1,9 @@
+---
+import AdminLayout from '@components/admin/AdminLayout.astro';
+import { ProfileEditor } from '@components/admin/ProfileEditor.tsx';
+---
+
+<AdminLayout title="Mi Perfil">
+  <ProfileEditor client:only="react" />
+</AdminLayout>
+

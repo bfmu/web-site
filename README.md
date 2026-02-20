@@ -1,51 +1,94 @@
-# Proyecto Web
+# Web Site - Blog Personal
 
-Este proyecto consiste en una aplicación web que se compone de un backend y un frontend, ambos construidos utilizando Docker. A continuación se detallan las instrucciones para configurar y ejecutar el proyecto.
+Blog personal construido con Astro (frontend) y NestJS (backend), con panel de administración integrado.
 
-## Estructura del Proyecto
+## 🚀 Inicio Rápido
 
-```
-web-site
-├── backend
-│   ├── Dockerfile
-│   └── src
-│       └── ...
-├── frontend
-│   ├── Dockerfile
-│   └── src
-│       └── ...
-├── docker-compose.yml
-└── README.md
+### Opción 1: Docker Compose (Recomendado)
+
+```bash
+# Levantar todo automáticamente
+./start-dev.sh
+
+# O manualmente
+docker-compose -f docker-compose.dev.yml up -d
 ```
 
-## Requisitos Previos
+Esto levanta:
+- MongoDB (puerto 27017)
+- Backend NestJS (puerto 3000)
+- Frontend Astro (puerto 4321)
 
-- Tener Docker y Docker Compose instalados en tu máquina.
+### Opción 2: Manual
 
-## Configuración del Proyecto
+```bash
+# 1. Iniciar MongoDB
+docker run -d -p 27017:27017 --name mongodb mongo:7.0
 
-1. Clona el repositorio en tu máquina local.
-2. Navega al directorio del proyecto.
+# 2. Iniciar Backend
+cd backend
+npm install
+npm run start:dev
 
-## Construcción y Ejecución
+# 3. Iniciar Frontend (en otra terminal)
+cd frontend
+npm install
+npm run dev
+```
 
-Para construir y ejecutar la aplicación, utiliza el siguiente comando en la raíz del proyecto:
+## 📁 Estructura del Proyecto
 
 ```
-docker-compose up --build
+web-site/
+├── backend/          # API NestJS + MongoDB
+├── frontend/         # Astro + Admin integrado
+├── docker-compose.dev.yml  # Docker para desarrollo
+└── start-dev.sh      # Script de inicio rápido
 ```
 
-Esto construirá las imágenes del backend y del frontend según los Dockerfiles y levantará los contenedores correspondientes.
+## 🔧 Configuración
 
-## Acceso a la Aplicación
+### Variables de Entorno
 
-Una vez que los contenedores estén en funcionamiento, podrás acceder a la aplicación a través de tu navegador en la dirección `http://localhost:3000` (ajusta el puerto según la configuración de tu aplicación).
+**Backend** (`backend/.env`):
+```env
+MONGODB_URI=mongodb://admin:admin123@mongodb:27017/blog?authSource=admin
+PORT=3000
+JWT_SECRET=tu-secret-aqui
+```
 
-## Notas Adicionales
+**Frontend** (`frontend/.env`):
+```env
+PUBLIC_BACKEND_URL=http://localhost:3000/
+PUBLIC_WEB_SITE_URL=http://localhost:4321/
+```
 
-- Asegúrate de revisar los Dockerfiles en las carpetas `backend` y `frontend` para entender cómo se configuran las aplicaciones.
-- Puedes detener los contenedores en ejecución con `docker-compose down`.
+## 📚 Documentación
 
-## Contribuciones
+Toda la documentación está organizada en la carpeta [`docs/`](docs/README.md) con un gestor de documentación (Docsify):
 
-Las contribuciones son bienvenidas. Si deseas contribuir, por favor abre un issue o un pull request en el repositorio.
+```bash
+# Ver la documentación localmente
+make docs
+# o: npx docsify-cli serve docs
+```
+
+Luego abre http://localhost:3333 en tu navegador.
+
+## 🎯 Características
+
+- ✅ Blog público con Astro
+- ✅ Panel de administración integrado
+- ✅ Editor de posts avanzado (Tiptap)
+- ✅ Autenticación JWT con OAuth (Google/GitHub)
+- ✅ Upload de imágenes
+- ✅ Gestión de categorías y tags
+- ✅ Estadísticas y analytics
+- ✅ Responsive design
+
+## 🔗 URLs de Desarrollo
+
+- Frontend: http://localhost:4321
+- Backend API: http://localhost:3000
+- Swagger Docs: http://localhost:3000/api/docs
+- Admin Panel: http://localhost:4321/admin/login

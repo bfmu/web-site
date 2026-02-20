@@ -1,0 +1,51 @@
+---
+interface Props {
+  class?: string;
+  delay?: number;
+}
+
+const { class: className = '', delay = 0 } = Astro.props;
+---
+
+<div class:list={['scroll-reveal', className]} data-delay={delay}>
+  <slot />
+</div>
+
+<style>
+  .scroll-reveal {
+    opacity: 0;
+    transform: translateY(1.5rem);
+    transition: opacity 0.55s ease-out, transform 0.55s ease-out;
+  }
+  .scroll-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<script is:inline>
+  window.initScrollReveal = function () {
+    var els = document.querySelectorAll('.scroll-reveal:not(.is-visible)');
+    if (!els.length) return;
+    var observer = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          var el = entry.target;
+          var delayMs = parseInt(el.getAttribute('data-delay') || '0', 10);
+          var apply = function () { el.classList.add('is-visible'); };
+          if (delayMs > 0) setTimeout(apply, delayMs);
+          else apply();
+          observer.unobserve(el);
+        });
+      },
+      { rootMargin: '0px 0px -40px 0px', threshold: 0.02 }
+    );
+    els.forEach(function (el) { observer.observe(el); });
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.initScrollReveal);
+  } else {
+    window.initScrollReveal();
+  }
+</script>

@@ -1,0 +1,157 @@
+---
+// Página de callback para OAuth (Google, GitHub, etc.)
+// Esta página recibe los tokens y redirige al admin
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autenticando...</title>
+  <style is:inline>
+    /* Estilos scoped solo para esta página */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: white;
+    }
+    
+    .auth-callback-wrapper {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    
+    .auth-callback-container {
+      text-align: center;
+      padding: 2rem;
+    }
+    
+    .auth-callback-spinner {
+      width: 50px;
+      height: 50px;
+      margin: 0 auto 1.5rem;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      animation: auth-spin 1s linear infinite;
+    }
+    
+    @keyframes auth-spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .auth-callback-container h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    
+    .auth-callback-container p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 0.95rem;
+    }
+    
+    .auth-callback-error {
+      background: rgba(255, 0, 0, 0.1);
+      border: 1px solid rgba(255, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .auth-callback-error-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    
+    .auth-callback-back-link {
+      display: inline-block;
+      margin-top: 1rem;
+      color: white;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-callback-wrapper">
+    <div class="auth-callback-container">
+      <div class="auth-callback-spinner"></div>
+      <h2>Autenticando...</h2>
+      <p>Espera un momento mientras procesamos tu sesión</p>
+      <div id="error-container"></div>
+    </div>
+  </div>
+
+  <script>
+    import { handleOAuthCallback } from '../../lib/auth';
+
+    // Función para obtener la URL de retorno
+    function getReturnUrl(): string {
+      const returnUrl = sessionStorage.getItem('returnUrl');
+      sessionStorage.removeItem('returnUrl'); // Limpiar después de leer
+      
+      // Si no hay returnUrl o es una URL de auth, usar página principal
+      if (!returnUrl || returnUrl.includes('/admin/login') || returnUrl.includes('/auth/')) {
+        return '/';
+      }
+      
+      return returnUrl;
+    }
+
+    // Obtener tokens de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const refresh = urlParams.get('refresh');
+
+    const errorContainer = document.getElementById('error-container');
+
+    if (!token || !refresh) {
+      // No hay tokens en la URL
+      if (errorContainer) {
+        errorContainer.innerHTML = `
+          <div class="auth-callback-error">
+            <div class="auth-callback-error-title">Error de autenticación</div>
+            <p>No se recibieron los tokens de autenticación.</p>
+            <a href="/admin/login" class="auth-callback-back-link">Volver al login</a>
+          </div>
+        `;
+      }
+    } else {
+      // Procesar los tokens
+      handleOAuthCallback(token, refresh)
+        .then(() => {
+          // Redirigir a returnUrl. ?_oauth=1 evita bfcache y fuerza actualización del Navbar al llegar
+          const dest = getReturnUrl();
+          const sep = dest.includes('?') ? '&' : '?';
+          setTimeout(() => {
+            window.location.replace(dest + sep + '_oauth=1');
+          }, 300);
+        })
+        .catch((error) => {
+          console.error('Error en OAuth callback:', error);
+          if (errorContainer) {
+            errorContainer.innerHTML = `
+              <div class="auth-callback-error">
+                <div class="auth-callback-error-title">Error al procesar autenticación</div>
+                <p>${error.message || 'No se pudo completar el inicio de sesión.'}</p>
+                <a href="/admin/login" class="auth-callback-back-link">Volver al login</a>
+              </div>
+            `;
+          }
+        });
+    }
+  </script>
+</body>
+</html>

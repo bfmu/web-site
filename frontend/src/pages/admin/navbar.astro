@@ -1,0 +1,8 @@
+---
+import AdminLayout from '@components/admin/AdminLayout.astro';
+import { NavbarEditor } from '@components/admin/NavbarEditor';
+---
+
+<AdminLayout title="Navbar">
+  <NavbarEditor client:only="react" />
+</AdminLayout>

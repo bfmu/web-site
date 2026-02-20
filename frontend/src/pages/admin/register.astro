@@ -1,0 +1,125 @@
+---
+import Layout from '@layouts/Layout.astro';
+
+// No verificar autenticación en SSR
+// La redirección si ya está autenticado se manejará en el cliente
+---
+
+<Layout title="Registro">
+  <div class="min-h-screen bg-[var(--page-bg)] dark:bg-gray-950">
+    <div class="fixed top-4 left-4 z-50">
+      <a
+        href="/"
+        class="flex items-center gap-2 rounded-lg bg-[var(--card-bg)] px-4 py-2 text-sm font-medium text-[var(--primary)] dark:text-sky-400 shadow-md transition-all hover:bg-[var(--btn-regular-bg-hover)] hover:scale-105 border border-[var(--line-divider)] dark:border-gray-700"
+      >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Volver al Sitio
+      </a>
+    </div>
+
+    <div class="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+      <div class="w-full max-w-md space-y-8 rounded-[var(--radius-large)] bg-[var(--card-bg)] dark:bg-gray-900 px-8 py-10 shadow-xl border border-[var(--line-divider)] dark:border-gray-700">
+        <div>
+          <h2 class="mt-6 text-center text-3xl font-bold tracking-tight text-[var(--primary)] dark:text-gray-100">
+            Crear cuenta
+          </h2>
+          <p class="mt-2 text-center text-sm text-[var(--deep-text)] dark:text-gray-400">
+            Regístrate con email y contraseña
+          </p>
+        </div>
+
+        <form id="register-form" class="mt-8 space-y-6">
+          <div class="space-y-4 rounded-md shadow-sm">
+            <div>
+              <label for="name" class="sr-only">Nombre</label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                autocomplete="name"
+                required
+                class="relative block w-full rounded-t-md border-0 px-3 py-2 text-[var(--btn-content)] dark:text-gray-200 bg-[var(--btn-regular-bg)] dark:bg-gray-800 ring-1 ring-inset ring-[var(--line-divider)] dark:ring-gray-600 placeholder:opacity-70 placeholder:dark:text-gray-500 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-[var(--primary)] sm:text-sm sm:leading-6"
+                placeholder="Nombre"
+              />
+            </div>
+            <div>
+              <label for="email" class="sr-only">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                required
+                class="relative block w-full border-0 px-3 py-2 text-[var(--btn-content)] dark:text-gray-200 bg-[var(--btn-regular-bg)] dark:bg-gray-800 ring-1 ring-inset ring-[var(--line-divider)] dark:ring-gray-600 placeholder:opacity-70 placeholder:dark:text-gray-500 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-[var(--primary)] sm:text-sm sm:leading-6"
+                placeholder="Email"
+              />
+            </div>
+            <div>
+              <label for="password" class="sr-only">Contraseña</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                required
+                minlength="6"
+                class="relative block w-full border-0 px-3 py-2 text-[var(--btn-content)] dark:text-gray-200 bg-[var(--btn-regular-bg)] dark:bg-gray-800 ring-1 ring-inset ring-[var(--line-divider)] dark:ring-gray-600 placeholder:opacity-70 placeholder:dark:text-gray-500 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-[var(--primary)] sm:text-sm sm:leading-6"
+                placeholder="Contraseña (mínimo 6 caracteres)"
+              />
+            </div>
+            <div>
+              <label for="password-confirm" class="sr-only">Confirmar contraseña</label>
+              <input
+                id="password-confirm"
+                name="password-confirm"
+                type="password"
+                autocomplete="new-password"
+                required
+                minlength="6"
+                class="relative block w-full rounded-b-md border-0 px-3 py-2 text-[var(--btn-content)] dark:text-gray-200 bg-[var(--btn-regular-bg)] dark:bg-gray-800 ring-1 ring-inset ring-[var(--line-divider)] dark:ring-gray-600 placeholder:opacity-70 placeholder:dark:text-gray-500 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-[var(--primary)] sm:text-sm sm:leading-6"
+                placeholder="Confirmar contraseña"
+              />
+            </div>
+          </div>
+
+          <div id="error-message" class="hidden rounded-md bg-red-500/20 p-4 text-sm text-red-600 dark:text-red-400 ring-1 ring-red-500/30"></div>
+
+          <div>
+            <button
+              type="submit"
+              id="submit-btn"
+              class="group relative flex w-full justify-center rounded-md bg-[var(--primary)] px-3 py-2 text-sm font-semibold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] disabled:opacity-50"
+            >
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                <svg
+                  class="h-5 w-5 text-white/80 group-hover:text-white"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </span>
+              Crear cuenta
+            </button>
+          </div>
+
+          <p class="text-center text-sm text-[var(--deep-text)] dark:text-gray-400">
+            ¿Ya tienes cuenta?
+            <a href="/admin/login" class="font-medium text-[var(--primary)] dark:text-sky-400 hover:underline">Iniciar sesión</a>
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script data-swup-reload-script>
+  import { initRegisterPage } from '../../lib/register-init';
+  initRegisterPage();
+</script>

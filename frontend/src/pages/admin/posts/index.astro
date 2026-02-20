@@ -1,0 +1,365 @@
+---
+import AdminLayout from '@components/admin/AdminLayout.astro';
+import { Fragment } from 'react';
+import { getPosts } from '../../../lib/admin-api';
+import type { BlogPost, PostQuery } from '../../../lib/admin-api';
+import { getBackendResourceUrl } from '../../../lib/env';
+
+const url = Astro.url;
+const searchParams = url.searchParams;
+
+const query: PostQuery = {
+  page: parseInt(searchParams.get('page') || '1'),
+  limit: parseInt(searchParams.get('limit') || '10'),
+  search: searchParams.get('search') || undefined,
+  category: searchParams.get('category') || undefined,
+  tag: searchParams.get('tag') || undefined,
+  draft: searchParams.get('draft') === 'true' ? true : searchParams.get('draft') === 'false' ? false : undefined,
+  sortBy: searchParams.get('sortBy') || 'published',
+  sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
+};
+
+let response;
+try {
+  response = await getPosts(query);
+} catch (error) {
+  console.error('Error loading posts:', error);
+  response = {
+    posts: [],
+    pagination: {
+      page: 1,
+      limit: 10,
+      total: 0,
+      pages: 0,
+    },
+  };
+}
+
+const { posts, pagination } = response;
+
+// Función auxiliar para filtrar páginas de paginación
+function getVisiblePages(totalPages: number, currentPage: number): number[] {
+  const pages: number[] = [];
+  for (let i = 1; i <= totalPages; i++) {
+    if (
+      i === 1 ||
+      i === totalPages ||
+      (i >= currentPage - 1 && i <= currentPage + 1)
+    ) {
+      pages.push(i);
+    }
+  }
+  return pages;
+}
+
+const visiblePages = getVisiblePages(pagination.pages, pagination.page);
+---
+
+<AdminLayout title="Posts">
+  <div class="space-y-6">
+    <!-- Header with actions -->
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Posts</h1>
+      <a
+        href="/admin/posts/new"
+        data-no-swup
+        class="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+      >
+        <svg
+          class="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+        Nuevo Post
+      </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <form id="filters-form" method="get" class="grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <div>
+          <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Buscar
+          </label>
+          <input
+            type="text"
+            id="search"
+            name="search"
+            value={query.search || ''}
+            placeholder="Título, contenido..."
+            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500"
+          />
+        </div>
+
+        <div>
+          <label for="draft" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Estado
+          </label>
+          <select
+            id="draft"
+            name="draft"
+            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          >
+            <option value="">Todos</option>
+            <option value="false" selected={query.draft === false}>Publicados</option>
+            <option value="true" selected={query.draft === true}>Borradores</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="sortBy" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Ordenar por
+          </label>
+          <select
+            id="sortBy"
+            name="sortBy"
+            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          >
+            <option value="published" selected={query.sortBy === 'published'}>Fecha</option>
+            <option value="title" selected={query.sortBy === 'title'}>Título</option>
+            <option value="views" selected={query.sortBy === 'views'}>Vistas</option>
+          </select>
+        </div>
+
+        <div class="flex items-end">
+          <button
+            type="submit"
+            class="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+            Filtrar
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Posts Table -->
+    <div class="overflow-hidden rounded-lg border border-gray-200 shadow-sm dark:border-gray-700">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-800">
+          <tr>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400"
+            >
+              Título
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400"
+            >
+              Estado
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400"
+            >
+              Fecha
+            </th>
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400"
+            >
+              Vistas
+            </th>
+            <th
+              scope="col"
+              class="relative px-6 py-3"
+            >
+              <span class="sr-only">Acciones</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+          {posts.length > 0 ? (
+            posts.map((post) => (
+              <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td class="whitespace-nowrap px-6 py-4">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10">
+                      {post.image && (
+                        <img
+                          class="h-10 w-10 rounded-lg object-cover"
+                          src={post.image.startsWith('/uploads/') ? getBackendResourceUrl(post.image) : post.image}
+                          alt={post.title}
+                        />
+                      )}
+                    </div>
+                    <div class="ml-4">
+                      <div class="text-sm font-medium text-gray-900 dark:text-white">
+                        {post.title}
+                      </div>
+                      <div class="text-sm text-gray-500 dark:text-gray-400">
+                        {post.category || 'Sin categoría'}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="whitespace-nowrap px-6 py-4">
+                  {post.draft ? (
+                    <span class="inline-flex rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
+                      Borrador
+                    </span>
+                  ) : (
+                    <span class="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                      Publicado
+                    </span>
+                  )}
+                </td>
+                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                  {new Date(post.published).toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </td>
+                <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                  {post.views || 0}
+                </td>
+                <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                  <a
+                    href={`/admin/posts/${post.slug}`}
+                    data-no-swup
+                    class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400"
+                  >
+                    Editar
+                  </a>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                No se encontraron posts
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {pagination.pages > 1 && (
+      <div class="flex items-center justify-between border-t border-gray-200 px-4 py-3 dark:border-gray-700 sm:px-6">
+        <div class="flex flex-1 justify-between sm:hidden">
+          {pagination.page > 1 && (
+            <a
+              href={`?page=${pagination.page - 1}`}
+              class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+            >
+              Anterior
+            </a>
+          )}
+          {pagination.page < pagination.pages && (
+            <a
+              href={`?page=${pagination.page + 1}`}
+              class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+            >
+              Siguiente
+            </a>
+          )}
+        </div>
+        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+          <div>
+            <p class="text-sm text-gray-700 dark:text-gray-300">
+              Mostrando <span class="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> a{' '}
+              <span class="font-medium">
+                {Math.min(pagination.page * pagination.limit, pagination.total)}
+              </span>{' '}
+              de <span class="font-medium">{pagination.total}</span> resultados
+            </p>
+          </div>
+          <div>
+            <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+              {pagination.page > 1 && (
+                <a
+                  href={`?page=${pagination.page - 1}`}
+                  class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 dark:ring-gray-600 dark:hover:bg-gray-700"
+                >
+                  <span class="sr-only">Anterior</span>
+                  <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path
+                      fill-rule="evenodd"
+                      d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </a>
+              )}
+              {visiblePages.map((page, index) => {
+                  const showEllipsis = index > 0 && page - visiblePages[index - 1] > 1;
+                  if (showEllipsis) {
+                    return (
+                      <Fragment>
+                        <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0 dark:text-gray-300 dark:ring-gray-600">
+                          ...
+                        </span>
+                        <a
+                          href={`?page=${page}`}
+                          class:list={[
+                            'relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0 dark:ring-gray-600',
+                            {
+                              'z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600':
+                                page === pagination.page,
+                              'text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700':
+                                page !== pagination.page,
+                            },
+                          ]}
+                        >
+                          {page}
+                        </a>
+                      </Fragment>
+                    );
+                  }
+                  return (
+                    <a
+                      href={`?page=${page}`}
+                      class:list={[
+                        'relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0 dark:ring-gray-600',
+                        {
+                          'z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600':
+                            page === pagination.page,
+                          'text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700':
+                            page !== pagination.page,
+                        },
+                      ]}
+                    >
+                      {page}
+                    </a>
+                  );
+                })}
+              {pagination.page < pagination.pages && (
+                <a
+                  href={`?page=${pagination.page + 1}`}
+                  class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 dark:ring-gray-600 dark:hover:bg-gray-700"
+                >
+                  <span class="sr-only">Siguiente</span>
+                  <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path
+                      fill-rule="evenodd"
+                      d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </a>
+              )}
+            </nav>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+</AdminLayout>
+
+<script data-swup-reload-script>
+  import { initPostsPage } from '../../../lib/posts-init';
+  initPostsPage();
+</script>
+

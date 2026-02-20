@@ -1,0 +1,9 @@
+---
+import AdminLayout from '@components/admin/AdminLayout.astro';
+import MediaLibrary from '../../components/admin/MediaLibrary.tsx';
+---
+
+<AdminLayout title="Librería de Medios">
+  <MediaLibrary client:only="react" />
+</AdminLayout>
+

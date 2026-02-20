@@ -1,0 +1,155 @@
+---
+import Layout from '@layouts/Layout.astro';
+
+// No verificar autenticación en SSR (localStorage no está disponible)
+// La redirección si ya está autenticado se manejará en el cliente (ver script al final)
+---
+
+<Layout title="Admin Login">
+  <div class="min-h-screen bg-[var(--page-bg)] dark:bg-gray-950">
+    <!-- Botón para volver al sitio -->
+    <div class="fixed top-4 left-4 z-50">
+      <a
+        href="/"
+        class="flex items-center gap-2 rounded-lg bg-[var(--card-bg)] px-4 py-2 text-sm font-medium text-[var(--primary)] dark:text-sky-400 shadow-md transition-all hover:bg-[var(--btn-regular-bg-hover)] hover:scale-105 border border-[var(--line-divider)] dark:border-gray-700"
+      >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Volver al Sitio
+      </a>
+    </div>
+
+    <div class="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+      <div class="w-full max-w-md space-y-8 rounded-[var(--radius-large)] bg-[var(--card-bg)] dark:bg-gray-900 px-8 py-10 shadow-xl border border-[var(--line-divider)] dark:border-gray-700">
+        <div>
+          <h2 class="mt-6 text-center text-3xl font-bold tracking-tight text-[var(--primary)] dark:text-gray-100">
+            Panel de Administración
+          </h2>
+          <p class="mt-2 text-center text-sm text-[var(--deep-text)] dark:text-gray-400">
+            Inicia sesión para acceder al panel
+          </p>
+        </div>
+
+        <form id="login-form" class="mt-8 space-y-6" method="post" action="#">
+          <div class="space-y-4 rounded-md shadow-sm">
+            <div>
+              <label for="email" class="sr-only">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                required
+                class="relative block w-full rounded-t-md border-0 px-3 py-2 text-[var(--btn-content)] dark:text-gray-200 bg-[var(--btn-regular-bg)] dark:bg-gray-800 ring-1 ring-inset ring-[var(--line-divider)] dark:ring-gray-600 placeholder:opacity-70 placeholder:dark:text-gray-500 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-[var(--primary)] sm:text-sm sm:leading-6"
+                placeholder="Email"
+              />
+            </div>
+            <div>
+              <label for="password" class="sr-only">Contraseña</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+                class="relative block w-full rounded-b-md border-0 px-3 py-2 text-[var(--btn-content)] dark:text-gray-200 bg-[var(--btn-regular-bg)] dark:bg-gray-800 ring-1 ring-inset ring-[var(--line-divider)] dark:ring-gray-600 placeholder:opacity-70 placeholder:dark:text-gray-500 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-[var(--primary)] sm:text-sm sm:leading-6"
+                placeholder="Contraseña"
+              />
+            </div>
+          </div>
+
+          <div id="error-message" class="hidden rounded-md bg-red-500/20 p-4 text-sm text-red-600 dark:text-red-400 ring-1 ring-red-500/30"></div>
+
+          <div>
+            <button
+              type="submit"
+              id="submit-btn"
+              class="group relative flex w-full justify-center rounded-md bg-[var(--primary)] px-3 py-2 text-sm font-semibold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] disabled:opacity-50"
+            >
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                <svg
+                  class="h-5 w-5 text-white/80 group-hover:text-white"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </span>
+              Iniciar Sesión
+            </button>
+          </div>
+
+          <p class="text-center text-sm text-[var(--deep-text)] dark:text-gray-400">
+            ¿No tienes cuenta?
+            <a href="/admin/register" class="font-medium text-[var(--primary)] dark:text-sky-400 hover:underline">Regístrate</a>
+          </p>
+
+          <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-[var(--line-divider)] dark:border-gray-600"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="bg-[var(--card-bg)] dark:bg-gray-900 px-2 text-[var(--deep-text)] dark:text-gray-400">
+                O continúa con
+              </span>
+            </div>
+          </div>
+
+          <div id="oauth-buttons" class="grid grid-cols-2 gap-3">
+            <!-- Los botones se cargarán dinámicamente según los providers habilitados -->
+          </div>
+
+          <div id="oauth-loading" class="text-center text-sm text-[var(--deep-text)] dark:text-gray-400">
+            Cargando opciones de login...
+          </div>
+
+          <div id="oauth-error" class="hidden text-center text-sm text-red-600 dark:text-red-400">
+            No hay métodos de login OAuth configurados
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script data-swup-reload-script lang="ts">
+  import { handleOAuthCallback, isAuthenticated, syncAuthSessionCookieIfNeeded } from '../../lib/auth';
+  import { loadOAuthProviders } from '../../lib/login-init';
+  import { navigateTo } from '../../lib/navigation';
+
+  function getReturnUrl() {
+    const returnUrl = sessionStorage.getItem('returnUrl');
+    sessionStorage.removeItem('returnUrl');
+    if (!returnUrl || /\/admin\/(login|register)|auth/.test(returnUrl)) return '/';
+    return returnUrl;
+  }
+
+  // Si ya está autenticado, sincronizar cookie (por si tenía sesión antigua sin cookie) y redirigir
+  if (isAuthenticated()) {
+    syncAuthSessionCookieIfNeeded();
+    navigateTo(getReturnUrl());
+  }
+
+  // Cargar OAuth providers (full page load; Swup ya los carga vía Layout content:replace)
+  loadOAuthProviders();
+
+  // Callback OAuth: cuando volvemos de Google/GitHub con ?token= & refresh=
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+  const refresh = urlParams.get('refresh');
+
+  if (token && refresh) {
+    handleOAuthCallback(token, refresh)
+      .then(() => navigateTo(getReturnUrl()))
+      .catch(async (err) => {
+        const { showError } = await import('../../lib/notifications');
+        showError(err instanceof Error ? err.message : 'Error al procesar autenticación');
+      });
+  }
+</script>
+

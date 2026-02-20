@@ -12,7 +12,11 @@ import {
   HttpStatus,
   HttpCode,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { BlogService } from './blog.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -25,10 +29,13 @@ import {
   ApiParam,
   ApiBody,
   ApiBearerAuth,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @ApiTags('blog')
 @Controller('blog')
@@ -45,6 +52,56 @@ export class BlogController {
   @UsePipes(new ValidationPipe({ transform: true }))
   async create(@Body() createPostDto: CreatePostDto) {
     return this.blogService.create(createPostDto);
+  }
+
+  @Post('upload-image')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'editor')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Subir imagen (requiere autenticación)' })
+  @ApiResponse({ status: 201, description: 'Imagen subida correctamente' })
+  async uploadImage(@UploadedFile() file: any) {
+    if (!file) {
+      throw new BadRequestException('No se proporcionó ningún archivo');
+    }
+
+    // Validar que sea una imagen
+    if (!file.mimetype.startsWith('image/')) {
+      throw new BadRequestException('El archivo debe ser una imagen');
+    }
+
+    // Validar tamaño (máximo 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      throw new BadRequestException('La imagen no puede ser mayor a 10MB');
+    }
+
+    // Crear directorio de uploads si no existe
+    const uploadsDir = path.join(process.cwd(), 'uploads', 'images');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // Generar nombre único para el archivo
+    const timestamp = Date.now();
+    const originalName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const fileName = `${timestamp}-${originalName}`;
+    const filePath = path.join(uploadsDir, fileName);
+
+    // Guardar archivo
+    fs.writeFileSync(filePath, file.buffer);
+
+    // Retornar URL relativa
+    const imageUrl = `/uploads/images/${fileName}`;
+    
+    return {
+      url: imageUrl,
+      filename: fileName,
+      size: file.size,
+      mimetype: file.mimetype,
+    };
   }
 
   @Get()

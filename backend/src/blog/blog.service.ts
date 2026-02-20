@@ -48,16 +48,17 @@ export class BlogService {
     // Construir filtros
     const filter: any = {};
 
-    // Por defecto no devolver borradores
-    if (draft === undefined) {
-      filter.draft = false;
-      console.log('Draft undefined - filtering only published posts');
-    } else if (draft === false) {
+    // Filtrar por draft solo si se especifica explícitamente
+    // Si draft es undefined, mostrar todos los posts (tanto borradores como publicados)
+    if (draft === false) {
       filter.draft = false;
       console.log('Draft false - filtering only published posts');
     } else if (draft === true) {
-      // No agregar filtro de draft - mostrar todos (borradores y publicados)
-      console.log('Draft true - showing all posts (drafts and published)');
+      filter.draft = true;
+      console.log('Draft true - filtering only draft posts');
+    } else {
+      // draft es undefined - no filtrar por draft, mostrar todos
+      console.log('Draft undefined - showing all posts (drafts and published)');
     }
 
     if (category) {
@@ -153,12 +154,17 @@ export class BlogService {
   }
 
   async update(slug: string, updatePostDto: UpdatePostDto): Promise<Post> {
-    const updateData = { ...updatePostDto };
+    const updateData: any = { ...updatePostDto };
 
     // Convertir fecha si se proporciona
     if (updatePostDto.published) {
       // Aceptar string o Date, pero no forzar el tipo
       updateData.published = updatePostDto.published;
+    }
+
+    // Si image es string vacío, establecerlo explícitamente para eliminar la imagen
+    if (updatePostDto.image === '') {
+      updateData.image = '';
     }
 
     // Si no envían readingTime pero cambió el contenido, recalcular
@@ -286,9 +292,10 @@ export class BlogService {
   }
 }
 
-// Helpers
-function stripMarkdown(md: string): string {
-  return md
+// Helpers - strip HTML and/or Markdown to plain text
+function stripToPlainText(content: string): string {
+  return String(content || '')
+    .replace(/<[^>]*>/g, ' ')
     .replace(/`{1,3}[^`]*`{1,3}/g, ' ')
     .replace(/!\[[^\]]*\]\([^\)]*\)/g, ' ')
     .replace(/\[[^\]]*\]\([^\)]*\)/g, ' ')
@@ -298,19 +305,19 @@ function stripMarkdown(md: string): string {
 }
 
 function generateExcerpt(content: string, maxLen: number = 160): string {
-  const plain = stripMarkdown(content);
+  const plain = stripToPlainText(content);
   if (plain.length <= maxLen) return plain;
   return plain.slice(0, maxLen).trimEnd() + '…';
 }
 
 function estimateReadingMinutes(content: string): number {
-  const text = stripMarkdown(content);
+  const text = stripToPlainText(content);
   const rt = (readingTimeLib as any)(text);
   return Math.max(1, Math.round(rt.minutes));
 }
 
 function countWords(content: string): number {
-  const text = stripMarkdown(content);
+  const text = stripToPlainText(content);
   return rtWordCount(text);
 }
 
