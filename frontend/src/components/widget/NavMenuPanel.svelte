@@ -26,7 +26,7 @@
 
 <div
   id="nav-menu-panel"
-  class="float-panel float-panel-closed fixed right-4 top-14 transition-all px-2 py-2"
+  class="float-panel float-panel-closed fixed right-4 top-[5.25rem] z-[60] md:hidden min-w-[220px] max-h-[calc(100vh-6rem)] overflow-y-auto transition-all px-2 py-2 shadow-xl border border-[var(--line-divider)] rounded-[var(--radius-large)]"
 >
   {#each links as link, i (link.name + link.url)}
     {#if link.children && link.children.length > 0}
