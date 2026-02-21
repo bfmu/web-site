@@ -79,6 +79,46 @@ services:
       - backend
     command: pnpm run dev
 
+  # Logging stack: Loki, Promtail, Grafana
+  loki:
+    image: grafana/loki:3.6.0
+    container_name: website-loki-dev
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki-config.yaml:/etc/loki/config.yaml:ro
+    command: -config.file=/etc/loki/config.yaml
+    networks:
+      - website-network
+
+  promtail:
+    image: grafana/promtail:3.6.0
+    container_name: website-promtail-dev
+    volumes:
+      - ./monitoring/promtail-config.yaml:/etc/promtail/config.yaml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yaml
+    depends_on:
+      - loki
+    networks:
+      - website-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: website-grafana-dev
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana-datasource.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+    depends_on:
+      - loki
+    networks:
+      - website-network
+
 volumes:
   mongodb_data:
     driver: local

@@ -1,21 +1,26 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Trust proxy para que req.ip use X-Forwarded-For (nginx)
   app.set('trust proxy', 1);
 
+  // Filtro global para loguear excepciones HTTP
+  app.useGlobalFilters(new HttpExceptionFilter());
+
   // Log de requests a backup para diagnóstico
   app.use((req, res, next) => {
     if (req.path?.startsWith('/api/backup')) {
-      console.log(`[Backup] ${req.method} ${req.path} - ${req.get('content-type') || 'no content-type'}`);
+      logger.log(`Backup request: ${req.method} ${req.path} - ${req.get('content-type') || 'no content-type'}`);
     }
     next();
   });
@@ -58,7 +63,7 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  console.info(`web-site-backend running on: http://localhost:${port}`);
-  console.info(`Swagger docs available at: http://localhost:${port}/api/docs`);
+  logger.log(`Backend running on: http://localhost:${port}`);
+  logger.log(`Swagger docs at: http://localhost:${port}/api/docs`);
 }
 bootstrap();

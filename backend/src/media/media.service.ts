@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Media, MediaDocument } from './schemas/media.schema';
@@ -11,6 +11,8 @@ import * as path from 'path';
 
 @Injectable()
 export class MediaService {
+  private readonly logger = new Logger(MediaService.name);
+
   constructor(
     @InjectModel(Media.name) private mediaModel: Model<MediaDocument>,
     @InjectModel(Album.name) private albumModel: Model<AlbumDocument>,
@@ -132,7 +134,7 @@ export class MediaService {
       try {
         fs.unlinkSync(filePath);
       } catch (error) {
-        console.error(`Error deleting file ${filePath}:`, error);
+        this.logger.error(`Error deleting file ${filePath}: ${error instanceof Error ? error.message : error}`);
         // Continuar con la eliminación del registro aunque falle el archivo
       }
     }

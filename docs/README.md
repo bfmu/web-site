@@ -24,6 +24,7 @@ Esto levanta:
 | [Docker](getting-started/docker.md) | Detalles de Docker Compose, volúmenes, troubleshooting |
 | [Setup Admin](admin/setup.md) | Panel de administración, editor Tiptap, upload de imágenes |
 | [Crear Usuario](admin/crear-usuario.md) | Crear admins, registro, roles |
+| [Logging](LOGGING.md) | Grafana Loki: ver logs sin SSH, configuración y uso |
 | [Backend](api/backend.md) | API NestJS, Swagger, tests |
 | [Blog API](api/blog.md) | Endpoints REST del blog, estructura de datos |
 
@@ -33,6 +34,7 @@ Esto levanta:
 - **Backend API**: http://localhost:3000
 - **Swagger Docs**: http://localhost:3000/api/docs
 - **Admin Panel**: http://localhost:4321/admin/login
+- **Grafana (logs)**: http://localhost:3001
 
 ## 🎯 Características
 

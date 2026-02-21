@@ -86,3 +86,16 @@ export function getWebSiteUrl(): string {
     'http://localhost:4321/';
   return url.endsWith('/') ? url : `${url}/`;
 }
+
+/**
+ * Obtiene la URL de Grafana (visor de logs).
+ * - Dev: http://localhost:3001
+ * - Prod: {PUBLIC_WEB_SITE_URL}/grafana/ o PUBLIC_GRAFANA_URL si está definida
+ */
+export function getGrafanaUrl(): string {
+  const explicit = import.meta.env.PUBLIC_GRAFANA_URL;
+  if (explicit) return explicit.endsWith('/') ? explicit : `${explicit}/`;
+  if (import.meta.env.DEV) return 'http://localhost:3001';
+  const base = getWebSiteUrl().replace(/\/$/, '');
+  return `${base}/grafana/`;
+}

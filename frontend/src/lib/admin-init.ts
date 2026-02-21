@@ -152,9 +152,11 @@ export function initAdmin(): void {
     const goToSiteLink = document.getElementById('go-to-site-link');
     const servicesLink = document.getElementById('services-link');
     const backupLink = document.getElementById('backup-link');
+    const logsLink = document.getElementById('logs-link');
     if (goToSiteLink) goToSiteLink.classList.remove('hidden');
     if (servicesLink) servicesLink.classList.remove('hidden');
     if (backupLink) backupLink.classList.remove('hidden');
+    if (logsLink) logsLink.classList.remove('hidden');
   }
 
   function getAvatarUrl(avatar: string | undefined): string {

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Album, AlbumDocument } from './schemas/album.schema';
@@ -8,6 +8,8 @@ import { UpdateAlbumDto } from './dto/update-album.dto';
 
 @Injectable()
 export class AlbumService {
+  private readonly logger = new Logger(AlbumService.name);
+
   constructor(
     @InjectModel(Album.name) private albumModel: Model<AlbumDocument>,
     @InjectModel(Media.name) private mediaModel: Model<MediaDocument>,
@@ -158,6 +160,7 @@ export class AlbumService {
   async addImagesBatch(slug: string, mediaIds: string[]): Promise<Album> {
     const album = await this.albumModel.findOne({ slug }).exec();
     if (!album) {
+      this.logger.warn(`addImagesBatch: album not found slug=${slug}`);
       throw new NotFoundException(`Album with slug "${slug}" not found`);
     }
 
@@ -167,9 +170,11 @@ export class AlbumService {
     );
 
     if (newIds.length === 0) {
+      this.logger.log(`addImagesBatch: no new images to add for album ${slug}`);
       return this.findOne(slug);
     }
 
+    this.logger.log(`addImagesBatch: adding ${newIds.length} images to album ${slug}`);
     await this.albumModel.findByIdAndUpdate(
       album._id,
       { $push: { images: { $each: newIds.map((id) => new Types.ObjectId(id)) } } },

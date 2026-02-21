@@ -13,6 +13,7 @@ import {
   BadRequestException,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -37,6 +38,8 @@ import * as path from 'path';
 @ApiTags('media')
 @Controller('media')
 export class MediaController {
+  private readonly logger = new Logger(MediaController.name);
+
   constructor(private readonly mediaService: MediaService) {}
 
   @Post('upload')
@@ -49,18 +52,21 @@ export class MediaController {
   @ApiResponse({ status: 201, description: 'Media creado correctamente' })
   async upload(@UploadedFile() file: any, @Body() body?: any) {
     if (!file) {
+      this.logger.warn('Upload attempt without file');
       throw new BadRequestException('No se proporcionó ningún archivo');
     }
 
     // Validar tipo de archivo
     const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
     if (!allowedMimeTypes.includes(file.mimetype)) {
+      this.logger.warn(`Upload rejected: invalid mimetype ${file.mimetype} for ${file.originalname}`);
       throw new BadRequestException('El archivo debe ser una imagen (JPEG, PNG, GIF, WEBP, SVG)');
     }
 
     // Validar tamaño (máximo 10MB)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
+      this.logger.warn(`Upload rejected: file too large ${file.size} bytes for ${file.originalname}`);
       throw new BadRequestException('La imagen no puede ser mayor a 10MB');
     }
 
@@ -107,6 +113,7 @@ export class MediaController {
 
     // Crear registro en DB
     const media = await this.mediaService.create(createMediaDto);
+    this.logger.log(`Media uploaded: ${fileName} (${file.size} bytes)`);
 
     // Convertir documento de Mongoose a objeto plano
     const mediaObj = (media as MediaDocument).toObject();
