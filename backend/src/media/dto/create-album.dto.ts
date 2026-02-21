@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsArray, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsArray, IsDateString, IsNumber } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateAlbumDto {
@@ -35,5 +35,10 @@ export class CreateAlbumDto {
   @IsOptional()
   @IsDateString()
   publishedAt?: string;
+
+  @ApiPropertyOptional({ example: 0, description: 'Orden en la galería (menor = primero)' })
+  @IsOptional()
+  @IsNumber()
+  order?: number;
 }
 

@@ -59,6 +59,19 @@ export class AlbumController {
     });
   }
 
+  @Patch('reorder')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'editor')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reordenar álbumes (requiere autenticación)' })
+  @ApiResponse({ status: 200, description: 'Álbumes reordenados' })
+  async reorder(@Body() body: { slugs: string[] }) {
+    if (!body.slugs || !Array.isArray(body.slugs)) {
+      throw new BadRequestException('slugs must be a non-empty array');
+    }
+    return this.albumService.reorderAlbums(body.slugs);
+  }
+
   @Get(':slug')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'editor')

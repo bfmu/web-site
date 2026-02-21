@@ -135,6 +135,7 @@ export class MediaController {
   @ApiOperation({ summary: 'Listar medios (requiere autenticación)' })
   @ApiQuery({ name: 'type', required: false, description: 'Tipo de medio' })
   @ApiQuery({ name: 'albumId', required: false, description: 'ID del álbum' })
+  @ApiQuery({ name: 'notInAlbum', required: false, description: 'Solo medios que no están en ningún álbum' })
   @ApiQuery({ name: 'isPublic', required: false, description: 'Si es público' })
   @ApiQuery({ name: 'search', required: false, description: 'Búsqueda' })
   @ApiQuery({ name: 'page', required: false, description: 'Página' })
@@ -144,6 +145,7 @@ export class MediaController {
     return this.mediaService.findAll({
       type: query.type,
       albumId: query.albumId,
+      notInAlbum: query.notInAlbum === 'true',
       isPublic: query.isPublic === 'true' ? true : query.isPublic === 'false' ? false : undefined,
       search: query.search,
       page: query.page ? parseInt(query.page) : 1,

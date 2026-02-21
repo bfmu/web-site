@@ -29,6 +29,9 @@ export class Album {
   @Prop({ default: 0 })
   viewCount: number;
 
+  @Prop({ default: 0 })
+  order: number; // Orden de visualización en la galería (menor = primero)
+
   @Prop()
   publishedAt?: Date; // Fecha de publicación pública
 }
@@ -40,4 +43,5 @@ AlbumSchema.index({ slug: 1 });
 AlbumSchema.index({ isPublic: 1 });
 AlbumSchema.index({ publishedAt: -1 });
 AlbumSchema.index({ createdAt: -1 });
+AlbumSchema.index({ order: 1 });
 

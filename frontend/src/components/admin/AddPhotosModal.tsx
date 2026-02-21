@@ -39,12 +39,6 @@ export function AddPhotosModal({
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  const albumImageIds = new Set(
-    (Array.isArray(album.images) ? album.images : []).map((img: MediaFile | string) =>
-      typeof img === 'string' ? img : (img as MediaFile)._id,
-    ),
-  );
-
   useEffect(() => {
     if (isOpen && activeTab === 'library') {
       setPage(1);
@@ -68,9 +62,9 @@ export function AddPhotosModal({
         page: pageNum,
         limit: 50,
         search: search || undefined,
+        notInAlbum: true,
       });
-      const filtered = response.media.filter((m) => !albumImageIds.has(m._id));
-      setMedia((prev) => (replace ? filtered : [...prev, ...filtered]));
+      setMedia((prev) => (replace ? response.media : [...prev, ...response.media]));
       setHasMore(response.pagination.page < response.pagination.pages);
     } catch (error) {
       console.error('Error loading media:', error);
@@ -228,7 +222,7 @@ export function AddPhotosModal({
               </div>
 
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Las imágenes que ya están en el álbum no se muestran aquí.
+                Solo se muestran imágenes que no han sido agregadas a ningún álbum.
               </p>
 
               {loading && media.length === 0 ? (

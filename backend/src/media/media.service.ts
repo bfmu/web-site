@@ -27,6 +27,7 @@ export class MediaService {
   async findAll(query: {
     type?: string;
     albumId?: string;
+    notInAlbum?: boolean;
     isPublic?: boolean;
     search?: string;
     page?: number;
@@ -35,6 +36,7 @@ export class MediaService {
     const {
       type,
       albumId,
+      notInAlbum,
       isPublic,
       search,
       page = 1,
@@ -49,6 +51,8 @@ export class MediaService {
 
     if (albumId) {
       filter.albumId = new Types.ObjectId(albumId);
+    } else if (notInAlbum) {
+      filter.$or = [{ albumId: null }, { albumId: { $exists: false } }];
     }
 
     if (isPublic !== undefined) {
@@ -56,12 +60,18 @@ export class MediaService {
     }
 
     if (search) {
-      filter.$or = [
+      const searchOr = [
         { filename: { $regex: search, $options: 'i' } },
         { originalName: { $regex: search, $options: 'i' } },
         { alt: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
       ];
+      if (filter.$or) {
+        filter.$and = [{ $or: filter.$or }, { $or: searchOr }];
+        delete filter.$or;
+      } else {
+        filter.$or = searchOr;
+      }
     }
 
     const skip = (page - 1) * limit;

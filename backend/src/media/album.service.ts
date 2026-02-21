@@ -23,9 +23,16 @@ export class AlbumService {
     }
 
     const images = createAlbumDto.images?.map((id) => new Types.ObjectId(id)) || [];
+    const maxOrder = await this.albumModel
+      .findOne()
+      .sort({ order: -1 })
+      .select('order')
+      .exec();
+    const nextOrder = (maxOrder?.order ?? -1) + 1;
     const albumData: any = {
       ...createAlbumDto,
       images,
+      order: createAlbumDto.order ?? nextOrder,
       // Álbumes vacíos se marcan automáticamente como no públicos
       isPublic: images.length > 0 ? (createAlbumDto.isPublic ?? true) : false,
     };
@@ -55,7 +62,7 @@ export class AlbumService {
       this.albumModel
         .find(filter)
         .populate('images', 'filename url alt description')
-        .sort({ createdAt: -1 })
+        .sort({ order: 1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .exec(),
@@ -95,6 +102,10 @@ export class AlbumService {
 
     if (updateAlbumDto.publishedAt) {
       updateData.publishedAt = new Date(updateAlbumDto.publishedAt);
+    }
+
+    if (updateAlbumDto.order !== undefined) {
+      updateData.order = updateAlbumDto.order;
     }
 
     const updatedAlbum = await this.albumModel
@@ -250,6 +261,26 @@ export class AlbumService {
     ).exec();
 
     return this.findOne(slug);
+  }
+
+  async reorderAlbums(slugs: string[]): Promise<Album[]> {
+    if (!Array.isArray(slugs) || slugs.length === 0) {
+      return this.albumModel
+        .find()
+        .sort({ order: 1, createdAt: -1 })
+        .populate('images', 'filename url alt description')
+        .exec();
+    }
+
+    const bulkOps = slugs.map((slug, index) => ({
+      updateOne: {
+        filter: { slug },
+        update: { order: index },
+      },
+    }));
+
+    await this.albumModel.bulkWrite(bulkOps);
+    return this.findAll({}).then((r) => r.albums);
   }
 
   async setCover(slug: string, mediaId: string): Promise<Album> {

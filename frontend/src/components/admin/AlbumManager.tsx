@@ -1,10 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
   getAlbums,
   getAlbum,
   createAlbum,
   updateAlbum,
   deleteAlbum,
+  reorderAlbums,
   removeImageFromAlbum,
   setAlbumCover,
   type Album,
@@ -16,6 +35,139 @@ import { AddPhotosModal } from './AddPhotosModal';
 import { showSuccess, showError, showWarning } from '@/lib/notifications';
 
 type ViewMode = 'list' | 'album';
+
+function SortableAlbumCard({
+  album,
+  getImageUrl,
+  onManageImages,
+  onEdit,
+  onDelete,
+  isReordering,
+}: {
+  album: Album;
+  getImageUrl: (url: string) => string;
+  onManageImages: (album: Album) => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  isReordering: boolean;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: album.slug });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const images = Array.isArray(album.images) ? album.images : [];
+  const imageCount = images.length;
+  const isEmpty = imageCount === 0;
+  const coverUrl = album.coverImage
+    ? getImageUrl(album.coverImage)
+    : images.length > 0 && typeof images[0] !== 'string'
+      ? getImageUrl((images[0] as MediaFile).url)
+      : '/default-avatar.svg';
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`rounded-xl border overflow-hidden hover:shadow-lg transition-shadow ${
+        isDragging
+          ? 'border-indigo-500 bg-indigo-50/30 dark:bg-indigo-900/20 dark:border-indigo-400 z-50 opacity-95'
+          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+      } ${isReordering ? 'pointer-events-none opacity-70' : ''}`}
+    >
+      <div className="flex">
+        <div
+          className="flex cursor-grab active:cursor-grabbing flex-shrink-0 items-center justify-center px-2 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+          {...attributes}
+          {...listeners}
+          title="Arrastrar para reordenar"
+        >
+          <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+            <path d="M7 2a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V4a2 2 0 012-2h2zm6 0a2 2 0 012 2v12a2 2 0 01-2 2h-2a2 2 0 01-2-2V4a2 2 0 012-2h2z" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div
+            className="aspect-video relative bg-gray-100 dark:bg-gray-700 cursor-pointer"
+            onClick={() => onManageImages(album)}
+          >
+            <img
+              src={coverUrl}
+              alt={album.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const img = e.target as HTMLImageElement;
+                img.onerror = null;
+                img.src = '/default-avatar.svg';
+              }}
+            />
+            <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+              <span className="text-white font-medium text-lg">Gestionar</span>
+            </div>
+            {!isEmpty && album.isPublic && (
+              <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                Público
+              </div>
+            )}
+            {isEmpty && (
+              <div className="absolute top-2 right-2 bg-amber-500 text-white text-xs px-2 py-1 rounded-full">
+                Vacío
+              </div>
+            )}
+          </div>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+              {album.title}
+            </h3>
+            {album.description && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
+                {album.description}
+              </p>
+            )}
+            <p className="text-xs text-gray-500 dark:text-gray-500 mb-4">
+              {imageCount} imagen{imageCount !== 1 ? 'es' : ''}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => onManageImages(album)}
+                className="flex-1 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              >
+                Gestionar
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Editar
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AlbumManager() {
   const [albums, setAlbums] = useState<Album[]>([]);
@@ -36,6 +188,13 @@ export default function AlbumManager() {
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [lastTitleForSlug, setLastTitleForSlug] = useState('');
   const [albumLoading, setAlbumLoading] = useState(false);
+  const [reorderSaving, setReorderSaving] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   useEffect(() => {
     loadAlbums();
@@ -194,6 +353,31 @@ export default function AlbumManager() {
     showSuccess('Fotos agregadas correctamente');
     loadAlbums();
     refreshSelectedAlbum();
+  };
+
+  const handleReorderAlbums = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = albums.findIndex((a) => a.slug === active.id);
+    const newIndex = albums.findIndex((a) => a.slug === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newOrder = arrayMove(albums, oldIndex, newIndex);
+    const slugs = newOrder.map((a) => a.slug);
+    setAlbums(newOrder);
+
+    try {
+      setReorderSaving(true);
+      await reorderAlbums(slugs);
+      showSuccess('Orden de álbumes actualizado');
+    } catch (error: any) {
+      console.error('Error reordering albums:', error);
+      showError(error.message || 'Error al reordenar álbumes');
+      loadAlbums();
+    } finally {
+      setReorderSaving(false);
+    }
   };
 
   const getImageUrl = (url: string): string => getOptimizedImageUrl(url, 200);
@@ -478,101 +662,42 @@ export default function AlbumManager() {
           No hay álbumes. Crea uno para comenzar.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {albums.map((album) => {
-            const images = Array.isArray(album.images) ? album.images : [];
-            const imageCount = images.length;
-            const isEmpty = imageCount === 0;
-            const coverUrl = album.coverImage
-              ? getImageUrl(album.coverImage)
-              : images.length > 0 && typeof images[0] !== 'string'
-              ? getImageUrl((images[0] as MediaFile).url)
-              : '/default-avatar.svg';
-
-            return (
-              <div
-                key={album._id}
-                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                <div
-                  className="aspect-video relative bg-gray-100 dark:bg-gray-700 cursor-pointer"
-                  onClick={() => handleManageImages(album)}
-                >
-                  <img
-                    src={coverUrl}
-                    alt={album.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const img = e.target as HTMLImageElement;
-                      img.onerror = null;
-                      img.src = '/default-avatar.svg';
+        <div className="space-y-3">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Arrastra los álbumes para ordenar su aparición en la galería pública. Los primeros se muestran primero.
+          </p>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleReorderAlbums}
+          >
+            <SortableContext items={albums.map((a) => a.slug)} strategy={rectSortingStrategy}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {albums.map((album) => (
+                  <SortableAlbumCard
+                    key={album._id}
+                    album={album}
+                    getImageUrl={getImageUrl}
+                    onManageImages={handleManageImages}
+                    onEdit={() => {
+                      setSelectedAlbum(album);
+                      setAlbumForm({
+                        slug: album.slug,
+                        title: album.title,
+                        description: album.description || '',
+                        isPublic: album.isPublic,
+                      });
+                      setSlugManuallyEdited(true);
+                      setLastTitleForSlug(album.title);
+                      setShowEditModal(true);
                     }}
+                    onDelete={() => handleDelete(album.slug)}
+                    isReordering={reorderSaving}
                   />
-                  <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
-                    <span className="text-white font-medium text-lg">Gestionar</span>
-                  </div>
-                  {!isEmpty && album.isPublic && (
-                    <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                      Público
-                    </div>
-                  )}
-                  {isEmpty && (
-                    <div className="absolute top-2 right-2 bg-amber-500 text-white text-xs px-2 py-1 rounded-full">
-                      Vacío
-                    </div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                    {album.title}
-                  </h3>
-                  {album.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
-                      {album.description}
-                    </p>
-                  )}
-                  <p className="text-xs text-gray-500 dark:text-gray-500 mb-4">
-                    {imageCount} imagen{imageCount !== 1 ? 'es' : ''}
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleManageImages(album)}
-                      className="flex-1 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-                    >
-                      Gestionar
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedAlbum(album);
-                        setAlbumForm({
-                          slug: album.slug,
-                          title: album.title,
-                          description: album.description || '',
-                          isPublic: album.isPublic,
-                        });
-                        setSlugManuallyEdited(true);
-                        setLastTitleForSlug(album.title);
-                        setShowEditModal(true);
-                      }}
-                      className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(album.slug);
-                      }}
-                      className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
+                ))}
               </div>
-            );
-          })}
+            </SortableContext>
+          </DndContext>
         </div>
       )}
 

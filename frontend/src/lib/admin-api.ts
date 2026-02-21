@@ -432,6 +432,7 @@ export interface MediaFile {
 export interface MediaQuery {
   type?: string;
   albumId?: string;
+  notInAlbum?: boolean;
   isPublic?: boolean;
   search?: string;
   page?: number;
@@ -593,6 +594,7 @@ export interface Album {
   images: MediaFile[] | string[];
   isPublic: boolean;
   viewCount: number;
+  order?: number;
   publishedAt?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -605,6 +607,7 @@ export interface CreateAlbumRequest {
   coverImage?: string;
   images?: string[];
   isPublic?: boolean;
+  order?: number;
   publishedAt?: string;
 }
 
@@ -663,6 +666,13 @@ export async function getAlbum(slug: string): Promise<Album> {
  */
 export async function updateAlbum(slug: string, album: UpdateAlbumRequest): Promise<Album> {
   return apiPatch<Album>(`albums/${slug}`, album);
+}
+
+/**
+ * Reordenar álbumes (el orden del array determina la prioridad en la galería)
+ */
+export async function reorderAlbums(slugs: string[]): Promise<Album[]> {
+  return apiPatch<Album[]>('albums/reorder', { slugs });
 }
 
 /**
