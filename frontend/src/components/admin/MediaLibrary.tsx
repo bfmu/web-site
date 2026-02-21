@@ -9,7 +9,7 @@ import {
   type MediaFile,
   type MediaQuery,
 } from '../../lib/admin-api';
-import { getOptimizedImageUrl } from '../../lib/image-utils';
+import { getOptimizedImageUrl, getOriginalImageUrl } from '../../lib/image-utils';
 import { showSuccess, showError } from '@/lib/notifications';
 
 export default function MediaLibrary() {
@@ -273,7 +273,7 @@ export default function MediaLibrary() {
               </div>
 
               <img
-                src={getImageUrl(selectedMedia)}
+                src={getOriginalImageUrl(selectedMedia.url)}
                 alt={selectedMedia.alt || selectedMedia.originalName}
                 className="w-full rounded-lg mb-4"
               />
