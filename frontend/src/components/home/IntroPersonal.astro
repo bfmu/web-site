@@ -1,6 +1,6 @@
 ---
 import { profileConfig } from '@/config';
-import { getBackendResourceUrl } from '@/lib/env';
+import { getOptimizedImageUrl } from '@/lib/image-utils';
 import { fetchPosts } from '@utils/api-blog';
 import { fetchPublicAlbums } from '@utils/api-blog';
 import profileAvatar from '@/assets/images/DSC_1024.jpg';
@@ -19,7 +19,7 @@ const ctaHref = (config.ctaHref as string) ?? '#work';
 let avatarUrl: string;
 const configAvatar = config.avatarUrl as string | undefined;
 if (configAvatar && (configAvatar.startsWith('http') || configAvatar.startsWith('/'))) {
-  avatarUrl = configAvatar.startsWith('/uploads/') ? getBackendResourceUrl(configAvatar) : configAvatar;
+  avatarUrl = configAvatar.startsWith('/uploads/') ? getOptimizedImageUrl(configAvatar, 288) : configAvatar;
 } else {
   avatarUrl = typeof profileAvatar === 'string' ? profileAvatar : profileAvatar.src;
 }

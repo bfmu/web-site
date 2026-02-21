@@ -3,7 +3,7 @@
  * cuando el Navbar está en el DOM. No se ejecuta en páginas auth (login/register)
  * que tienen una barra mínima sin el Navbar completo.
  */
-import { getBackendResourceUrl } from './env';
+import { getOptimizedImageUrl } from './image-utils';
 
 let userMenuInitialized = false;
 let storageListenerAttached = false;
@@ -73,11 +73,11 @@ function updateAdminButton(): void {
       if (userAvatar) {
         let avatarUrl = user.avatar || '/default-avatar.svg';
         if (avatarUrl && avatarUrl.startsWith('/uploads/')) {
-          avatarUrl = getBackendResourceUrl(avatarUrl);
+          avatarUrl = getOptimizedImageUrl(avatarUrl, 150);
         } else if (!avatarUrl || avatarUrl === '/default-avatar.png' || avatarUrl === '/default-avatar.svg') {
           avatarUrl = '/default-avatar.svg';
         } else if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('/default-avatar')) {
-          avatarUrl = getBackendResourceUrl(avatarUrl);
+          avatarUrl = getOptimizedImageUrl(avatarUrl, 150);
         }
         userAvatar.src = avatarUrl;
         userAvatar.onerror = function () {

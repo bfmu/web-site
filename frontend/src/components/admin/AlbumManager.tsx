@@ -11,6 +11,7 @@ import {
   type MediaFile,
 } from '../../lib/admin-api';
 import { getBackendResourceUrl } from '../../lib/env';
+import { getOptimizedImageUrl } from '../../lib/image-utils';
 import { AddPhotosModal } from './AddPhotosModal';
 import { showSuccess, showError, showWarning } from '@/lib/notifications';
 
@@ -195,7 +196,7 @@ export default function AlbumManager() {
     refreshSelectedAlbum();
   };
 
-  const getImageUrl = (url: string): string => getBackendResourceUrl(url);
+  const getImageUrl = (url: string): string => getOptimizedImageUrl(url, 200);
 
   // Vista dentro del álbum (navegación)
   if (viewMode === 'album' && selectedAlbum) {

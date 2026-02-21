@@ -9,7 +9,7 @@ import {
   type MediaFile,
   type MediaQuery,
 } from '../../lib/admin-api';
-import { getBackendResourceUrl } from '../../lib/env';
+import { getOptimizedImageUrl } from '../../lib/image-utils';
 import { showSuccess, showError } from '@/lib/notifications';
 
 export default function MediaLibrary() {
@@ -138,7 +138,7 @@ export default function MediaLibrary() {
     return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
   };
 
-  const getImageUrl = (media: MediaFile): string => getBackendResourceUrl(media.url);
+  const getImageUrl = (media: MediaFile): string => getOptimizedImageUrl(media.url, 200);
 
   return (
     <div className="space-y-6">

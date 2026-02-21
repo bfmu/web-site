@@ -1,7 +1,7 @@
 ---
 import { getPostUrlBySlug } from '@utils/url-utils';
 import { fetchRecentPosts } from '@utils/api-blog';
-import { getBackendResourceUrl } from '@/lib/env';
+import { getOptimizedImageUrl } from '@/lib/image-utils';
 
 interface Props {
   config?: Record<string, unknown>;
@@ -43,7 +43,7 @@ function isNew(published: string): boolean {
             <a href={getPostUrlBySlug(entry.slug)} class="relative group overflow-hidden rounded-[var(--radius-large)] shadow-md block bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 {entry.image && (
                     <div class="overflow-hidden">
-                        <img src={entry.image.startsWith('/uploads/') ? getBackendResourceUrl(entry.image) : entry.image} alt={entry.title} class="w-full h-48 object-cover transition duration-300 group-hover:scale-105" />
+                        <img src={entry.image.startsWith('/uploads/') ? getOptimizedImageUrl(entry.image, 600) : entry.image} alt={entry.title} class="w-full h-48 object-cover transition duration-300 group-hover:scale-105" />
                     </div>
                 )}
                 {isNew(entry.published) && (

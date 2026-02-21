@@ -1,6 +1,6 @@
 ---
 import { fetchPublicAlbums } from '@utils/api-blog';
-import { getBackendResourceUrl } from '@/lib/env';
+import { getOptimizedImageUrl } from '@/lib/image-utils';
 
 interface Props {
   config?: Record<string, unknown>;
@@ -30,7 +30,7 @@ try {
 
 function getImageUrl(url: string | undefined): string {
   if (!url) return '/default-avatar.svg';
-  return getBackendResourceUrl(url);
+  return getOptimizedImageUrl(url, 400);
 }
 ---
 

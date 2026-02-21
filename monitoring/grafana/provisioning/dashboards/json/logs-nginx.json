@@ -1,0 +1,20 @@
+{
+  "title": "Logs - Nginx",
+  "uid": "logs-nginx",
+  "panels": [{
+    "type": "logs",
+    "title": "website-nginx",
+    "gridPos": {"h": 20, "w": 24, "x": 0, "y": 0},
+    "datasource": {"type": "loki"},
+    "targets": [{
+      "expr": "{job=\"containerlogs\"} |~ \"HTTP/[12]\"",
+      "refId": "A",
+      "queryType": "range"
+    }],
+    "options": {"showTime": true, "sortOrder": "Descending", "wrapLogMessage": true}
+  }],
+  "schemaVersion": 39,
+  "refresh": "10s",
+  "time": {"from": "now-1h", "to": "now"},
+  "tags": ["logs", "nginx"]
+}

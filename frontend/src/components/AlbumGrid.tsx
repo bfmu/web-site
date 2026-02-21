@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import InstagramModal from './InstagramModal';
+import { getOptimizedImageUrl } from '../lib/image-utils';
 
 interface Image {
   id: string;
@@ -66,7 +67,7 @@ export default function AlbumGrid({ images, albumTitle }: AlbumGridProps) {
               className={`group relative overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 ${sizeClass} cursor-pointer`}
             >
               <img
-                src={image.url}
+                src={getOptimizedImageUrl(image.url, 400)}
                 alt={image.alt}
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                 loading="lazy"

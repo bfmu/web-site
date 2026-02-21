@@ -1,6 +1,6 @@
 ---
 import bannerImage from '@/assets/images/DSC_2453.jpg';
-import { getBackendResourceUrl } from '@/lib/env';
+import { getOptimizedImageUrl } from '@/lib/image-utils';
 
 interface Props {
   config?: Record<string, unknown>;
@@ -19,7 +19,7 @@ const defaultBannerUrl = typeof bannerImage === 'string' ? bannerImage : bannerI
 
 function resolveUrl(url: string): string {
   if (!url || !(url.startsWith('http') || url.startsWith('/'))) return '';
-  return getBackendResourceUrl(url);
+  return getOptimizedImageUrl(url, 1920);
 }
 
 const imageUrlLegacy = config.imageUrl as string | undefined;

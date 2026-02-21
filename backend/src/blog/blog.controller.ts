@@ -72,10 +72,10 @@ export class BlogController {
       throw new BadRequestException('El archivo debe ser una imagen');
     }
 
-    // Validar tamaño (máximo 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Validar tamaño (máximo 100MB)
+    const maxSize = 100 * 1024 * 1024; // 100MB
     if (file.size > maxSize) {
-      throw new BadRequestException('La imagen no puede ser mayor a 10MB');
+      throw new BadRequestException('La imagen no puede ser mayor a 100MB');
     }
 
     // Crear directorio de uploads si no existe

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getUser, setUser } from '../../lib/auth';
 import { getProfile, updateProfile, uploadAvatar, changePassword } from '../../lib/admin-api';
 import { apiGet } from '../../lib/api';
-import { getBackendResourceUrl } from '../../lib/env';
+import { getOptimizedImageUrl } from '../../lib/image-utils';
 import { showSuccess, showError, showWarning } from '@/lib/notifications';
 
 export function ProfileEditor() {
@@ -119,7 +119,7 @@ export function ProfileEditor() {
     if (!url || url === '/default-avatar.png' || url === '/default-avatar.svg') {
       return '/default-avatar.svg';
     }
-    return getBackendResourceUrl(url);
+    return getOptimizedImageUrl(url, 200);
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {

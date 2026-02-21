@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { getOptimizedImageUrl } from '../lib/image-utils';
 
 interface Image {
   id: string;
@@ -118,7 +119,7 @@ export default function InstagramModal({
             </div>
           )}
           <img
-            src={currentImage.url}
+            src={getOptimizedImageUrl(currentImage.url, 1200)}
             alt={currentImage.alt}
             className={`max-w-full max-h-full object-contain transition-opacity duration-300 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'

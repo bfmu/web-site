@@ -4,6 +4,7 @@ import { Fragment } from 'react';
 import { getPosts } from '../../../lib/admin-api';
 import type { BlogPost, PostQuery } from '../../../lib/admin-api';
 import { getBackendResourceUrl } from '../../../lib/env';
+import { getOptimizedImageUrl } from '../../../lib/image-utils';
 
 const url = Astro.url;
 const searchParams = url.searchParams;
@@ -187,7 +188,7 @@ const visiblePages = getVisiblePages(pagination.pages, pagination.page);
                       {post.image && (
                         <img
                           class="h-10 w-10 rounded-lg object-cover"
-                          src={post.image.startsWith('/uploads/') ? getBackendResourceUrl(post.image) : post.image}
+                          src={post.image.startsWith('/uploads/') ? getOptimizedImageUrl(post.image, 80) : post.image}
                           alt={post.title}
                         />
                       )}

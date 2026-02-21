@@ -6,7 +6,7 @@ import {
   type MediaFile,
   type Album,
 } from '../../lib/admin-api';
-import { getBackendResourceUrl } from '../../lib/env';
+import { getOptimizedImageUrl } from '../../lib/image-utils';
 import { showSuccess, showError } from '@/lib/notifications';
 
 interface AddPhotosModalProps {
@@ -159,7 +159,7 @@ export function AddPhotosModal({
     }
   };
 
-  const getImageUrl = (m: MediaFile): string => getBackendResourceUrl(m.url);
+  const getImageUrl = (m: MediaFile): string => getOptimizedImageUrl(m.url, 200);
 
   if (!isOpen) return null;
 

@@ -1,6 +1,6 @@
 ---
 import { url } from '../utils/url-utils'
-import { getBackendResourceUrl } from '../lib/env'
+import { getOptimizedImageUrl } from '../lib/image-utils'
 
 interface Props {
   album: {
@@ -20,10 +20,10 @@ const { album } = Astro.props;
 const imageCount = Array.isArray(album.images) ? album.images.length : 0;
 const coverUrl = album.coverImage || (album.images && album.images.length > 0 && typeof album.images[0] !== 'string' ? album.images[0].url : null) || '/default-avatar.svg';
 
-// Construir URL completa de la imagen
+// Construir URL optimizada de la imagen
 function getImageUrl(imgUrl: string | undefined): string {
   if (!imgUrl) return '/default-avatar.svg';
-  return getBackendResourceUrl(imgUrl);
+  return getOptimizedImageUrl(imgUrl, 400);
 }
 
 const fullCoverUrl = getImageUrl(coverUrl);

@@ -5,7 +5,7 @@
  * directa como tras transiciones Swup.
  */
 import { getUser, isAdmin, logout } from './auth';
-import { getBackendResourceUrl } from './env';
+import { getOptimizedImageUrl } from './image-utils';
 import { navigateTo } from './navigation';
 
 let adminListenersAttached = false;
@@ -162,7 +162,7 @@ export function initAdmin(): void {
   function getAvatarUrl(avatar: string | undefined): string {
     if (!avatar || avatar === '/default-avatar.svg') return '/default-avatar.svg';
     if (avatar.startsWith('http')) return avatar;
-    if (avatar.startsWith('/uploads/')) return getBackendResourceUrl(avatar);
+    if (avatar.startsWith('/uploads/')) return getOptimizedImageUrl(avatar, 150);
     return avatar;
   }
 

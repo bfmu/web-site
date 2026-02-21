@@ -140,6 +140,21 @@ Los administradores tienen un enlace "Logs" en el sidebar del panel admin que ab
 {job="containerlogs"} != "GET /health"
 ```
 
+### Dashboard "Logs por contenedor"
+
+Se provisiona automáticamente un dashboard que muestra logs separados por servicio:
+
+- **Backend** (NestJS)
+- **Nginx** (accesos y proxy)
+- **MongoDB**
+- **Grafana**
+- **Loki**
+- **Promtail**
+- **Frontend** (Astro)
+- **Todos los logs**
+
+Ruta: **Dashboards** → **Logs por contenedor**. Los filtros usan patrones de texto distintivos de cada contenedor.
+
 ### Crear un dashboard básico
 
 1. **Dashboards** → **New** → **New Dashboard**
@@ -253,7 +268,7 @@ En producción, nginx debe estar configurado con `location /grafana/` y `GF_SERV
 
 ### Subida de imágenes falla con error genérico
 
-Si las imágenes superan 1MB, nginx las rechazaba por defecto. Se añadió `client_max_body_size 10m` en nginx. Tras cambiar `nginx.conf`, reiniciar el contenedor nginx.
+Si las imágenes superan 1MB, nginx las rechazaba por defecto. Se configuró `client_max_body_size 100m` en nginx (límite de 100MB para uploads). Tras cambiar `nginx.conf`, reiniciar el contenedor nginx.
 
 ## Limitaciones
 

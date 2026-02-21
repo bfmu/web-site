@@ -6,6 +6,7 @@ import {
   type MediaQuery,
 } from '../../lib/admin-api';
 import { getBackendResourceUrl } from '../../lib/env';
+import { getOptimizedImageUrl } from '../../lib/image-utils';
 import { showError } from '@/lib/notifications';
 
 interface ImageLibraryModalProps {
@@ -120,7 +121,7 @@ export function ImageLibraryModal({
     }
   };
 
-  const getImageUrl = (media: MediaFile): string => getBackendResourceUrl(media.url);
+  const getImageUrl = (media: MediaFile): string => getOptimizedImageUrl(media.url, 200);
 
   if (!isOpen) return null;
 

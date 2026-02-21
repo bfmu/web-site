@@ -3,6 +3,7 @@ import { fetchHomepageConfig } from '../../lib/api-homepage';
 import { updateHomepageConfig, type HomepageSectionConfig } from '../../lib/admin-api';
 import { ImageLibraryModal } from './ImageLibraryModal';
 import { getBackendResourceUrl } from '../../lib/env';
+import { getOptimizedImageUrl } from '../../lib/image-utils';
 import { DEFAULT_HOMEPAGE_SECTIONS } from '../home/componentRegistry';
 import { showSuccess, showError } from '@/lib/notifications';
 
@@ -254,7 +255,7 @@ function Field({
 
 function heroImageUrl(url: string): string {
   if (!url) return '';
-  return getBackendResourceUrl(url.startsWith('/') ? url : `/${url}`);
+  return getOptimizedImageUrl(url.startsWith('/') ? url : `/${url}`, 400);
 }
 
 function HeroFields({
