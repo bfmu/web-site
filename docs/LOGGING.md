@@ -48,11 +48,13 @@ SSH a tu servidor y, desde la carpeta del proyecto:
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-Esto levanta todo, incluyendo loki, promtail y grafana. Grafana estará disponible en `https://tudominio.com/grafana/`.
+Esto levanta todo, incluyendo loki, promtail y grafana. Grafana estará en el subdominio configurado (ej: `https://grafana.tudominio.com/`).
+
+**Requisito**: Agrega en Nginx Proxy Manager un Proxy Host para `grafana.tudominio.com` apuntando a `website-nginx:80`, y asegúrate de que el DNS del subdominio apunte al servidor.
 
 ### 3. Verificar que funciona
 
-1. **Abrir Grafana**: Ve a `https://tudominio.com/grafana/` e inicia sesión con `GF_SECURITY_ADMIN_USER` y `GF_SECURITY_ADMIN_PASSWORD`.
+1. **Abrir Grafana**: Ve a `https://grafana.tudominio.com/` e inicia sesión con `GF_SECURITY_ADMIN_USER` y `GF_SECURITY_ADMIN_PASSWORD`.
 
 2. **Comprobar el datasource**: Menú izquierdo → **Explore** → selecciona **Loki**. Deberías poder ejecutar consultas.
 
@@ -62,7 +64,7 @@ Esto levanta todo, incluyendo loki, promtail y grafana. Grafana estará disponib
 
 ### 4. Enlace "Logs" en el panel admin
 
-Tras desplegar, los usuarios admin verán el enlace "Logs" en el sidebar. Al hacer clic, se abre Grafana en una nueva pestaña. La URL se infiere automáticamente: `PUBLIC_WEB_SITE_URL` + `/grafana/`. No necesitas ninguna variable extra.
+Tras desplegar, los usuarios admin verán el enlace "Logs" en el sidebar. La URL se toma de `GRAFANA_PUBLIC_URL` (ej: `https://grafana.tudominio.com/`). Configúralo en el `.env`.
 
 ### 5. Seguridad (recomendado)
 
