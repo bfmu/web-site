@@ -158,6 +158,76 @@ La URL de Grafana para el enlace "Logs" del admin se infiere de `PUBLIC_WEB_SITE
 
 ## Resolución de problemas
 
+### Grafana con Nginx Proxy Manager (NPM) – no carga o da error
+
+Si usas NPM como proxy inverso y `grafana.tudominio.com` no funciona:
+
+#### 1. Red Docker compartida (crítico)
+
+NPM y el stack web-site deben estar en la **misma red Docker** para que NPM resuelva `website-nginx`.
+
+```bash
+# En el servidor, crear la red si no existe
+docker network create proxy 2>/dev/null || true
+
+# Verificar que website-nginx está en proxy
+docker network inspect proxy
+```
+
+Si `website-nginx` no aparece en la red `proxy`, el stack no está bien conectado. El `docker-compose.prod.yml` ya incluye `proxy: external: true` para nginx.
+
+**Conectar NPM a la red proxy:** Edita el `docker-compose.yml` de NPM (o donde lo tengas) y añade la red a los servicios que hacen proxy:
+
+```yaml
+networks:
+  default:
+    name: npm_default  # o el nombre actual
+  proxy:
+    external: true
+
+services:
+  app:  # el servicio principal de NPM
+    networks:
+      - default
+      - proxy
+```
+
+Luego: `docker compose down && docker compose up -d` en la carpeta de NPM.
+
+#### 2. Habilitar WebSockets en NPM
+
+Grafana usa WebSockets. En el Proxy Host de `grafana.tudominio.com` en NPM:
+
+- **Custom locations** / **Details** → activa **Soporte de Websockets** (WebSocket Support).
+
+Sin esto, Grafana puede cargar mal o dar errores 502 en ciertas pantallas.
+
+#### 3. Configuración correcta del Proxy Host en NPM
+
+Para `grafana.tudominio.com`:
+
+| Campo | Valor |
+|-------|-------|
+| Dominio | grafana.tudominio.com |
+| Esquema | http |
+| Forward Hostname | website-nginx |
+| Forward Port | 80 |
+| WebSockets | **Activado** |
+
+El nginx interno recibe `Host: grafana.tudominio.com` y hace proxy a Grafana.
+
+#### 4. Alternativa: publicar puerto de nginx al host
+
+Si no puedes compartir red con NPM, publica el puerto 80 del nginx en el `docker-compose.prod.yml`:
+
+```yaml
+nginx:
+  ports:
+    - "8080:80"  # usa un puerto libre, ej. 8080
+```
+
+Luego en NPM configura el Forward Hostname como la IP del servidor (ej. `127.0.0.1` o la IP interna) y el puerto `8080`. Ten en cuenta que el `Host` debe seguir siendo `grafana.tudominio.com` para que nginx enrute correctamente.
+
 ### Promtail no ve logs / directorio vacío
 
 El contenedor Promtail monta `/var/lib/docker/containers` desde el host. Verifica:

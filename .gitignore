@@ -20,3 +20,4 @@ yarn-error.log*
 # Ignorar configuraciones del sistema operativo
 .DS_Store
 Thumbs.db
+._*

@@ -93,7 +93,6 @@ services:
     depends_on:
       - frontend
       - backend
-      - grafana
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health", "||", "exit", "1"]
       interval: 30s
@@ -132,7 +131,7 @@ services:
     expose:
       - 3000
     environment:
-      # Grafana en subdominio para evitar redirect loop en v10
+      # Grafana en subdominio - NPM apunta directo a este contenedor
       - GF_SERVER_ROOT_URL=${GRAFANA_PUBLIC_URL:-https://grafana.bfmu.dev/}
       - GF_SERVER_SERVE_FROM_SUB_PATH=false
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER:-admin}
@@ -144,6 +143,7 @@ services:
       - loki
     networks:
       - internal
+      - proxy  # Para que NPM pueda conectarse directo (grafana.bfmu.dev -> website-grafana:3000)
 
 volumes:
   mongodb_data:
