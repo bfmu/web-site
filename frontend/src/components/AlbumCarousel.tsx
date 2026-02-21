@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getOptimizedImageUrl } from '../lib/image-utils';
+import { getOptimizedImageUrl, getOriginalImageUrl } from '../lib/image-utils';
 
 interface Image {
   id: string;
@@ -130,7 +130,7 @@ export default function AlbumCarousel({ images, albumTitle }: AlbumCarouselProps
       {/* Main Image */}
       <div className="relative aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
         <a
-          href={getOptimizedImageUrl(currentImage.url, 1920)}
+          href={getOriginalImageUrl(currentImage.url)}
           data-pswp-width={1920}
           data-pswp-height={1080}
           target="_blank"
@@ -141,7 +141,7 @@ export default function AlbumCarousel({ images, albumTitle }: AlbumCarouselProps
           onTouchEnd={handleTouchEnd}
         >
           <img
-            src={getOptimizedImageUrl(currentImage.url, 800)}
+            src={getOptimizedImageUrl(currentImage.url, 2560, 95)}
             alt={currentImage.alt}
             className="w-full h-full object-contain"
             loading="lazy"
