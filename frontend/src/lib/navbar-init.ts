@@ -20,12 +20,14 @@ function switchTheme(): void {
 
 function loadButtonScript(): void {
   const switchBtn = document.getElementById('scheme-switch');
-  if (switchBtn) {
+  if (switchBtn && !switchBtn.dataset.navbarInited) {
+    switchBtn.dataset.navbarInited = '1';
     switchBtn.addEventListener('click', () => switchTheme());
   }
 
   const settingBtn = document.getElementById('display-settings-switch');
-  if (settingBtn) {
+  if (settingBtn && !settingBtn.dataset.navbarInited) {
+    settingBtn.dataset.navbarInited = '1';
     settingBtn.addEventListener('click', () => {
       const settingPanel = document.getElementById('display-setting');
       if (settingPanel) {
@@ -35,12 +37,12 @@ function loadButtonScript(): void {
   }
 
   const menuBtn = document.getElementById('nav-menu-switch');
-  if (menuBtn) {
-    menuBtn.addEventListener('click', () => {
-      const menuPanel = document.getElementById('nav-menu-panel');
-      if (menuPanel) {
-        menuPanel.classList.toggle('float-panel-closed');
-      }
+  const menuPanel = document.getElementById('nav-menu-panel');
+  if (menuBtn && menuPanel && !menuBtn.dataset.navbarInited) {
+    menuBtn.dataset.navbarInited = '1';
+    menuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menuPanel.classList.toggle('float-panel-closed');
     });
   }
 }
@@ -264,7 +266,8 @@ export function initNavbar(): void {
   updateAdminButton();
 
   const adminLoginBtn = document.getElementById('admin-login-btn') as HTMLAnchorElement | null;
-  if (adminLoginBtn) {
+  if (adminLoginBtn && !adminLoginBtn.dataset.navbarInited) {
+    adminLoginBtn.dataset.navbarInited = '1';
     adminLoginBtn.addEventListener('click', () => {
       const currentUrl = window.location.pathname;
       if (!currentUrl.includes('/admin/login') && !currentUrl.includes('/auth/')) {
