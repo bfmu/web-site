@@ -202,8 +202,10 @@ export class MediaController {
       const userOrientation = mediaRecord?.orientation ?? 0;
 
       let pipeline = sharp(fullPath)
-        .autoOrient() // Aplicar orientación EXIF para mantener la correcta
-        .rotate(userOrientation); // Aplicar rotación adicional del usuario si existe
+        .rotate(); // Sin argumentos aplica EXIF orientation (equivale a autoOrient)
+      if (userOrientation) {
+        pipeline = pipeline.rotate(userOrientation);
+      }
 
       const metadata = await pipeline.metadata();
       const needsResize = (width && metadata.width && metadata.width > width) ||
