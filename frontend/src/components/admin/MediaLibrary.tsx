@@ -138,7 +138,24 @@ export default function MediaLibrary() {
     return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
   };
 
-  const getImageUrl = (media: MediaFile): string => getOptimizedImageUrl(media.url, 200);
+  const getImageUrl = (media: MediaFile): string => {
+    const base = getOptimizedImageUrl(media.url, 200);
+    return media.orientation ? `${base}&_o=${media.orientation}` : base;
+  };
+
+  const handleRotate = async (degrees: number) => {
+    if (!selectedMedia) return;
+    const current = selectedMedia.orientation ?? 0;
+    const newOrientation = ((current + degrees) % 360 + 360) % 360;
+    try {
+      await updateMedia(selectedMedia._id, { orientation: newOrientation });
+      showSuccess('Orientación actualizada');
+      setSelectedMedia({ ...selectedMedia, orientation: newOrientation });
+      loadMedia();
+    } catch (error: any) {
+      showError(error.message || 'Error al rotar imagen');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -273,7 +290,8 @@ export default function MediaLibrary() {
               </div>
 
               <img
-                src={getOriginalImageUrl(selectedMedia.url)}
+                key={`${selectedMedia._id}-${selectedMedia.orientation ?? 0}`}
+                src={`${getOriginalImageUrl(selectedMedia.url)}&_o=${selectedMedia.orientation ?? 0}`}
                 alt={selectedMedia.alt || selectedMedia.originalName}
                 className="w-full rounded-lg mb-4"
               />
@@ -299,6 +317,29 @@ export default function MediaLibrary() {
               </div>
 
               <div className="flex flex-wrap gap-2">
+                <div className="flex gap-1" title="Girar imagen">
+                  <button
+                    onClick={() => handleRotate(-90)}
+                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                    title="Girar 90° izquierda"
+                  >
+                    ↶ 90°
+                  </button>
+                  <button
+                    onClick={() => handleRotate(90)}
+                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                    title="Girar 90° derecha"
+                  >
+                    ↷ 90°
+                  </button>
+                  <button
+                    onClick={() => handleRotate(180)}
+                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                    title="Voltear 180°"
+                  >
+                    ⟲ 180°
+                  </button>
+                </div>
                 <button
                   onClick={() => {
                     setEditData({

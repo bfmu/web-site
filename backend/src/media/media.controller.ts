@@ -197,7 +197,14 @@ export class MediaController {
     }
 
     try {
-      let pipeline = sharp(fullPath);
+      // Buscar orientación guardada del usuario (si existe registro en media)
+      const mediaRecord = await this.mediaService.findByPath(cleanPath);
+      const userOrientation = mediaRecord?.orientation ?? 0;
+
+      let pipeline = sharp(fullPath)
+        .autoOrient() // Aplicar orientación EXIF para mantener la correcta
+        .rotate(userOrientation); // Aplicar rotación adicional del usuario si existe
+
       const metadata = await pipeline.metadata();
       const needsResize = (width && metadata.width && metadata.width > width) ||
         (height && metadata.height && metadata.height > height);

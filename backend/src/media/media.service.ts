@@ -112,6 +112,11 @@ export class MediaService {
     return this.mediaModel.findOne({ filename }).exec();
   }
 
+  async findByPath(filePath: string): Promise<Media | null> {
+    const normalized = filePath.startsWith('/') ? filePath : `/${filePath}`;
+    return this.mediaModel.findOne({ path: normalized }).exec();
+  }
+
   async update(id: string, updateMediaDto: UpdateMediaDto): Promise<Media> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid media ID');

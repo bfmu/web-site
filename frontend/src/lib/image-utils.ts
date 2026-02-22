@@ -2,7 +2,7 @@
  * Utilidades para URLs de imágenes optimizadas.
  * Usa el endpoint /api/media/serve del backend para servir imágenes redimensionadas y comprimidas.
  */
-import { getBackendApiUrl, getBackendResourceUrl } from './env';
+import { getBackendApiUrl } from './env';
 
 /**
  * Extrae la ruta relativa de uploads desde una URL o path.
@@ -46,12 +46,14 @@ export function getOptimizedImageUrl(
 
 /**
  * URL de la imagen original (sin redimensionar). Para vista completa cuando la calidad es crítica.
+ * Usa el endpoint serve para aplicar orientación EXIF y rotación del usuario.
  * Nota: archivos grandes (ej. 66MB) tardarán más en cargar.
  */
 export function getOriginalImageUrl(src: string): string {
-  const path = extractUploadPath(src);
-  if (!path) return src;
-  return getBackendResourceUrl(path);
+  const uploadPath = extractUploadPath(src);
+  if (!uploadPath) return src;
+  // Usar serve para aplicar orientación EXIF y rotación guardada (misma lógica que optimizada)
+  return getOptimizedImageUrl(src, undefined, 95);
 }
 
 /**

@@ -425,6 +425,7 @@ export interface MediaFile {
   alt?: string;
   description?: string;
   order: number;
+  orientation?: number; // Rotación en grados: 0, 90, 180, 270
   createdAt?: string;
   updatedAt?: string;
 }

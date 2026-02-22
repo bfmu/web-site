@@ -49,6 +49,9 @@ export class Media {
 
   @Prop({ default: 0 })
   order: number; // Orden dentro del álbum
+
+  @Prop()
+  orientation?: number; // Rotación adicional en grados: 0, 90, 180, 270
 }
 
 export const MediaSchema = SchemaFactory.createForClass(Media);

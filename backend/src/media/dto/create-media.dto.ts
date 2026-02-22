@@ -65,5 +65,10 @@ export class CreateMediaDto {
   @IsOptional()
   @IsNumber()
   order?: number;
+
+  @ApiPropertyOptional({ example: 0, description: 'Rotación en grados: 0, 90, 180, 270' })
+  @IsOptional()
+  @IsNumber()
+  orientation?: number;
 }
 
