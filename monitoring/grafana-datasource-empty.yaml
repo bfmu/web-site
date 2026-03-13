@@ -1,0 +1,5 @@
+# Datasources vacío - Grafana arranca sin provisionar Loki
+# Usar temporalmente si el provisionado de Loki falla (ej: "data source not found")
+# Para restaurar Loki: cambiar el mount en docker-compose a grafana-datasource.yaml
+apiVersion: 1
+datasources: []
