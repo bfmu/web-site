@@ -65,7 +65,7 @@ services:
       args:
         - PUBLIC_WEB_SITE_URL=${PUBLIC_WEB_SITE_URL}
         - PUBLIC_BACKEND_URL=${PUBLIC_BACKEND_URL}
-        - PUBLIC_GRAFANA_URL=${GRAFANA_PUBLIC_URL:-}
+        - PUBLIC_GRAFANA_URL=${GRAFANA_PUBLIC_URL:-https://grafana.bfmu.dev/}
     container_name: website-frontend
     restart: unless-stopped
     expose:
@@ -73,7 +73,7 @@ services:
     environment:
       - PUBLIC_WEB_SITE_URL=${PUBLIC_WEB_SITE_URL}
       - PUBLIC_BACKEND_URL=${PUBLIC_BACKEND_URL}
-      - PUBLIC_GRAFANA_URL=${GRAFANA_PUBLIC_URL:-}
+      - PUBLIC_GRAFANA_URL=${GRAFANA_PUBLIC_URL:-https://grafana.bfmu.dev/}
     networks:
       - internal
     depends_on:
@@ -132,9 +132,9 @@ services:
       - 3000
     entrypoint: ["/bin/sh", "-c", "for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do wget -q -O - http://loki:3100/ready 2>/dev/null | grep -q ready && break; sleep 2; done; exec /run.sh"]
     environment:
-      # Grafana en subpath bfmu.dev/grafana (o GRAFANA_PUBLIC_URL para subdominio)
-      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-${PUBLIC_WEB_SITE_URL:-https://bfmu.dev}/grafana/}
-      - GF_SERVER_SERVE_FROM_SUB_PATH=${GRAFANA_SERVE_FROM_SUBPATH:-true}
+      # Grafana en subdominio grafana.bfmu.dev (evita problemas de NPM con subpaths)
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-https://grafana.bfmu.dev/}
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
