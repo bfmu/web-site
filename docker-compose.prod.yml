@@ -111,13 +111,6 @@ services:
     command: -config.file=/etc/loki/config.yaml
     networks:
       - internal
-    healthcheck:
-      test: ["CMD", "/usr/bin/loki", "-health"]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 45s
-
   promtail:
     image: grafana/promtail:2.9.4
     container_name: website-promtail
@@ -137,6 +130,7 @@ services:
     restart: unless-stopped
     expose:
       - 3000
+    entrypoint: ["/bin/sh", "-c", "for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do wget -q -O - http://loki:3100/ready 2>/dev/null | grep -q ready && break; sleep 2; done; exec /run.sh"]
     environment:
       # Grafana en subpath bfmu.dev/grafana (o GRAFANA_PUBLIC_URL para subdominio)
       - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-${PUBLIC_WEB_SITE_URL:-https://bfmu.dev}/grafana/}
@@ -148,8 +142,7 @@ services:
       - ./monitoring/grafana-datasource.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
       - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
     depends_on:
-      loki:
-        condition: service_healthy
+      - loki
     networks:
       - internal
       - proxy  # Para que NPM pueda conectarse directo (grafana.bfmu.dev -> website-grafana:3000)
