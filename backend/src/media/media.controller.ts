@@ -94,6 +94,20 @@ export class MediaController {
     const apiUrl = process.env.API_URL || 'http://localhost:3000';
     const fullUrl = `${apiUrl}${relativePath}`;
 
+    // Extraer dimensiones reales (post EXIF rotation) para evitar layout shift en frontend.
+    // SVG no tiene dimensiones rasterizadas — se omite.
+    let width: number | undefined;
+    let height: number | undefined;
+    if (file.mimetype !== 'image/svg+xml') {
+      try {
+        const meta = await sharp(file.buffer).rotate().metadata();
+        width = meta.width;
+        height = meta.height;
+      } catch (err) {
+        this.logger.warn(`Could not extract dimensions from ${file.originalname}: ${err}`);
+      }
+    }
+
     // Extraer metadata del body (puede venir como objeto o como string desde FormData)
     const isPublic = body?.isPublic === 'true' || body?.isPublic === true || false;
     const alt = body?.alt || undefined;
@@ -108,6 +122,8 @@ export class MediaController {
       url: fullUrl,
       mimeType: file.mimetype,
       size: file.size,
+      width,
+      height,
       type: 'image',
       isPublic,
       alt: alt && alt.trim() ? alt.trim() : undefined,
