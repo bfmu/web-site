@@ -20,9 +20,9 @@ const sharp = require('sharp');
 const DRY_RUN = process.argv.includes('--dry');
 
 async function main() {
-  const uri = process.env.MONGO_URI;
+  const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
   if (!uri) {
-    throw new Error('MONGO_URI is not set — run this inside the backend container');
+    throw new Error('MONGODB_URI is not set — run this inside the backend container');
   }
 
   await mongoose.connect(uri);
