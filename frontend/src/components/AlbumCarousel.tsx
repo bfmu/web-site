@@ -6,6 +6,8 @@ interface Image {
   url: string;
   alt: string;
   description?: string;
+  width?: number;
+  height?: number;
 }
 
 interface AlbumCarouselProps {
@@ -131,8 +133,8 @@ export default function AlbumCarousel({ images, albumTitle }: AlbumCarouselProps
       <div className="relative aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
         <a
           href={getOriginalImageUrl(currentImage.url)}
-          data-pswp-width={1920}
-          data-pswp-height={1080}
+          data-pswp-width={currentImage.width || 1920}
+          data-pswp-height={currentImage.height || 1080}
           target="_blank"
           rel="noopener noreferrer"
           className="block w-full h-full"
@@ -143,6 +145,8 @@ export default function AlbumCarousel({ images, albumTitle }: AlbumCarouselProps
           <img
             src={getOptimizedImageUrl(currentImage.url, 2560, 95)}
             alt={currentImage.alt}
+            width={currentImage.width}
+            height={currentImage.height}
             className="w-full h-full object-contain"
             loading="lazy"
             onError={(e) => {

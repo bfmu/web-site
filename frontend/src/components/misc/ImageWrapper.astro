@@ -7,13 +7,15 @@ interface Props {
   alt?: string
   position?: string
   basePath?: string
+  width?: number
+  height?: number
 }
 import { Image } from 'astro:assets'
 import { url } from '../../utils/url-utils'
 import { getBackendResourceUrl } from '../../lib/env'
 import { getOptimizedImageUrl } from '../../lib/image-utils'
 
-const { id, src, alt, position = 'center', basePath = '/' } = Astro.props
+const { id, src, alt, position = 'center', basePath = '/', width, height } = Astro.props
 const className = Astro.props.class
 
 let isLocal = !(
@@ -52,6 +54,6 @@ const imageStyle = `object-position: ${position}`
 <div id={id} class:list={[className, 'overflow-hidden relative']}>
     <div class="transition absolute inset-0 dark:bg-black/10 bg-opacity-50 pointer-events-none"></div>
     {isLocal && img && <Image src={img} alt={alt || ""} class={imageClass} style={imageStyle} format="webp" quality={80} loading="lazy" />}
-    {!isLocal && <img src={isBackendResource ? getOptimizedImageUrl(src, 1200, 90) : isPublic ? url(src) : src} alt={alt || ""} class={imageClass} style={imageStyle} loading="lazy" />}
+    {!isLocal && <img src={isBackendResource ? getOptimizedImageUrl(src, 1200, 90) : isPublic ? url(src) : src} alt={alt || ""} class={imageClass} style={imageStyle} loading="lazy" width={width} height={height} />}
 </div>
 
