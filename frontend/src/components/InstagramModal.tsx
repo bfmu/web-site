@@ -121,6 +121,8 @@ export default function InstagramModal({
           <img
             src={getOriginalImageUrl(currentImage.url)}
             alt={currentImage.alt}
+            width={currentImage.width}
+            height={currentImage.height}
             className={`max-w-full max-h-full object-contain transition-opacity duration-300 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
