@@ -16,8 +16,10 @@ import {
   HttpStatus,
   Logger,
   StreamableFile,
-  Header,
+  Headers,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -176,15 +178,17 @@ export class MediaController {
   @ApiQuery({ name: 'h', required: false, description: 'Alto máximo en píxeles' })
   @ApiQuery({ name: 'q', required: false, description: 'Calidad 1-100 (default: 80)' })
   @ApiQuery({ name: 'format', required: false, description: 'webp | jpeg' })
+  @ApiQuery({ name: 'v', required: false, description: 'Cache buster (típicamente la orientación)' })
   @ApiResponse({ status: 200, description: 'Imagen optimizada' })
-  @Header('Cache-Control', 'public, max-age=31536000, immutable')
   async serve(
     @Query('path') pathParam: string,
+    @Res({ passthrough: true }) res: Response,
     @Query('w') w?: string,
     @Query('h') h?: string,
     @Query('q') q?: string,
     @Query('format') formatParam?: string,
-  ): Promise<StreamableFile> {
+    @Headers('if-none-match') ifNoneMatch?: string,
+  ): Promise<StreamableFile | undefined> {
     if (!pathParam || typeof pathParam !== 'string') {
       throw new BadRequestException('El parámetro path es requerido');
     }
@@ -207,16 +211,32 @@ export class MediaController {
     const quality = Math.min(100, Math.max(1, parseInt(q || '80', 10)));
     const outputFormat = formatParam === 'jpeg' ? 'jpeg' : 'webp';
 
+    // Buscar orientación guardada del usuario (si existe registro en media)
+    const mediaRecord = await this.mediaService.findByPath(cleanPath);
+    const userOrientation = mediaRecord?.orientation ?? 0;
+
+    // ETag basado en lo que afecta el output. Si rotás en admin, userOrientation cambia → ETag
+    // cambia → cache invalidado automáticamente sin importar lo que tenga el browser/proxy.
+    const etag = `W/"${cleanPath}-${userOrientation}-${width ?? 0}-${height ?? 0}-${quality}-${outputFormat}"`;
+
+    // Cache largo PERO sin `immutable` (la imagen SÍ puede cambiar al rotarla).
+    // El frontend bustea con &v=<orientation> para forzar URL nueva ante cambios.
+    res.setHeader('Cache-Control', 'public, max-age=2592000, stale-while-revalidate=86400');
+    res.setHeader('ETag', etag);
+    res.setHeader('Vary', 'Accept');
+
+    if (ifNoneMatch && ifNoneMatch === etag) {
+      res.status(304);
+      return undefined;
+    }
+
     if (ext === '.svg') {
       const buffer = fs.readFileSync(fullPath);
+      res.setHeader('Content-Type', 'image/svg+xml');
       return new StreamableFile(buffer, { type: 'image/svg+xml' });
     }
 
     try {
-      // Buscar orientación guardada del usuario (si existe registro en media)
-      const mediaRecord = await this.mediaService.findByPath(cleanPath);
-      const userOrientation = mediaRecord?.orientation ?? 0;
-
       let pipeline = sharp(fullPath)
         .rotate(); // Sin argumentos aplica EXIF orientation (equivale a autoOrient)
       if (userOrientation) {
@@ -233,6 +253,7 @@ export class MediaController {
         ? await pipeline.webp({ quality }).toBuffer()
         : await pipeline.jpeg({ quality }).toBuffer();
       const mimeType = outputFormat === 'webp' ? 'image/webp' : 'image/jpeg';
+      res.setHeader('Content-Type', mimeType);
       return new StreamableFile(buffer, { type: mimeType });
     } catch (err) {
       this.logger.warn(`Error processing image ${cleanPath}: ${err}`);

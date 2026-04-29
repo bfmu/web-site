@@ -10,7 +10,7 @@ import {
   type MediaQuery,
 } from '../../lib/admin-api';
 import { getOptimizedImageUrl, getOriginalImageUrl } from '../../lib/image-utils';
-import { showSuccess, showError } from '@/lib/notifications';
+import { showSuccess, showError, showInfo } from '@/lib/notifications';
 
 export default function MediaLibrary() {
   const [media, setMedia] = useState<MediaFile[]>([]);
@@ -139,21 +139,40 @@ export default function MediaLibrary() {
   };
 
   const getImageUrl = (media: MediaFile): string => {
-    const base = getOptimizedImageUrl(media.url, 200);
-    return media.orientation ? `${base}&_o=${media.orientation}` : base;
+    return getOptimizedImageUrl(media.url, 200, 80, media.orientation ?? 0);
   };
 
   const handleRotate = async (degrees: number) => {
-    if (!selectedMedia) return;
+    if (!selectedMedia) {
+      showError('No hay imagen seleccionada');
+      return;
+    }
+    if (!selectedMedia._id) {
+      showError('Imagen sin ID válido');
+      console.error('[handleRotate] selectedMedia sin _id', selectedMedia);
+      return;
+    }
     const current = selectedMedia.orientation ?? 0;
     const newOrientation = ((current + degrees) % 360 + 360) % 360;
+    console.log('[handleRotate] start', {
+      id: selectedMedia._id,
+      filename: selectedMedia.filename,
+      current,
+      degrees,
+      newOrientation,
+    });
+    showInfo(`Rotando ${degrees > 0 ? '+' : ''}${degrees}°...`);
     try {
-      await updateMedia(selectedMedia._id, { orientation: newOrientation });
-      showSuccess('Orientación actualizada');
-      setSelectedMedia({ ...selectedMedia, orientation: newOrientation });
+      const updated = await updateMedia(selectedMedia._id, { orientation: newOrientation });
+      console.log('[handleRotate] success', { id: updated._id, orientation: updated.orientation });
+      showSuccess(`Orientación actualizada (${updated.orientation ?? newOrientation}°)`);
+      // Confiar en la respuesta del backend en lugar del state local con spread.
+      setSelectedMedia(updated);
       loadMedia();
     } catch (error: any) {
-      showError(error.message || 'Error al rotar imagen');
+      console.error('[handleRotate] failed', error);
+      const detail = error?.message || error?.data?.message || 'desconocido';
+      showError(`Error al rotar: ${detail}`);
     }
   };
 
@@ -291,7 +310,7 @@ export default function MediaLibrary() {
 
               <img
                 key={`${selectedMedia._id}-${selectedMedia.orientation ?? 0}`}
-                src={`${getOriginalImageUrl(selectedMedia.url)}&_o=${selectedMedia.orientation ?? 0}`}
+                src={getOriginalImageUrl(selectedMedia.url, selectedMedia.orientation ?? 0)}
                 alt={selectedMedia.alt || selectedMedia.originalName}
                 className="w-full rounded-lg mb-4"
               />

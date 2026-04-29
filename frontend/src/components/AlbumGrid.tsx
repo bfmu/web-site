@@ -9,6 +9,7 @@ interface Image {
   description?: string;
   width?: number;
   height?: number;
+  orientation?: number;
 }
 
 interface AlbumGridProps {
@@ -67,7 +68,7 @@ export default function AlbumGrid({ images, albumTitle }: AlbumGridProps) {
               className={`group relative overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 ${sizeClass} cursor-pointer`}
             >
               <img
-                src={getOptimizedImageUrl(image.url, 600, 90)}
+                src={getOptimizedImageUrl(image.url, 600, 90, image.orientation ?? 0)}
                 alt={image.alt}
                 width={image.width}
                 height={image.height}
