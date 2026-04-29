@@ -28,9 +28,9 @@ try {
   console.error('[GalleryPreview] Error al obtener álbumes:', e);
 }
 
-function getImageUrl(url: string | undefined): string {
+function getImageUrl(url: string | undefined, version?: number): string {
   if (!url) return '/default-avatar.svg';
-  return getOptimizedImageUrl(url, 400);
+  return getOptimizedImageUrl(url, 400, 80, version ?? 0);
 }
 ---
 
@@ -42,10 +42,12 @@ function getImageUrl(url: string | undefined): string {
       <div class="mt-8 max-w-5xl mx-auto px-6">
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {albums.slice(0, 4).map((album) => {
-            const cover = album.coverImage ?? (Array.isArray(album.images) && album.images[0] && typeof album.images[0] === 'object' && album.images[0] !== null && 'url' in (album.images[0] as object))
-              ? ((album.images[0] as { url: string }).url)
+            const firstImg = Array.isArray(album.images) && album.images[0] && typeof album.images[0] === 'object' && album.images[0] !== null
+              ? (album.images[0] as { url?: string; orientation?: number })
               : null;
-            const coverUrl = getImageUrl(cover ?? undefined);
+            const cover = album.coverImage ?? firstImg?.url ?? null;
+            const coverOrientation = firstImg?.orientation ?? 0;
+            const coverUrl = getImageUrl(cover ?? undefined, coverOrientation);
             return (
               <a href={`/gallery/${album.slug}`} class="group block aspect-square rounded-lg overflow-hidden bg-[var(--btn-regular-bg)] transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">
                 <img src={coverUrl} alt={album.title} class="w-full h-full object-cover transition duration-300 group-hover:scale-105" loading="lazy" />

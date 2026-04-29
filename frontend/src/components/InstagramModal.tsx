@@ -9,6 +9,7 @@ interface Image {
   description?: string;
   width?: number;
   height?: number;
+  orientation?: number;
 }
 
 interface InstagramModalProps {
@@ -119,7 +120,7 @@ export default function InstagramModal({
             </div>
           )}
           <img
-            src={getOriginalImageUrl(currentImage.url)}
+            src={getOriginalImageUrl(currentImage.url, currentImage.orientation ?? 0)}
             alt={currentImage.alt}
             width={currentImage.width}
             height={currentImage.height}

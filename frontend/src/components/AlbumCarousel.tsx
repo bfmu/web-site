@@ -8,6 +8,7 @@ interface Image {
   description?: string;
   width?: number;
   height?: number;
+  orientation?: number;
 }
 
 interface AlbumCarouselProps {
@@ -132,7 +133,7 @@ export default function AlbumCarousel({ images, albumTitle }: AlbumCarouselProps
       {/* Main Image */}
       <div className="relative aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
         <a
-          href={getOriginalImageUrl(currentImage.url)}
+          href={getOriginalImageUrl(currentImage.url, currentImage.orientation ?? 0)}
           data-pswp-width={currentImage.width || 1920}
           data-pswp-height={currentImage.height || 1080}
           target="_blank"
@@ -143,7 +144,7 @@ export default function AlbumCarousel({ images, albumTitle }: AlbumCarouselProps
           onTouchEnd={handleTouchEnd}
         >
           <img
-            src={getOptimizedImageUrl(currentImage.url, 2560, 95)}
+            src={getOptimizedImageUrl(currentImage.url, 2560, 95, currentImage.orientation ?? 0)}
             alt={currentImage.alt}
             width={currentImage.width}
             height={currentImage.height}
@@ -231,7 +232,7 @@ export default function AlbumCarousel({ images, albumTitle }: AlbumCarouselProps
               aria-label={`Ver imagen ${index + 1}`}
             >
               <img
-                src={getOptimizedImageUrl(image.url, 160)}
+                src={getOptimizedImageUrl(image.url, 160, 80, image.orientation ?? 0)}
                 alt={image.alt}
                 className="w-full h-full object-cover"
                 loading="lazy"

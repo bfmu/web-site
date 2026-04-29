@@ -23,19 +23,21 @@ const imageObjs = (Array.isArray(album.images) ? album.images : []).filter(
 
 const imageCount = imageObjs.length;
 
-const coverRaw = album.coverImage || (imageObjs[0]?.url ?? null);
+const coverObj = imageObjs.find((img: any) => img.url === album.coverImage) ?? imageObjs[0] ?? null;
+const coverRaw = album.coverImage || (coverObj?.url ?? null);
+const coverOrientation = coverObj?.orientation ?? 0;
 
 // Thumbs: hasta 3, distintas a la cover
 const extras = imageObjs
   .filter((img: any) => img.url !== coverRaw)
   .slice(0, 3);
 
-function thumbUrl(src: string | undefined, w: number) {
+function thumbUrl(src: string | undefined, w: number, version?: number) {
   if (!src) return '/default-avatar.svg';
-  return getOptimizedImageUrl(src, w, 80);
+  return getOptimizedImageUrl(src, w, 80, version ?? 0);
 }
 
-const coverUrl = thumbUrl(coverRaw ?? undefined, 600);
+const coverUrl = thumbUrl(coverRaw ?? undefined, 600, coverOrientation);
 const albumUrl = url(`/gallery/${album.slug}`);
 
 const dateLabel = album.publishedAt
@@ -70,7 +72,7 @@ const showMosaic = extras.length > 0;
         {extras.map((img: any) => (
           <div class="flex-1 relative overflow-hidden">
             <img
-              src={thumbUrl(img.url, 200)}
+              src={thumbUrl(img.url, 200, img.orientation ?? 0)}
               alt=""
               class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"

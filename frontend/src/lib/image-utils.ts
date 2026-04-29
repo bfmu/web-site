@@ -26,11 +26,14 @@ function extractUploadPath(src: string): string | null {
  * @param src - Ruta relativa (/uploads/images/xxx.jpg) o URL completa
  * @param width - Ancho máximo en píxeles (opcional). Para vista completa usa 4096 o superior
  * @param quality - Calidad 1-100 (default: 80, para fotos de alta calidad usa 95)
+ * @param version - Cache buster opcional (ej. orientación). Cualquier valor que cambie cuando
+ *   la imagen cambia (ej. al rotarla en admin) → URL distinta → cache invalidado automáticamente.
  */
 export function getOptimizedImageUrl(
   src: string,
   width?: number,
-  quality = 80
+  quality = 80,
+  version?: string | number,
 ): string {
   const path = extractUploadPath(src);
   if (!path) return src;
@@ -40,6 +43,9 @@ export function getOptimizedImageUrl(
   params.set('path', path);
   if (width && width > 0) params.set('w', String(width));
   params.set('q', String(Math.min(100, Math.max(1, quality))));
+  if (version !== undefined && version !== null && version !== '') {
+    params.set('v', String(version));
+  }
 
   return `${base}/media/serve?${params.toString()}`;
 }
@@ -49,11 +55,13 @@ export function getOptimizedImageUrl(
  * Usa el endpoint serve para aplicar orientación EXIF y rotación del usuario.
  * Nota: archivos grandes (ej. 66MB) tardarán más en cargar.
  */
-export function getOriginalImageUrl(src: string): string {
+export function getOriginalImageUrl(
+  src: string,
+  version?: string | number,
+): string {
   const uploadPath = extractUploadPath(src);
   if (!uploadPath) return src;
-  // Usar serve para aplicar orientación EXIF y rotación guardada (misma lógica que optimizada)
-  return getOptimizedImageUrl(src, undefined, 95);
+  return getOptimizedImageUrl(src, undefined, 95, version);
 }
 
 /**
@@ -62,16 +70,23 @@ export function getOriginalImageUrl(src: string): string {
 export function getOptimizedImageSrcSet(
   src: string,
   widths: number[] = [400, 800, 1200],
-  quality = 80
+  quality = 80,
+  version?: string | number,
 ): string {
   const path = extractUploadPath(src);
   if (!path) return '';
 
   const base = getBackendApiUrl().replace(/\/$/, '');
   return widths
-    .map(
-      (w) =>
-        `${base}/media/serve?path=${encodeURIComponent(path)}&w=${w}&q=${quality} ${w}w`
-    )
+    .map((w) => {
+      const params = new URLSearchParams();
+      params.set('path', path);
+      params.set('w', String(w));
+      params.set('q', String(quality));
+      if (version !== undefined && version !== null && version !== '') {
+        params.set('v', String(version));
+      }
+      return `${base}/media/serve?${params.toString()} ${w}w`;
+    })
     .join(', ');
 }
