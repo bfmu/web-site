@@ -20,9 +20,21 @@ const DEFAULT_SECTIONS = [
     },
   },
   {
-    id: 'intro',
+    id: 'now-listening',
     enabled: true,
     order: 1,
+    config: {},
+  },
+  {
+    id: 'actividad-reciente',
+    enabled: true,
+    order: 2,
+    config: {},
+  },
+  {
+    id: 'intro',
+    enabled: true,
+    order: 3,
     config: {
       title: '¡Hola! Soy Bryan Muñoz',
       bio: 'Bienvenido a mi espacio digital, donde comparto mis proyectos, ideas y pasiones. Aquí podrás explorar mi portafolio de desarrollo, aprender con mis artículos técnicos, descubrir mis fotografías y reflexiones sobre libros y música. ¡Espero que encuentres algo que te inspire!',
@@ -34,7 +46,7 @@ const DEFAULT_SECTIONS = [
   {
     id: 'secciones',
     enabled: true,
-    order: 2,
+    order: 4,
     config: {
       title: 'Explora mi contenido',
       subtitle: 'Descubre mis proyectos, ideas y pasiones a través de estas secciones.',
@@ -43,6 +55,7 @@ const DEFAULT_SECTIONS = [
         { titulo: '🌟 Exploraciones artísticas', descripcion: 'Fotografía y momentos que inspiran.', enlace: '/gallery/', icono: 'gallery' },
         { titulo: '📝 Resúmenes y opiniones', descripcion: 'Libros que leo y reflexiones sobre ellos.', enlace: '/blogs/', icono: 'blog' },
         { titulo: '📚 Guías y artículos', descripcion: 'Soluciones y optimización de procesos.', enlace: '/archive/', icono: 'archive' },
+        { titulo: '📚 Libros', descripcion: 'Los libros que estoy leyendo y mis notas sobre ellos.', enlace: '/books/', icono: 'books' },
         { titulo: '💻 Portafolio', descripcion: 'Proyectos destacados de desarrollo de software.', enlace: 'https://portfolio.bfmu.dev', icono: 'portfolio' },
       ],
     },
@@ -50,7 +63,7 @@ const DEFAULT_SECTIONS = [
   {
     id: 'gallery-preview',
     enabled: true,
-    order: 3,
+    order: 5,
     config: {
       title: 'Galería',
       ctaText: 'Ver galería completa',
@@ -61,7 +74,7 @@ const DEFAULT_SECTIONS = [
   {
     id: 'ultimos-posts',
     enabled: true,
-    order: 4,
+    order: 6,
     config: {
       title: 'Últimos artículos',
       subtitle: 'Explora las publicaciones más recientes de mi blog.',
@@ -69,12 +82,6 @@ const DEFAULT_SECTIONS = [
       ctaText: 'Ver todos los artículos',
       ctaHref: '/blogs/',
     },
-  },
-  {
-    id: 'now-listening',
-    enabled: true,
-    order: 5,
-    config: {},
   },
 ];
 
