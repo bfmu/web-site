@@ -46,8 +46,21 @@ async function bootstrap() {
     }),
   );
 
+  const allowedOrigins = [
+    'https://bfmu.dev',
+    'https://www.bfmu.dev',
+    'http://localhost:4321',
+    'http://localhost:3000',
+  ];
   app.enableCors({
-    origin: '*',
+    origin: (origin, callback) => {
+      // Permitir requests sin Origin (SSR server-side, curl, etc.)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin not allowed — ${origin}`));
+      }
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type, Accept, Authorization',
   });

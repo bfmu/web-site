@@ -1,4 +1,5 @@
 import { Controller, Post, Get, Body, Req, UseGuards } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
@@ -12,9 +13,12 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Post('track')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Registrar una vista de página (público)' })
   @ApiBody({ type: TrackPageViewDto })
   @ApiResponse({ status: 201, description: 'Vista registrada' })
+  @ApiResponse({ status: 429, description: 'Demasiadas requests' })
   async track(@Body() dto: TrackPageViewDto, @Req() req: Request) {
     const ip = this.getClientIp(req);
     const userAgent = req.get('User-Agent');

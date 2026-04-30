@@ -41,6 +41,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as sharp from 'sharp';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 const CACHE_DIR = path.resolve(process.cwd(), 'uploads/.cache');
 
@@ -54,13 +55,15 @@ export class MediaController {
   }
 
   @Post('upload')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(ThrottlerGuard, JwtAuthGuard, RolesGuard)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @Roles('admin', 'editor')
   @UseInterceptors(FileInterceptor('file'))
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Subir archivo y crear registro de media (requiere autenticación)' })
   @ApiResponse({ status: 201, description: 'Media creado correctamente' })
+  @ApiResponse({ status: 429, description: 'Demasiados uploads, esperá 1 minuto' })
   async upload(@UploadedFile() file: any, @Body() body?: any) {
     if (!file) {
       this.logger.warn('Upload attempt without file');
