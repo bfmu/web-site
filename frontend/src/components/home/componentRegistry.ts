@@ -4,11 +4,12 @@
  */
 export const HOME_SECTION_IDS = [
   'hero',
+  'now-listening',
+  'actividad-reciente',
   'intro',
   'secciones',
   'gallery-preview',
   'ultimos-posts',
-  'now-listening',
 ] as const;
 
 export type HomeSectionId = (typeof HOME_SECTION_IDS)[number];
@@ -38,9 +39,21 @@ export const DEFAULT_HOMEPAGE_SECTIONS: HomepageSection[] = [
     },
   },
   {
-    id: 'intro',
+    id: 'now-listening',
     enabled: true,
     order: 1,
+    config: {},
+  },
+  {
+    id: 'actividad-reciente',
+    enabled: true,
+    order: 2,
+    config: {},
+  },
+  {
+    id: 'intro',
+    enabled: true,
+    order: 3,
     config: {
       title: '¡Hola! Soy Bryan Muñoz',
       bio: 'Bienvenido a mi espacio digital, donde comparto mis proyectos, ideas y pasiones.',
@@ -52,7 +65,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS: HomepageSection[] = [
   {
     id: 'secciones',
     enabled: true,
-    order: 2,
+    order: 4,
     config: {
       title: 'Explora mi contenido',
       subtitle: 'Descubre mis proyectos, ideas y pasiones a través de estas secciones.',
@@ -82,6 +95,12 @@ export const DEFAULT_HOMEPAGE_SECTIONS: HomepageSection[] = [
           icono: 'archive',
         },
         {
+          titulo: '📚 Libros',
+          descripcion: 'Los libros que estoy leyendo y mis notas sobre ellos.',
+          enlace: '/books/',
+          icono: 'books',
+        },
+        {
           titulo: '💻 Portafolio',
           descripcion: 'Proyectos destacados de desarrollo de software.',
           enlace: 'https://portfolio.bfmu.dev',
@@ -93,7 +112,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS: HomepageSection[] = [
   {
     id: 'gallery-preview',
     enabled: true,
-    order: 3,
+    order: 5,
     config: {
       title: 'Galería',
       ctaText: 'Ver galería completa',
@@ -104,7 +123,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS: HomepageSection[] = [
   {
     id: 'ultimos-posts',
     enabled: true,
-    order: 4,
+    order: 6,
     config: {
       title: 'Últimos artículos',
       subtitle: 'Explora las publicaciones más recientes de mi blog.',
@@ -112,11 +131,5 @@ export const DEFAULT_HOMEPAGE_SECTIONS: HomepageSection[] = [
       ctaText: 'Ver todos los artículos',
       ctaHref: '/blogs/',
     },
-  },
-  {
-    id: 'now-listening',
-    enabled: true,
-    order: 5,
-    config: {},
   },
 ];

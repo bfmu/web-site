@@ -1,0 +1,97 @@
+---
+import { fetchRecentPosts } from '@utils/api-blog';
+import { fetchPublicAlbums } from '@utils/api-blog';
+import { fetchBooks } from '@/lib/api-books';
+import { getPostUrlBySlug } from '@utils/url-utils';
+import { getOptimizedImageUrl } from '@/lib/image-utils';
+
+let lastPost: { slug: string; title: string; image?: string } | null = null;
+let lastBook: { title: string; author: string; cover?: string; postSlug?: string; _id: string } | null = null;
+let lastAlbum: { slug: string; title: string; coverImage?: string } | null = null;
+
+try {
+  const [posts, booksRaw, albumsRes] = await Promise.allSettled([
+    fetchRecentPosts(1),
+    fetchBooks(),
+    fetchPublicAlbums(),
+  ]);
+
+  if (posts.status === 'fulfilled' && posts.value?.length > 0) {
+    lastPost = posts.value[0];
+  }
+  if (booksRaw.status === 'fulfilled' && booksRaw.value?.length > 0) {
+    const sorted = [...booksRaw.value].sort((a, b) => {
+      const dateA = a.readAt ?? a.createdAt;
+      const dateB = b.readAt ?? b.createdAt;
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+    lastBook = sorted[0];
+  }
+  if (albumsRes.status === 'fulfilled') {
+    const albums = albumsRes.value?.albums ?? [];
+    if (albums.length > 0) lastAlbum = albums[0];
+  }
+} catch (_) {}
+
+const items = [
+  lastPost && {
+    label: 'Último post',
+    title: lastPost.title,
+    href: getPostUrlBySlug(lastPost.slug),
+    image: lastPost.image ? getOptimizedImageUrl(lastPost.image, 120) : null,
+    icon: '✍️',
+    color: 'from-blue-500/10',
+  },
+  lastBook && {
+    label: 'Último libro',
+    title: `${lastBook.title} — ${lastBook.author}`,
+    href: lastBook.postSlug ? getPostUrlBySlug(lastBook.postSlug) : '/books/',
+    image: lastBook.cover ? getOptimizedImageUrl(lastBook.cover, 120) : null,
+    icon: '📖',
+    color: 'from-emerald-500/10',
+  },
+  lastAlbum && {
+    label: 'Último álbum',
+    title: lastAlbum.title,
+    href: `/gallery/${lastAlbum.slug}/`,
+    image: lastAlbum.coverImage ? getOptimizedImageUrl(lastAlbum.coverImage, 120) : null,
+    icon: '📷',
+    color: 'from-violet-500/10',
+  },
+].filter(Boolean);
+---
+
+{items.length > 0 && (
+  <div class="w-full">
+    <p class="text-xs font-semibold uppercase tracking-widest text-[var(--deep-text)] opacity-60 mb-3 px-1">
+      Actividad reciente
+    </p>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {items.map((item) => (
+        <a
+          href={item!.href}
+          class={`group flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r ${item!.color} to-transparent bg-[var(--card-bg)] border border-[var(--line-divider)] hover:border-[var(--primary)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md`}
+        >
+          {item!.image ? (
+            <img
+              src={item!.image}
+              alt={item!.title}
+              class="w-10 h-10 rounded-lg object-cover shrink-0 border border-[var(--line-divider)]"
+              loading="lazy"
+            />
+          ) : (
+            <span class="text-2xl shrink-0 w-10 text-center">{item!.icon}</span>
+          )}
+          <div class="min-w-0">
+            <p class="text-[0.68rem] font-semibold uppercase tracking-wider text-[var(--deep-text)] opacity-60">
+              {item!.label}
+            </p>
+            <p class="text-sm font-medium text-[var(--primary)] dark:text-[var(--title-active)] line-clamp-2 leading-snug group-hover:underline">
+              {item!.title}
+            </p>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+)}
