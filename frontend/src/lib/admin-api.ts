@@ -848,3 +848,48 @@ export async function restoreBackup(file: File): Promise<RestoreResult> {
     clearTimeout(timeoutId);
   }
 }
+
+// ─── Books ────────────────────────────────────────────────────────────────────
+
+export interface Book {
+  _id: string;
+  title: string;
+  author: string;
+  cover?: string;
+  readAt?: string;
+  rating?: number;
+  postSlug?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBookRequest {
+  title: string;
+  author: string;
+  cover?: string;
+  readAt?: string;
+  rating?: number;
+  postSlug?: string;
+}
+
+export type UpdateBookRequest = Partial<CreateBookRequest>;
+
+export async function adminGetBooks(): Promise<Book[]> {
+  return apiGet<Book[]>('books');
+}
+
+export async function adminGetBook(id: string): Promise<Book> {
+  return apiGet<Book>(`books/${id}`);
+}
+
+export async function adminCreateBook(data: CreateBookRequest): Promise<Book> {
+  return apiPost<Book>('books', data);
+}
+
+export async function adminUpdateBook(id: string, data: UpdateBookRequest): Promise<Book> {
+  return apiPatch<Book>(`books/${id}`, data);
+}
+
+export async function adminDeleteBook(id: string): Promise<void> {
+  return apiDelete<void>(`books/${id}`);
+}

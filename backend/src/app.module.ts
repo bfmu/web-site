@@ -12,6 +12,7 @@ import { HealthModule } from './health/health.module';
 import { HomepageModule } from './homepage/homepage.module';
 import { NavbarModule } from './navbar/navbar.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { BooksModule } from './books/books.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     HomepageModule,
     NavbarModule,
     AnalyticsModule,
+    BooksModule,
   ],
   controllers: [],
   providers: [],
