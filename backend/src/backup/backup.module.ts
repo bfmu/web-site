@@ -18,6 +18,7 @@ import {
   HomepageConfig,
   HomepageConfigSchema,
 } from '../homepage/schemas/homepage-config.schema';
+import { Book, BookSchema } from '../books/schemas/book.schema';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import {
       { name: ApiIntegration.name, schema: ApiIntegrationSchema },
       { name: OAuthProvider.name, schema: OAuthProviderSchema },
       { name: HomepageConfig.name, schema: HomepageConfigSchema },
+      { name: Book.name, schema: BookSchema },
     ]),
   ],
   controllers: [BackupController],

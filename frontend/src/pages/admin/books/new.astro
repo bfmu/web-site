@@ -1,0 +1,107 @@
+---
+import AdminLayout from '@components/admin/AdminLayout.astro'
+---
+
+<AdminLayout title="Nuevo libro">
+  <div class="max-w-lg space-y-6">
+    <div class="flex items-center gap-4">
+      <a href="/admin/books" data-no-swup class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+        ← Volver
+      </a>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Nuevo libro</h1>
+    </div>
+
+    <form id="book-form" class="space-y-5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Título *</label>
+        <input name="title" required type="text" placeholder="El nombre del viento"
+          class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Autor *</label>
+        <input name="author" required type="text" placeholder="Patrick Rothfuss"
+          class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Portada (URL)</label>
+        <input name="cover" type="text" placeholder="/uploads/images/portada.jpg o https://..."
+          class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Podés pegar una URL de la biblioteca de media o una URL externa.</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de lectura</label>
+          <input name="readAt" type="date"
+            class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rating (1–5)</label>
+          <select name="rating"
+            class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="">Sin rating</option>
+            <option value="1">★☆☆☆☆</option>
+            <option value="2">★★☆☆☆</option>
+            <option value="3">★★★☆☆</option>
+            <option value="4">★★★★☆</option>
+            <option value="5">★★★★★</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Slug del post (opinión)</label>
+        <input name="postSlug" type="text" placeholder="mi-opinion-sobre-este-libro"
+          class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Si tenés un post con tu opinión, pegá el slug acá.</p>
+      </div>
+
+      <div id="form-error" class="hidden rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400"></div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit"
+          class="flex-1 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors disabled:opacity-50">
+          Guardar libro
+        </button>
+        <a href="/admin/books" data-no-swup
+          class="rounded-md border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  import { adminCreateBook } from '../../../lib/admin-api'
+
+  const form = document.getElementById('book-form') as HTMLFormElement
+  const errorEl = document.getElementById('form-error')!
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    errorEl.classList.add('hidden')
+
+    const data = Object.fromEntries(new FormData(form))
+    const submit = form.querySelector('[type=submit]') as HTMLButtonElement
+    submit.disabled = true
+
+    try {
+      await adminCreateBook({
+        title: String(data.title),
+        author: String(data.author),
+        cover: data.cover ? String(data.cover) : undefined,
+        readAt: data.readAt ? String(data.readAt) : undefined,
+        rating: data.rating ? Number(data.rating) : undefined,
+        postSlug: data.postSlug ? String(data.postSlug) : undefined,
+      })
+      window.location.href = '/admin/books'
+    } catch (err: any) {
+      errorEl.textContent = err.message || 'Error al guardar'
+      errorEl.classList.remove('hidden')
+      submit.disabled = false
+    }
+  })
+</script>

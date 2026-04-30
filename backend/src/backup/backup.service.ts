@@ -29,6 +29,7 @@ import {
   HomepageConfig,
   HomepageConfigDocument,
 } from '../homepage/schemas/homepage-config.schema';
+import { Book, BookDocument } from '../books/schemas/book.schema';
 
 const BACKUP_VERSION = '1.1';
 const COLLECTIONS = [
@@ -39,7 +40,7 @@ const COLLECTIONS = [
   'apiintegrations',
   'oauthproviders',
 ] as const;
-const EXTRA_COLLECTIONS = ['homepage_config'] as const;
+const EXTRA_COLLECTIONS = ['homepage_config', 'books'] as const;
 const RATE_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_BACKUP_SIZE = Number(process.env.BACKUP_MAX_SIZE) || 2 * 1024 * 1024 * 1024; // 2GB
 
@@ -72,6 +73,8 @@ export class BackupService {
     private oauthProviderModel: Model<OAuthProviderDocument>,
     @InjectModel(HomepageConfig.name)
     private homepageConfigModel: Model<HomepageConfigDocument>,
+    @InjectModel(Book.name)
+    private bookModel: Model<BookDocument>,
   ) {}
 
   private getUploadsPath(): string {
@@ -87,6 +90,7 @@ export class BackupService {
       apiintegrations: this.apiIntegrationModel,
       oauthproviders: this.oauthProviderModel,
       homepage_config: this.homepageConfigModel,
+      books: this.bookModel,
     };
   }
 
@@ -136,6 +140,9 @@ export class BackupService {
           break;
         case 'users':
           if (d.avatar) d.avatar = toRelativePath(d.avatar);
+          break;
+        case 'books':
+          if (d.cover) d.cover = toRelativePath(d.cover);
           break;
         case 'homepage_config':
           if (Array.isArray(d.sections)) {
