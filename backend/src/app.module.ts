@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SpotifyModule } from './spotify/spotify.module';
 import { ConfigModule } from '@nestjs/config';
@@ -17,6 +18,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60000, limit: 100 }]),
     MongooseModule.forRoot(
       process.env.MONGODB_URI || 'mongodb://localhost:27017/blog',
     ),
