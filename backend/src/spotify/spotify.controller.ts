@@ -218,6 +218,50 @@ export class SpotifyController {
   }
 
   /**
+   * Canción actual de Spotify o última escuchada.
+   * Endpoint: GET /api/spotify/now-playing
+   * Respuesta: { playing: boolean, track: { name, artist, album, coverUrl, spotifyUrl } | null }
+   */
+  @Get('now-playing')
+  async getNowPlaying() {
+    try {
+      const current = await this.spotifyService.getCurrentlyPlaying();
+      if (current?.is_playing && current?.item) {
+        const t = current.item;
+        return {
+          playing: true,
+          track: {
+            name: t.name,
+            artist: t.artists?.map((a: any) => a.name).join(', '),
+            album: t.album?.name,
+            coverUrl: t.album?.images?.[1]?.url ?? t.album?.images?.[0]?.url ?? null,
+            spotifyUrl: t.external_urls?.spotify ?? null,
+          },
+        };
+      }
+
+      const lastPlayed = await this.spotifyService.getLastPlayedTrack();
+      if (lastPlayed?.track) {
+        const t = lastPlayed.track;
+        return {
+          playing: false,
+          track: {
+            name: t.name,
+            artist: t.artists?.map((a: any) => a.name).join(', '),
+            album: t.album?.name,
+            coverUrl: t.album?.images?.[1]?.url ?? t.album?.images?.[0]?.url ?? null,
+            spotifyUrl: t.external_urls?.spotify ?? null,
+          },
+        };
+      }
+
+      return { playing: false, track: null };
+    } catch {
+      return { playing: false, track: null };
+    }
+  }
+
+  /**
    * Obtiene las ultimas canciones escuchadas
    * Endpoint: GET /api/spotify/recently-played
    */

@@ -301,6 +301,21 @@ export class SpotifyService implements OnModuleInit {
     return data.items;
   }
 
+  // Método para obtener la canción que se está reproduciendo ahora
+  async getCurrentlyPlaying(): Promise<any | null> {
+    this.ensureConfigured();
+    try {
+      const data = await this.makeRequest({
+        method: 'get',
+        url: 'https://api.spotify.com/v1/me/player/currently-playing',
+      });
+      if (!data || !data.item) return null;
+      return data;
+    } catch {
+      return null;
+    }
+  }
+
   // Metodo para obtener las ultimas canciones escuchadas
   async getRecentlyPlayed() {
     this.ensureConfigured();
