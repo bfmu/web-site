@@ -37,16 +37,21 @@ import { MediaService } from './media.service';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { UpdateMediaDto } from './dto/update-media.dto';
 import { MediaDocument } from './schemas/media.schema';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as sharp from 'sharp';
+
+const CACHE_DIR = path.resolve(process.cwd(), 'uploads/.cache');
 
 @ApiTags('media')
 @Controller('media')
 export class MediaController {
   private readonly logger = new Logger(MediaController.name);
 
-  constructor(private readonly mediaService: MediaService) {}
+  constructor(private readonly mediaService: MediaService) {
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
+  }
 
   @Post('upload')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -236,6 +241,19 @@ export class MediaController {
       return new StreamableFile(buffer, { type: 'image/svg+xml' });
     }
 
+    const mimeType = outputFormat === 'webp' ? 'image/webp' : 'image/jpeg';
+    const cacheKey = crypto
+      .createHash('sha256')
+      .update(`${cleanPath}-${userOrientation}-${width ?? 0}-${height ?? 0}-${quality}-${outputFormat}`)
+      .digest('hex');
+    const cachePath = path.join(CACHE_DIR, `${cacheKey}.${outputFormat}`);
+
+    if (fs.existsSync(cachePath)) {
+      const buffer = fs.readFileSync(cachePath);
+      res.setHeader('Content-Type', mimeType);
+      return new StreamableFile(buffer, { type: mimeType });
+    }
+
     try {
       let pipeline = sharp(fullPath)
         .rotate(); // Sin argumentos aplica EXIF orientation (equivale a autoOrient)
@@ -252,7 +270,14 @@ export class MediaController {
       const buffer = outputFormat === 'webp'
         ? await pipeline.webp({ quality }).toBuffer()
         : await pipeline.jpeg({ quality }).toBuffer();
-      const mimeType = outputFormat === 'webp' ? 'image/webp' : 'image/jpeg';
+
+      try {
+        fs.writeFileSync(cachePath + '.tmp', buffer);
+        fs.renameSync(cachePath + '.tmp', cachePath);
+      } catch {
+        // Cache write failure is non-fatal
+      }
+
       res.setHeader('Content-Type', mimeType);
       return new StreamableFile(buffer, { type: mimeType });
     } catch (err) {
@@ -260,6 +285,22 @@ export class MediaController {
       const buffer = fs.readFileSync(fullPath);
       return new StreamableFile(buffer);
     }
+  }
+
+  @Delete('cache')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Limpiar cache de variantes procesadas (solo admin)' })
+  @ApiResponse({ status: 200, description: 'Cache eliminado' })
+  clearCache(): { deleted: number } {
+    if (!fs.existsSync(CACHE_DIR)) return { deleted: 0 };
+    const files = fs.readdirSync(CACHE_DIR);
+    for (const f of files) {
+      fs.rmSync(path.join(CACHE_DIR, f), { force: true });
+    }
+    return { deleted: files.length };
   }
 
   @Get(':id')
