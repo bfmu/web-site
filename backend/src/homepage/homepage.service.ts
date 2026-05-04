@@ -13,6 +13,7 @@ const DEFAULT_SECTIONS = [
       imageUrls: [] as string[],
       carouselIntervalSeconds: 5.5,
       heightVh: 70,
+      eyebrow: 'BRYAN F. MUÑOZ M. · BOGOTÁ',
       title: 'Desarrollo, Fotografía y Reflexión',
       subtitle: 'Desarrollo soluciones. Capturo momentos. Reflexiono sobre historias. Aquí es donde todo converge.',
       ctaText: 'Explorar',
@@ -87,7 +88,10 @@ const DEFAULT_SECTIONS = [
     id: 'now-footer',
     enabled: true,
     order: 7,
-    config: {},
+    config: {
+      email: 'bfmumo@gmail.com',
+      thisWeek: [] as string[],
+    },
   },
 ];
 

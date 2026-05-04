@@ -1,14 +1,23 @@
 ---
 import { profileConfig } from '@/config';
 
-// "Esta semana" — actualizar manualmente o conectar a una API de notion/obsidian en el futuro
-const thisWeek = [
+interface Props {
+  config?: Record<string, unknown>;
+}
+
+const { config = {} } = Astro.props;
+
+const defaultWeek = [
   'Explorando NestJS guards y decoradores personalizados',
   'Leyendo sobre sistemas distribuidos',
   'Fotografiando en las calles del centro de Bogotá',
 ];
 
-const email = 'bfmumo@gmail.com';
+const thisWeek = (Array.isArray(config.thisWeek) && config.thisWeek.length > 0)
+  ? (config.thisWeek as string[])
+  : defaultWeek;
+
+const email = (config.email as string) ?? 'bfmumo@gmail.com';
 ---
 
 <section class="now-footer">

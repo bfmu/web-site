@@ -12,8 +12,9 @@ const title = (config.title as string) ?? 'Desarrollo, Fotografía y Reflexión'
 const subtitle =
   (config.subtitle as string) ??
   'Desarrollo soluciones. Capturo momentos. Reflexiono sobre historias. Aquí es donde todo converge.';
-const ctaText = (config.ctaText as string) ?? 'Explorar';
-const ctaHref = (config.ctaHref as string) ?? '#explore';
+const ctaText  = (config.ctaText  as string) ?? 'Explorar';
+const ctaHref  = (config.ctaHref  as string) ?? '#explore';
+const eyebrow  = (config.eyebrow  as string) ?? 'BRYAN F. MUÑOZ M. · BOGOTÁ';
 const carouselIntervalSeconds =
   typeof config.carouselIntervalSeconds === 'number' ? config.carouselIntervalSeconds : 5.5;
 const heightVh =
@@ -65,10 +66,12 @@ const intervalMs = Math.max(2000, Math.min(30000, carouselIntervalSeconds * 1000
 
   <!-- Content -->
   <div class="hero__overlay">
-    <div class="hero__eyebrow">
-      <span class="hero__eyebrow-dot" aria-hidden="true"></span>
-      <span>BRYAN F. MUÑOZ M. · BOGOTÁ</span>
-    </div>
+    {eyebrow && (
+      <div class="hero__eyebrow">
+        <span class="hero__eyebrow-dot" aria-hidden="true"></span>
+        <span>{eyebrow}</span>
+      </div>
+    )}
 
     <h1 class="hero__title" data-word-reveal data-text={title}>{title}</h1>
 

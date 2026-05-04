@@ -13,7 +13,9 @@ const SECTION_LABELS: Record<string, string> = {
   secciones: 'Grid de secciones',
   'gallery-preview': 'Preview galería',
   'ultimos-posts': 'Últimos artículos',
-  'now-listening': 'Ahora escuchando (Spotify)',
+  'now-listening': 'Actividad reciente (Spotify + libro + álbum)',
+  'actividad-reciente': 'Actividad reciente (Spotify + libro + álbum)',
+  'now-footer': 'Footer /now (reloj · esta semana · contacto)',
 };
 
 export function HomepageEditor() {
@@ -195,10 +197,16 @@ export function HomepageEditor() {
                     onUpdate={(c) => updateSectionConfig('ultimos-posts', c)}
                   />
                 )}
-                {section.id === 'now-listening' && (
+                {(section.id === 'now-listening' || section.id === 'actividad-reciente') && (
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Muestra la canción actual de Spotify cuando hay algo reproduciéndose. No requiere configuración.
+                    Muestra la canción actual de Spotify, el último libro leído y el último álbum. No requiere configuración manual.
                   </p>
+                )}
+                {section.id === 'now-footer' && (
+                  <NowFooterFields
+                    config={section.config ?? {}}
+                    onUpdate={(c) => updateSectionConfig('now-footer', c)}
+                  />
                 )}
               </div>
             )}
@@ -350,6 +358,11 @@ function HeroFields({
           </button>
         </div>
       </div>
+      <Field
+        label="Eyebrow (texto sobre el título, dejar vacío para ocultar)"
+        value={(config.eyebrow as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, eyebrow: v })}
+      />
       <Field
         label="Título"
         value={(config.title as string) ?? ''}
@@ -555,6 +568,76 @@ function GalleryPreviewFields({
         value={(config.ctaHref as string) ?? ''}
         onChange={(v) => onUpdate({ ...config, ctaHref: v })}
       />
+    </div>
+  );
+}
+
+function NowFooterFields({
+  config,
+  onUpdate,
+}: {
+  config: Record<string, unknown>;
+  onUpdate: (c: Record<string, unknown>) => void;
+}) {
+  const items = (Array.isArray(config.thisWeek) ? config.thisWeek : []) as string[];
+
+  const updateItem = (index: number, value: string) => {
+    const next = [...items];
+    next[index] = value;
+    onUpdate({ ...config, thisWeek: next });
+  };
+
+  const addItem = () => onUpdate({ ...config, thisWeek: [...items, ''] });
+
+  const removeItem = (index: number) => {
+    const next = items.filter((_, i) => i !== index);
+    onUpdate({ ...config, thisWeek: next });
+  };
+
+  return (
+    <div>
+      <Field
+        label="Email de contacto"
+        value={(config.email as string) ?? ''}
+        onChange={(v) => onUpdate({ ...config, email: v })}
+      />
+      <div className="mt-3">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Lista "Esta semana"
+          </span>
+          <button
+            type="button"
+            onClick={addItem}
+            className="text-sm text-indigo-600 hover:underline"
+          >
+            + Añadir ítem
+          </button>
+        </div>
+        {items.length === 0 && (
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
+            Sin ítems — se usarán los valores por defecto.
+          </p>
+        )}
+        {items.map((item, index) => (
+          <div key={index} className="mb-2 flex items-center gap-2">
+            <input
+              type="text"
+              value={item}
+              onChange={(e) => updateItem(index, e.target.value)}
+              placeholder={`Ítem ${index + 1}`}
+              className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            />
+            <button
+              type="button"
+              onClick={() => removeItem(index)}
+              className="text-sm text-red-500 hover:text-red-700"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

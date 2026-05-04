@@ -68,7 +68,7 @@ const staggerDelay = index * 80;
 {section.id === 'now-footer' && (
   <ScrollReveal delay={staggerDelay} class="mb-12">
     <section>
-      <NowFooter />
+      <NowFooter config={section.config} />
     </section>
   </ScrollReveal>
 )}
