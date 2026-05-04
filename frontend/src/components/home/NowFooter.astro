@@ -1,0 +1,222 @@
+---
+import { profileConfig } from '@/config';
+
+// "Esta semana" — actualizar manualmente o conectar a una API de notion/obsidian en el futuro
+const thisWeek = [
+  'Explorando NestJS guards y decoradores personalizados',
+  'Leyendo sobre sistemas distribuidos',
+  'Fotografiando en las calles del centro de Bogotá',
+];
+
+const email = 'bfmumo@gmail.com';
+---
+
+<section class="now-footer">
+  <div class="now-footer__inner">
+
+    <!-- Live clock Bogotá -->
+    <div class="now-footer__clock-block">
+      <p class="now-footer__location">
+        <span class="now-footer__dot" aria-hidden="true"></span>
+        Bogotá, Colombia · UTC−5
+      </p>
+      <time class="now-footer__clock" id="now-clock" datetime="" aria-live="off">
+        --:--
+      </time>
+    </div>
+
+    <!-- Esta semana -->
+    <div class="now-footer__week">
+      <p class="now-footer__section-label">Esta semana</p>
+      <ul class="now-footer__list" role="list">
+        {thisWeek.map((item) => (
+          <li class="now-footer__list-item">
+            <span class="now-footer__bullet" aria-hidden="true">→</span>
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <!-- Contact + socials -->
+    <div class="now-footer__contact">
+      <p class="now-footer__section-label">Contacto</p>
+      <a href={`mailto:${email}`} class="now-footer__email">{email}</a>
+
+      <div class="now-footer__socials">
+        {profileConfig.links.map((link) => (
+          <a
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="now-footer__social"
+            aria-label={link.name}
+          >
+            <span aria-hidden="true">↗</span>
+            {link.name}
+          </a>
+        ))}
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .now-footer {
+    width: 100%;
+    padding: 2.5rem 1.5rem;
+    background: var(--card-bg);
+    border-radius: var(--radius-large);
+    box-shadow: 0 2px 16px -4px rgb(0 0 0 / 0.07);
+    border-top: 3px solid #06b6d4;
+  }
+
+  .now-footer__inner {
+    max-width: 56rem;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  @media (min-width: 560px) { .now-footer__inner { grid-template-columns: auto 1fr auto; align-items: start; gap: 3rem; } }
+
+  /* ── Clock ── */
+  .now-footer__clock-block { display: flex; flex-direction: column; gap: 0.25rem; }
+
+  .now-footer__location {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--deep-text);
+    opacity: 0.55;
+    margin: 0;
+  }
+
+  .now-footer__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    background: #22c55e;
+    box-shadow: 0 0 6px #22c55e;
+    flex-shrink: 0;
+    animation: dot-live 2.5s ease-in-out infinite;
+  }
+
+  .now-footer__clock {
+    font-family: ui-monospace, 'JetBrains Mono', monospace;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 700;
+    color: #06b6d4;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  /* ── Esta semana ── */
+  .now-footer__section-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--deep-text);
+    opacity: 0.5;
+    margin: 0 0 0.6rem;
+  }
+
+  .now-footer__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .now-footer__list-item {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.88rem;
+    color: var(--deep-text);
+    line-height: 1.5;
+  }
+
+  .now-footer__bullet {
+    color: #06b6d4;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+  }
+
+  /* ── Contact ── */
+  .now-footer__email {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--primary);
+    text-decoration: none;
+    margin-bottom: 0.85rem;
+    transition: color 0.2s;
+  }
+  .now-footer__email:hover { color: #06b6d4; text-decoration: underline; }
+  .now-footer__email:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; border-radius: 2px; }
+
+  .now-footer__socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .now-footer__social {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 9999px;
+    background: var(--btn-regular-bg);
+    color: var(--btn-content);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.18s ease, transform 0.18s ease;
+  }
+  .now-footer__social:hover { background: var(--btn-regular-bg-hover); transform: translateY(-1px); }
+  .now-footer__social:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+
+  @keyframes dot-live {
+    0%, 100% { opacity: 1; box-shadow: 0 0 6px #22c55e; }
+    50%       { opacity: 0.5; box-shadow: 0 0 2px #22c55e; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .now-footer__dot { animation: none; }
+  }
+</style>
+
+<script data-swup-reload-script>
+  function startClock() {
+    const el = document.getElementById('now-clock');
+    if (!el) return;
+
+    function tick() {
+      const now = new Date(
+        new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' })
+      );
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      el.textContent = `${hh}:${mm}:${ss}`;
+      el.setAttribute('datetime', now.toISOString());
+    }
+
+    tick();
+    setInterval(tick, 1000);
+  }
+
+  startClock();
+</script>

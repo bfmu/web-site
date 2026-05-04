@@ -78,10 +78,16 @@ const DEFAULT_SECTIONS = [
     config: {
       title: 'Últimos artículos',
       subtitle: 'Explora las publicaciones más recientes de mi blog.',
-      limit: 3,
+      limit: 4,
       ctaText: 'Ver todos los artículos',
       ctaHref: '/blogs/',
     },
+  },
+  {
+    id: 'now-footer',
+    enabled: true,
+    order: 7,
+    config: {},
   },
 ];
 

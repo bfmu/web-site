@@ -5,7 +5,7 @@ interface Props {
 
 const { config = {} } = Astro.props;
 
-const title = (config.title as string) ?? 'Explora mi contenido';
+const title    = (config.title as string)    ?? 'Explora mi contenido';
 const subtitle = (config.subtitle as string) ?? 'Descubre mis proyectos, ideas y pasiones a través de estas secciones.';
 
 const defaultItems = [
@@ -13,30 +13,176 @@ const defaultItems = [
   { titulo: '🌟 Exploraciones artísticas', descripcion: 'Fotografía y momentos que inspiran.', enlace: '/gallery/' },
   { titulo: '📝 Resúmenes y opiniones', descripcion: 'Libros que leo y reflexiones sobre ellos.', enlace: '/blogs/' },
   { titulo: '📚 Guías y artículos', descripcion: 'Soluciones y optimización de procesos.', enlace: '/archive/' },
+  { titulo: '📖 Libros', descripcion: 'Los libros que estoy leyendo y mis notas sobre ellos.', enlace: '/books/' },
   { titulo: '💻 Portafolio', descripcion: 'Proyectos destacados de desarrollo de software.', enlace: 'https://portfolio.bfmu.dev' },
 ];
 
-const items = Array.isArray(config.items) && config.items.length > 0
-  ? (config.items as Array<{ titulo: string; descripcion: string; enlace: string }>)
-  : defaultItems;
+const items =
+  Array.isArray(config.items) && config.items.length > 0
+    ? (config.items as Array<{ titulo: string; descripcion: string; enlace: string }>)
+    : defaultItems;
 ---
 
-<section class="w-full py-16 bg-[var(--card-bg)] text-center rounded-[var(--radius-large)] shadow-md">
-    <div class="max-w-5xl mx-auto px-6">
-        <h2 class="text-3xl font-bold text-[var(--primary)] dark:text-[var(--title-active)]">{title}</h2>
-        <p class="text-lg text-[var(--deep-text)] dark:text-white mt-4">{subtitle}</p>
-    </div>
+<section class="bento" id="work">
+  <div class="bento__header">
+    <h2 class="bento__title">{title}</h2>
+    <p class="bento__subtitle">{subtitle}</p>
+  </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-8 max-w-5xl mx-auto px-6">
-        {items.map((seccion, i) => (
-            <a
-                href={seccion.enlace}
-                class="seccion-card p-6 bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)] active:bg-[var(--btn-regular-bg-active)] text-[var(--btn-content)] rounded-lg text-lg font-semibold transition-all duration-300 shadow-md hover:shadow-xl hover:scale-[1.02] border-2 border-transparent hover:border-[var(--primary)] block text-center"
-                style={`animation-delay: ${i * 80}ms`}
-            >
-                <h3 class="text-xl font-semibold text-[var(--primary)] dark:text-[var(--title-active)]">{seccion.titulo}</h3>
-                <p class="text-[var(--deep-text)] dark:text-white mt-2">{seccion.descripcion}</p>
-            </a>
-        ))}
-    </div>
+  <div class="bento__grid">
+    {items.map((item, i) => {
+      const isExternal = item.enlace.startsWith('http');
+      return (
+        <a
+          href={item.enlace}
+          class="bento-card"
+          style={`--delay: ${i * 60}ms`}
+          target={isExternal ? '_blank' : undefined}
+          rel={isExternal ? 'noopener noreferrer' : undefined}
+          aria-label={item.titulo}
+        >
+          <!-- Animated cyan accent bar -->
+          <span class="bento-card__accent" aria-hidden="true"></span>
+
+          <div class="bento-card__body">
+            <h3 class="bento-card__name">{item.titulo}</h3>
+            <p class="bento-card__desc">{item.descripcion}</p>
+          </div>
+
+          <div class="bento-card__footer">
+            <span class="bento-card__arrow" aria-hidden="true">→</span>
+          </div>
+        </a>
+      );
+    })}
+  </div>
 </section>
+
+<style>
+  .bento {
+    width: 100%;
+    padding: 3rem 1.5rem;
+    background: var(--card-bg);
+    border-radius: var(--radius-large);
+    box-shadow: 0 2px 16px -4px rgb(0 0 0 / 0.07);
+  }
+
+  .bento__header {
+    max-width: 44rem;
+    margin: 0 auto 2.25rem;
+    text-align: center;
+  }
+
+  .bento__title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0 0 0.5rem;
+  }
+
+  .bento__subtitle {
+    font-size: 1rem;
+    color: var(--deep-text);
+    margin: 0;
+    opacity: 0.8;
+    line-height: 1.6;
+  }
+
+  .bento__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    max-width: 56rem;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 480px) { .bento__grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 720px) { .bento__grid { grid-template-columns: repeat(3, 1fr); } }
+
+  /* ── Card ── */
+  .bento-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 1.35rem 1.25rem 1rem;
+    border-radius: 0.875rem;
+    background: var(--btn-regular-bg);
+    border: 1px solid transparent;
+    text-decoration: none;
+    overflow: hidden;
+    transition: background 0.22s ease, border-color 0.22s ease,
+                transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
+                box-shadow 0.22s ease;
+    animation: card-in 0.45s ease both;
+    animation-delay: var(--delay, 0ms);
+  }
+  .bento-card:hover {
+    background: var(--btn-regular-bg-hover);
+    border-color: var(--primary);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.14);
+  }
+  .bento-card:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  /* Animated left accent bar */
+  .bento-card__accent {
+    position: absolute;
+    top: 12%;
+    left: 0;
+    width: 3px;
+    height: 0%;
+    background: #06b6d4;
+    border-radius: 0 2px 2px 0;
+    transition: height 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .bento-card:hover .bento-card__accent { height: 76%; }
+
+  .bento-card__body { flex: 1; padding-left: 0.25rem; }
+
+  .bento-card__name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin: 0 0 0.4rem;
+    line-height: 1.35;
+  }
+
+  .bento-card__desc {
+    font-size: 0.83rem;
+    color: var(--deep-text);
+    margin: 0;
+    line-height: 1.55;
+    opacity: 0.85;
+  }
+
+  .bento-card__footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+  }
+
+  .bento-card__arrow {
+    font-size: 0.9rem;
+    color: var(--primary);
+    opacity: 0.6;
+    transition: transform 0.2s ease, opacity 0.2s;
+  }
+  .bento-card:hover .bento-card__arrow {
+    transform: translateX(4px);
+    opacity: 1;
+  }
+
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bento-card { animation: none; transition: none; }
+    .bento-card__accent { transition: none; }
+    .bento-card:hover { transform: none; }
+  }
+</style>
