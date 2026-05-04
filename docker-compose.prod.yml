@@ -73,6 +73,7 @@ services:
     environment:
       - PUBLIC_WEB_SITE_URL=${PUBLIC_WEB_SITE_URL}
       - PUBLIC_BACKEND_URL=${PUBLIC_BACKEND_URL}
+      - PUBLIC_BACKEND_URL_SSR=http://backend:3000
       - PUBLIC_GRAFANA_URL=${GRAFANA_PUBLIC_URL:-https://grafana.bfmu.dev/}
     networks:
       - internal
