@@ -22,7 +22,8 @@ try {
   if (albumSlugsFilter.length > 0) {
     albums = albums.filter((a) => albumSlugsFilter.includes(a.slug));
   }
-  albums = albums.slice(0, 2);
+  // Solo mostrar álbumes con cover image para evitar placeholders vacíos
+  albums = albums.filter((a) => a.coverImage).slice(0, 2);
 } catch (_) {}
 ---
 
@@ -34,32 +35,22 @@ try {
     </a>
   </div>
 
-  <div class="gallery-teaser__grid">
-    {albums.length > 0 ? albums.map((album) => {
-      const cover = album.coverImage ? getOptimizedImageUrl(album.coverImage, 800) : null;
-      return (
-        <a href={`/gallery/${album.slug}/`} class="gallery-photo" aria-label={album.title}>
-          {cover ? (
+  {albums.length > 0 && (
+    <div class="gallery-teaser__grid">
+      {albums.map((album) => {
+        const cover = getOptimizedImageUrl(album.coverImage!, 800);
+        return (
+          <a href={`/gallery/${album.slug}/`} class="gallery-photo" aria-label={album.title}>
             <img src={cover} alt={album.title} class="gallery-photo__img" loading="lazy" />
-          ) : (
-            <div class="gallery-photo__placeholder" aria-hidden="true">📷</div>
-          )}
-          <div class="gallery-photo__caption">
-            <span>{album.title}</span>
-            <span class="gallery-photo__arrow" aria-hidden="true">→</span>
-          </div>
-        </a>
-      );
-    }) : (
-      <a href={ctaHref} class="gallery-photo gallery-photo--cta">
-        <div class="gallery-photo__placeholder" aria-hidden="true">📷</div>
-        <div class="gallery-photo__caption">
-          <span>Ver galería</span>
-          <span class="gallery-photo__arrow" aria-hidden="true">→</span>
-        </div>
-      </a>
-    )}
-  </div>
+            <div class="gallery-photo__caption">
+              <span>{album.title}</span>
+              <span class="gallery-photo__arrow" aria-hidden="true">→</span>
+            </div>
+          </a>
+        );
+      })}
+    </div>
+  )}
 </section>
 
 <style>
@@ -69,6 +60,7 @@ try {
     background: var(--card-bg);
     border-radius: var(--radius-large);
     box-shadow: 0 2px 16px -4px rgb(0 0 0 / 0.07);
+    border-top: 3px solid #06b6d4;
   }
 
   .gallery-teaser__header {

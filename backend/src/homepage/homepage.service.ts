@@ -22,7 +22,7 @@ const DEFAULT_SECTIONS = [
   },
   {
     id: 'now-listening',
-    enabled: true,
+    enabled: false,
     order: 1,
     config: {},
   },

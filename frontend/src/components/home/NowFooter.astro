@@ -82,14 +82,21 @@ const email = (config.email as string) ?? 'bfmumo@gmail.com';
   }
 
   .now-footer__inner {
-    max-width: 56rem;
+    max-width: 48rem;
     margin: 0 auto;
     display: grid;
     grid-template-columns: 1fr;
     gap: 2rem;
   }
 
-  @media (min-width: 560px) { .now-footer__inner { grid-template-columns: auto 1fr auto; align-items: start; gap: 3rem; } }
+  @media (min-width: 560px) {
+    .now-footer__inner {
+      grid-template-columns: auto 1fr auto;
+      align-items: start;
+      gap: 2.5rem;
+      justify-items: start;
+    }
+  }
 
   /* ── Clock ── */
   .now-footer__clock-block { display: flex; flex-direction: column; gap: 0.25rem; }
