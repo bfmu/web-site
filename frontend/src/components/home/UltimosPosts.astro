@@ -9,58 +9,297 @@ interface Props {
 
 const { config = {} } = Astro.props;
 
-const title = (config.title as string) ?? 'Últimos artículos';
-const subtitle = (config.subtitle as string) ?? 'Explora las publicaciones más recientes de mi blog.';
-const limit = typeof config.limit === 'number' ? config.limit : 3;
+const title   = (config.title as string)   ?? 'Últimos artículos';
+const subtitle= (config.subtitle as string)?? 'Explora las publicaciones más recientes.';
+const limit   = typeof config.limit === 'number' ? config.limit : 4;
 const ctaText = (config.ctaText as string) ?? 'Ver todos los artículos';
 const ctaHref = (config.ctaHref as string) ?? '/blogs/';
 
-let ultimosPosts: Array<{ slug: string; title: string; description?: string; image?: string; published: string }> = [];
+let posts: Array<{
+  slug: string;
+  title: string;
+  description?: string;
+  image?: string;
+  published: string;
+  readingTime?: number;
+  tags?: string[];
+}> = [];
+
 try {
-  ultimosPosts = await fetchRecentPosts(limit);
+  posts = await fetchRecentPosts(limit);
 } catch (e) {
-  console.error('[UltimosPosts] Error al obtener posts recientes:', e);
+  console.error('[UltimosPosts]', e);
 }
 
 const now = Date.now();
-const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-function isNew(published: string): boolean {
-  const t = new Date(published).getTime();
-  return now - t <= sevenDaysMs;
-}
+function isNew(published: string) { return now - new Date(published).getTime() <= 7 * 86400_000; }
+
+function pad(n: number) { return String(n).padStart(2, '0'); }
 ---
 
-<section class="w-full py-16 bg-[var(--card-bg)] text-center rounded-[var(--radius-large)] shadow-md">
-    <div class="max-w-5xl mx-auto px-6">
-        <h2 class="text-3xl font-bold text-[var(--primary)] dark:text-[var(--title-active)]">
-            {title}
-        </h2>
-        <p class="text-lg text-[var(--deep-text)] dark:text-white mt-4">{subtitle}</p>
-    </div>
+<section class="articles">
+  <div class="articles__header">
+    <h2 class="articles__title">{title}</h2>
+    <p class="articles__subtitle">{subtitle}</p>
+  </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 max-w-5xl mx-auto px-6">
-        {ultimosPosts.length > 0 ? ultimosPosts.map((entry) => (
-            <a href={getPostUrlBySlug(entry.slug)} class="relative group overflow-hidden rounded-[var(--radius-large)] shadow-md block bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                {entry.image && (
-                    <div class="overflow-hidden">
-                        <img src={entry.image.startsWith('/uploads/') ? getOptimizedImageUrl(entry.image, 600) : entry.image} alt={entry.title} class="w-full h-48 object-cover transition duration-300 group-hover:scale-105" />
-                    </div>
+  {posts.length > 0 ? (
+    <ol class="articles__list" role="list">
+      {posts.map((post, i) => (
+        <li class="articles__item">
+          <a href={getPostUrlBySlug(post.slug)} class="articles__link">
+            <!-- Number -->
+            <span class="articles__num" aria-hidden="true">{pad(i + 1)}</span>
+
+            <!-- Main content -->
+            <span class="articles__content">
+              <span class="articles__meta">
+                {post.tags?.[0] && (
+                  <span class="articles__tag">{post.tags[0]}</span>
                 )}
-                {isNew(entry.published) && (
-                    <span class="absolute top-3 right-3 z-10 rounded-full bg-[var(--primary)] px-2.5 py-0.5 text-xs font-medium text-white">Nuevo</span>
+                <span class="articles__date">
+                  {new Date(post.published).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+                {post.readingTime && (
+                  <span class="articles__read">{post.readingTime} min</span>
                 )}
-                <div class="p-6 text-left">
-                    <h3 class="text-xl font-semibold text-[var(--primary)] dark:text-[var(--title-active)]">{entry.title}</h3>
-                    <p class="text-[var(--deep-text)] dark:text-white mt-2 line-clamp-3">{entry.description}</p>
-                    <span class="text-sm text-[var(--deep-text)] dark:text-gray-300 mt-4 block">{new Date(entry.published).toLocaleDateString()}</span>
-                </div>
-                <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-10 transition pointer-events-none"></div>
-            </a>
-        )) : (
-            <p class="col-span-full text-[var(--deep-text)] dark:text-gray-400">No hay artículos recientes o la API no está disponible.</p>
-        )}
-    </div>
-    <div class="mt-8 text-center">
-        <a href={ctaHref} class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)] text-[var(--btn-content)] font-medium transition">{ctaText}</a>
-    </div>
+                {isNew(post.published) && (
+                  <span class="articles__new">nuevo</span>
+                )}
+              </span>
+              <span class="articles__post-title">{post.title}</span>
+              {post.description && (
+                <span class="articles__desc">{post.description}</span>
+              )}
+            </span>
+
+            {/* Thumbnail */}
+            {post.image && (
+              <img
+                src={post.image.startsWith('/uploads/') ? getOptimizedImageUrl(post.image, 120) : post.image}
+                alt=""
+                class="articles__thumb"
+                loading="lazy"
+                width="64"
+                height="64"
+              />
+            )}
+          </a>
+        </li>
+      ))}
+    </ol>
+  ) : (
+    <p class="articles__empty">No hay artículos recientes disponibles.</p>
+  )}
+
+  <div class="articles__footer">
+    <a href={ctaHref} class="articles__cta">
+      {ctaText}
+      <span aria-hidden="true">→</span>
+    </a>
+  </div>
 </section>
+
+<style>
+  .articles {
+    width: 100%;
+    padding: 3rem 1.5rem;
+    background: var(--card-bg);
+    border-radius: var(--radius-large);
+    box-shadow: 0 2px 16px -4px rgb(0 0 0 / 0.07);
+  }
+
+  .articles__header {
+    margin-bottom: 2rem;
+  }
+
+  .articles__title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0 0 0.4rem;
+  }
+
+  .articles__subtitle {
+    font-size: 0.95rem;
+    color: var(--deep-text);
+    margin: 0;
+    opacity: 0.75;
+  }
+
+  /* ── List ── */
+  .articles__list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .articles__item {
+    border-bottom: 1px solid var(--line-divider);
+  }
+  .articles__item:first-child {
+    border-top: 1px solid var(--line-divider);
+  }
+
+  .articles__link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0.5rem;
+    text-decoration: none;
+    border-radius: 0.5rem;
+    margin: 0 -0.5rem;
+    transition: background 0.18s ease, transform 0.18s ease;
+  }
+  .articles__link:hover {
+    background: var(--btn-regular-bg);
+    transform: translateX(6px);
+  }
+  .articles__link:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  /* Number */
+  .articles__num {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+    opacity: 0.25;
+    font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, monospace;
+    flex-shrink: 0;
+    width: 2.5rem;
+    text-align: right;
+    transition: opacity 0.18s ease;
+  }
+  .articles__link:hover .articles__num { opacity: 0.7; }
+
+  /* Content */
+  .articles__content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .articles__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+  }
+
+  .articles__tag {
+    padding: 0.15rem 0.55rem;
+    border-radius: 9999px;
+    background: var(--btn-regular-bg);
+    color: var(--btn-content);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.62rem;
+  }
+
+  .articles__date,
+  .articles__read {
+    color: var(--deep-text);
+    opacity: 0.6;
+  }
+
+  .articles__new {
+    padding: 0.1rem 0.45rem;
+    border-radius: 9999px;
+    background: #06b6d4;
+    color: white;
+    font-weight: 700;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .articles__post-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--deep-text);
+    line-height: 1.4;
+    transition: color 0.18s ease;
+    /* Growing underline */
+    display: inline;
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: left bottom;
+    background-repeat: no-repeat;
+    transition: background-size 0.25s ease, color 0.18s ease;
+  }
+  .articles__link:hover .articles__post-title {
+    color: var(--primary);
+    background-size: 100% 1px;
+  }
+
+  .articles__desc {
+    font-size: 0.8rem;
+    color: var(--deep-text);
+    opacity: 0.65;
+    line-height: 1.5;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+
+  /* Thumbnail */
+  .articles__thumb {
+    width: 3.75rem;
+    height: 3.75rem;
+    border-radius: 0.5rem;
+    object-fit: cover;
+    flex-shrink: 0;
+    opacity: 0.85;
+    transition: opacity 0.18s ease;
+  }
+  .articles__link:hover .articles__thumb { opacity: 1; }
+
+  .articles__empty {
+    color: var(--deep-text);
+    opacity: 0.6;
+    font-size: 0.9rem;
+    padding: 1rem 0;
+  }
+
+  /* CTA */
+  .articles__footer { margin-top: 0.5rem; }
+
+  .articles__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1.4rem;
+    border-radius: 9999px;
+    background: var(--btn-regular-bg);
+    color: var(--btn-content);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .articles__cta:hover {
+    background: var(--btn-regular-bg-hover);
+    transform: translateY(-1px);
+  }
+  .articles__cta:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .articles__link { transition: none; }
+    .articles__link:hover { transform: none; }
+    .articles__post-title { background-image: none; transition: none; }
+  }
+</style>

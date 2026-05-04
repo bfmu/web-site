@@ -5,8 +5,8 @@ import SeccionesGrid from './SeccionesGrid.astro';
 import GalleryPreview from './GalleryPreview.astro';
 import UltimosPosts from './UltimosPosts.astro';
 import ActividadReciente from './ActividadReciente.astro';
+import NowFooter from './NowFooter.astro';
 import ScrollReveal from './ScrollReveal.astro';
-import NowListening from './NowListening.tsx';
 import type { HomepageSection } from './componentRegistry';
 
 interface Props {
@@ -54,7 +54,7 @@ const staggerDelay = index * 80;
 {section.id === 'now-listening' && (
   <ScrollReveal delay={staggerDelay} class="mb-12">
     <section>
-      <NowListening client:only="react" />
+      <ActividadReciente />
     </section>
   </ScrollReveal>
 )}
@@ -62,6 +62,13 @@ const staggerDelay = index * 80;
   <ScrollReveal delay={staggerDelay} class="mb-12">
     <section>
       <ActividadReciente />
+    </section>
+  </ScrollReveal>
+)}
+{section.id === 'now-footer' && (
+  <ScrollReveal delay={staggerDelay} class="mb-12">
+    <section>
+      <NowFooter config={section.config} />
     </section>
   </ScrollReveal>
 )}

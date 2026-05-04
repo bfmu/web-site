@@ -9,11 +9,16 @@ interface Props {
 const { config = {} } = Astro.props;
 
 const title = (config.title as string) ?? 'Desarrollo, Fotografía y Reflexión';
-const subtitle = (config.subtitle as string) ?? 'Desarrollo soluciones. Capturo momentos. Reflexiono sobre historias. Aquí es donde todo converge.';
-const ctaText = (config.ctaText as string) ?? 'Explorar';
-const ctaHref = (config.ctaHref as string) ?? '#explore';
-const carouselIntervalSeconds = typeof config.carouselIntervalSeconds === 'number' ? config.carouselIntervalSeconds : 5.5;
-const heightVh = typeof config.heightVh === 'number' ? Math.max(30, Math.min(100, config.heightVh)) : 70;
+const subtitle =
+  (config.subtitle as string) ??
+  'Desarrollo soluciones. Capturo momentos. Reflexiono sobre historias. Aquí es donde todo converge.';
+const ctaText  = (config.ctaText  as string) ?? 'Explorar';
+const ctaHref  = (config.ctaHref  as string) ?? '#explore';
+const eyebrow  = (config.eyebrow  as string) ?? 'BRYAN F. MUÑOZ M. · BOGOTÁ';
+const carouselIntervalSeconds =
+  typeof config.carouselIntervalSeconds === 'number' ? config.carouselIntervalSeconds : 5.5;
+const heightVh =
+  typeof config.heightVh === 'number' ? Math.max(30, Math.min(100, config.heightVh)) : 70;
 
 const defaultBannerUrl = typeof bannerImage === 'string' ? bannerImage : bannerImage.src;
 
@@ -22,8 +27,8 @@ function resolveUrl(url: string): string {
   return getOptimizedImageUrl(url, 2560, 90);
 }
 
-const imageUrlLegacy = config.imageUrl as string | undefined;
 const imageUrlsRaw = (config.imageUrls as string[] | undefined) ?? [];
+const imageUrlLegacy = config.imageUrl as string | undefined;
 
 let imageUrls: string[];
 if (imageUrlsRaw.length > 0) {
@@ -45,7 +50,8 @@ const intervalMs = Math.max(2000, Math.min(30000, carouselIntervalSeconds * 1000
   data-slides-count={slides.length}
   style={`--hero-height: ${heightVh}vh;`}
 >
-  <div class="hero__bg" aria-hidden="true">
+  <!-- Parallax background -->
+  <div class="hero__bg" data-parallax-bg aria-hidden="true">
     {slides.map((url, i) => (
       <div
         class:list={['hero__slide', { 'is-active': i === 0 }]}
@@ -55,12 +61,42 @@ const intervalMs = Math.max(2000, Math.min(30000, carouselIntervalSeconds * 1000
     ))}
   </div>
 
+  <!-- Gradient vignette -->
+  <div class="hero__vignette" aria-hidden="true"></div>
+
+  <!-- Content -->
   <div class="hero__overlay">
-    <h1 class="hero__title">{title}</h1>
-    <p class="hero__subtitle">{subtitle}</p>
-    <a href={ctaHref} class="hero__cta">{ctaText}</a>
+    {eyebrow && (
+      <div class="hero__eyebrow">
+        <span class="hero__eyebrow-dot" aria-hidden="true"></span>
+        <span>{eyebrow}</span>
+      </div>
+    )}
+
+    <h1 class="hero__title" data-word-reveal data-text={title}>{title}</h1>
+
+    <p class="hero__subtitle" data-subtitle-reveal>{subtitle}</p>
+
+    <div class="hero__cta-wrap">
+      <a href={ctaHref} class="hero__cta" data-magnetic>{ctaText}</a>
+    </div>
   </div>
 
+  <!-- Scroll cue -->
+  <button
+    class="hero__scroll-cue"
+    data-scroll-cue
+    type="button"
+    aria-label="Desplazarse hacia abajo"
+    onclick={`document.querySelector('${ctaHref}')?.scrollIntoView({behavior:'smooth'})`}
+  >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M6 9l6 6 6-6"/>
+    </svg>
+  </button>
+
+  <!-- Carousel dots -->
   {slides.length > 1 && (
     <div class="hero__dots" aria-label="Slides del carrusel">
       {slides.map((_, i) => (
@@ -83,14 +119,16 @@ const intervalMs = Math.max(2000, Math.min(30000, carouselIntervalSeconds * 1000
     min-height: var(--hero-height, 70vh);
     overflow: hidden;
     border-radius: var(--radius-large, 1rem);
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    box-shadow: 0 4px 32px -8px rgb(0 0 0 / 0.25);
   }
 
+  /* BG oversized for parallax headroom */
   .hero__bg {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    inset: -6%;
+    width: 112%;
+    height: 112%;
+    will-change: transform;
   }
 
   .hero__slide {
@@ -102,94 +140,215 @@ const intervalMs = Math.max(2000, Math.min(30000, carouselIntervalSeconds * 1000
     background-position: center;
     background-repeat: no-repeat;
     opacity: 0;
-    transition: opacity 0.7s ease;
+    transition: opacity 0.8s ease;
   }
+  .hero__slide.is-active { opacity: 1; }
 
-  .hero__slide.is-active {
-    opacity: 1;
+  /* Darker gradient at bottom for title legibility */
+  .hero__vignette {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      160deg,
+      rgba(0,0,0,0.28) 0%,
+      rgba(0,0,0,0.55) 50%,
+      rgba(0,0,0,0.72) 100%
+    );
+    pointer-events: none;
+    z-index: 1;
   }
 
   .hero__overlay {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
+    z-index: 2;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 1.5rem;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: var(--radius-large, 1rem);
+    padding: 2rem 1.5rem 5rem;
+    pointer-events: none;
   }
 
+  /* Eyebrow pill */
+  .hero__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 1.1rem;
+    border-radius: 9999px;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.22);
+    color: rgba(255,255,255,0.92);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    margin-bottom: 1.4rem;
+    animation: eyebrow-in 0.55s cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  .hero__eyebrow-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    background: #22d3ee;
+    box-shadow: 0 0 7px #22d3ee;
+    flex-shrink: 0;
+    animation: dot-pulse 2.2s ease-in-out infinite;
+  }
+
+  /* Title words are injected by hero-animations.ts */
   .hero__title {
-    font-size: 2.25rem;
+    font-size: clamp(1.9rem, 5vw, 3.8rem);
     font-weight: 700;
     color: white;
-    text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+    text-shadow: 0 2px 16px rgb(0 0 0 / 0.45);
     margin: 0;
+    line-height: 1.18;
+    max-width: 54rem;
   }
 
-  @media (min-width: 768px) {
-    .hero__title {
-      font-size: 3.75rem;
-    }
+  /* Word span styles (global so JS-injected spans pick them up) */
+  :global(.hw) {
+    display: inline-block;
+    opacity: 0;
+    filter: blur(5px);
+    transform: translateY(18px);
+    transition: opacity 0.42s ease, filter 0.42s ease, transform 0.42s ease;
+  }
+  :global(.hw--v) {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
   }
 
+  /* Subtitle */
   .hero__subtitle {
-    font-size: 1.125rem;
-    color: rgba(255, 255, 255, 0.9);
+    font-size: clamp(0.95rem, 2vw, 1.1rem);
+    color: rgba(255,255,255,0.87);
     max-width: 42rem;
-    margin: 1rem 0 0;
+    margin: 1.25rem 0 0;
+    line-height: 1.65;
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .hero__subtitle--v {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* CTA */
+  .hero__cta-wrap {
+    margin-top: 2.25rem;
+    pointer-events: auto;
   }
 
   .hero__cta {
-    margin-top: 1.5rem;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    font-size: 1.125rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.8rem 2.2rem;
+    border-radius: 9999px;
+    font-size: 1rem;
     font-weight: 600;
-    background: var(--btn-regular-bg);
-    color: var(--btn-content);
+    background: rgba(6,182,212,0.92);
+    color: white;
     text-decoration: none;
-    transition: transform 0.2s, box-shadow 0.2s;
+    will-change: transform;
+    transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
+                box-shadow 0.22s ease,
+                background 0.18s ease;
+    box-shadow: 0 4px 24px -6px rgba(6,182,212,0.55);
+    letter-spacing: 0.01em;
   }
-
   .hero__cta:hover {
-    transform: scale(1.05);
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    background: rgb(6,182,212);
+    box-shadow: 0 8px 32px -6px rgba(6,182,212,0.7);
+  }
+  .hero__cta:focus-visible {
+    outline: 2px solid #22d3ee;
+    outline-offset: 4px;
   }
 
-  .hero__dots {
+  /* Scroll cue */
+  .hero__scroll-cue {
     position: absolute;
-    bottom: 1rem;
+    bottom: 1.75rem;
     left: 50%;
     transform: translateX(-50%);
+    z-index: 3;
     display: flex;
-    gap: 0.5rem;
-    z-index: 10;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: none;
+    background: rgba(255,255,255,0.16);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-radius: 9999px;
+    cursor: pointer;
+    opacity: 1;
+    transition: opacity 0.4s ease, background 0.2s;
+    animation: scroll-bounce 2.4s ease-in-out infinite;
+  }
+  .hero__scroll-cue:hover { background: rgba(255,255,255,0.28); }
+  .hero__scroll-cue:focus-visible { outline: 2px solid white; outline-offset: 3px; }
+
+  /* Dots — hidden if scroll-cue visible (bottom space shared) */
+  .hero__dots {
+    position: absolute;
+    bottom: 1.25rem;
+    right: 1.5rem;
+    display: flex;
+    gap: 0.45rem;
+    z-index: 3;
   }
 
   .hero__dot {
-    width: 0.5rem;
-    height: 0.5rem;
+    width: 0.45rem;
+    height: 0.45rem;
     border-radius: 9999px;
     border: none;
     padding: 0;
     cursor: pointer;
-    background: rgba(255, 255, 255, 0.5);
-    transition: width 0.3s, background 0.3s;
+    background: rgba(255,255,255,0.45);
+    transition: width 0.3s ease, background 0.3s ease;
+  }
+  .hero__dot.is-active {
+    width: 1.4rem;
+    background: white;
   }
 
-  .hero__dot.is-active {
-    width: 1.5rem;
-    background: white;
+  /* Keyframes */
+  @keyframes eyebrow-in {
+    from { opacity: 0; transform: translateY(-14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes dot-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 7px #22d3ee; }
+    50%       { opacity: 0.55; transform: scale(0.75); box-shadow: 0 0 3px #22d3ee; }
+  }
+  @keyframes scroll-bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50%       { transform: translateX(-50%) translateY(7px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero__eyebrow, .hero__eyebrow-dot, .hero__scroll-cue { animation: none; }
+    :global(.hw)          { opacity: 1 !important; filter: none !important; transform: none !important; transition: none !important; }
+    .hero__subtitle       { opacity: 1 !important; transform: none !important; transition: none !important; }
   }
 </style>
 
 <script data-swup-reload-script>
   import { initHeroPage } from '../../lib/hero-init';
+  import { initHeroAnimations } from '../../lib/hero-animations';
   initHeroPage();
+  initHeroAnimations();
 </script>
