@@ -286,6 +286,20 @@ const isExternal = ctaHref.startsWith('http');
     })(performance.now());
   }
 
+  async function fetchStatCounts() {
+    const base = (import.meta.env.PUBLIC_BACKEND_URL as string | undefined)?.replace(/\/$/, '') ?? 'http://localhost:3000';
+    const [postsRes, albumsRes, booksRes] = await Promise.allSettled([
+      fetch(`${base}/api/blog?limit=1&page=1&draft=false`).then(r => r.ok ? r.json() : null),
+      fetch(`${base}/api/gallery/albums`).then(r => r.ok ? r.json() : null),
+      fetch(`${base}/api/books`).then(r => r.ok ? r.json() : null),
+    ]);
+    return {
+      posts:  postsRes.status  === 'fulfilled' ? (postsRes.value?.pagination?.total  ?? null) : null,
+      albums: albumsRes.status === 'fulfilled' ? (albumsRes.value?.pagination?.total ?? null) : null,
+      books:  booksRes.status  === 'fulfilled' && Array.isArray(booksRes.value) ? booksRes.value.length : null,
+    };
+  }
+
   function initCountStats() {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const root = document.querySelector<HTMLElement>('[data-stats-root]');
@@ -293,8 +307,11 @@ const isExternal = ctaHref.startsWith('http');
 
     const stats = root.querySelectorAll<HTMLElement>('[data-count]');
 
-    const obs = new IntersectionObserver((entries) => {
-      if (!entries[0].isIntersecting) return;
+    let intersected = false;
+    let fetchDone = false;
+
+    function runAnimation() {
+      if (!intersected || !fetchDone) return;
       stats.forEach((stat) => {
         const target = parseInt(stat.dataset.count ?? '0', 10);
         const num = stat.querySelector<HTMLElement>('[data-stat-num]');
@@ -302,7 +319,27 @@ const isExternal = ctaHref.startsWith('http');
         if (reduced) { num.textContent = String(target); return; }
         countUp(num, target);
       });
+    }
+
+    // Fetch client-side para corregir ceros cuando el SSR no alcanzó el backend
+    fetchStatCounts().then((counts) => {
+      stats.forEach((stat) => {
+        const label = stat.querySelector<HTMLElement>('[data-stat-label]')?.textContent?.trim()
+          ?? stat.querySelector<HTMLElement>('.about-card__stat-label')?.textContent?.trim()
+          ?? '';
+        if (label.includes('artículos') && counts.posts   !== null) stat.dataset.count = String(counts.posts);
+        if (label.includes('álbum')     && counts.albums  !== null) stat.dataset.count = String(counts.albums);
+        if (label.includes('libro')     && counts.books   !== null) stat.dataset.count = String(counts.books);
+      });
+      fetchDone = true;
+      runAnimation();
+    }).catch(() => { fetchDone = true; runAnimation(); });
+
+    const obs = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) return;
       obs.disconnect();
+      intersected = true;
+      runAnimation();
     }, { threshold: 0.3 });
 
     obs.observe(root);

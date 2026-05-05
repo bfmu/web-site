@@ -87,7 +87,7 @@ export function PersistentPlayer() {
   const embedWrapperRef = useRef<HTMLDivElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<EmbedController | null>(null);
-  const lastPlaybackStartedAt = useRef(0);
+  const ignorePlaybackStateUntil = useRef(0);
   const dragRef = useRef<{ active: boolean; pending: boolean; startX: number; startY: number; startLeft: number; startTop: number; pointerId: number | null }>({ active: false, pending: false, startX: 0, startY: 0, startLeft: 0, startTop: 0, pointerId: null });
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [position, setPosition] = useState(0);
@@ -158,7 +158,8 @@ export function PersistentPlayer() {
           }
 
           EmbedController.addListener("playback_started", () => {
-            lastPlaybackStartedAt.current = Date.now();
+            // Ignorar eventos de Spotify por 4s tras iniciar pista (evita falsos isPaused)
+            ignorePlaybackStateUntil.current = Date.now() + 4000;
             setPlaying(true);
           });
 
@@ -167,9 +168,7 @@ export function PersistentPlayer() {
             const playingUri = (e.data as { playingURI?: string })?.playingURI;
             const isOurTrack = !tid || !playingUri || playingUri === `spotify:track:${tid}`;
             if (isOurTrack && e.data?.isPaused !== undefined) {
-              const recentlyStarted = Date.now() - lastPlaybackStartedAt.current < 4000;
-              // Ignorar isPaused: true en los ~4s tras playback_started (Spotify envía valores erróneos)
-              if (!e.data.isPaused || !recentlyStarted) {
+              if (Date.now() > ignorePlaybackStateUntil.current) {
                 setPlaying(!e.data.isPaused);
               }
             }
@@ -205,6 +204,8 @@ export function PersistentPlayer() {
     const ctrl = controllerRef.current;
     if (!ctrl || !isReady) return;
     const currentlyPlaying = usePlayerStore.getState().isPlaying;
+    // Bloquear eventos de Spotify 2s para que no sobreescriban el estado del usuario
+    ignorePlaybackStateUntil.current = Date.now() + 2000;
     if (currentlyPlaying) {
       ctrl.pause();
     } else {

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { usePlayerStore } from '../music/playerStore';
 
 interface Track {
   name: string;
@@ -16,6 +17,10 @@ interface NowPlayingData {
 function getApiUrl(): string {
   const base = (import.meta as any).env?.PUBLIC_BACKEND_URL || 'http://localhost:3000/';
   return `${base.replace(/\/$/, '')}/api/spotify/now-playing`;
+}
+
+function extractTrackId(spotifyUrl: string): string | null {
+  return spotifyUrl.match(/\/track\/([A-Za-z0-9]+)/)?.[1] ?? null;
 }
 
 /* RAF-based bar visualizer — heights updated via refs (zero re-renders) */
@@ -105,11 +110,25 @@ export default function SpotifyChip() {
 
   const { track, playing } = data;
 
+  const handleClick = () => {
+    const trackId = track.spotifyUrl ? extractTrackId(track.spotifyUrl) : null;
+    if (trackId) {
+      usePlayerStore.getState().playTrack(trackId, {
+        id: trackId,
+        name: track.name,
+        artist: track.artist,
+        coverUrl: track.coverUrl ?? '',
+        spotifyUrl: track.spotifyUrl ?? undefined,
+      });
+    } else {
+      window.location.href = '/music/';
+    }
+  };
+
   return (
-    <a
-      href={track.spotifyUrl ?? '/music/'}
-      target={track.spotifyUrl ? '_blank' : undefined}
-      rel={track.spotifyUrl ? 'noopener noreferrer' : undefined}
+    <button
+      type="button"
+      onClick={handleClick}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -121,6 +140,9 @@ export default function SpotifyChip() {
         textDecoration: 'none',
         transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s',
         flexShrink: 0,
+        cursor: 'pointer',
+        textAlign: 'left',
+        fontFamily: 'inherit',
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLElement;
@@ -206,6 +228,6 @@ export default function SpotifyChip() {
 
       {/* Visualizer */}
       <VisualizerBars playing={playing} />
-    </a>
+    </button>
   );
 }
