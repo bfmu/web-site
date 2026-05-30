@@ -1,0 +1,35 @@
+name: Deploy
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - 'docker-compose.prod.yml'
+      - 'nginx.conf'
+      - '.github/workflows/deploy.yml'
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to prod
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd /home/bryan/docker/github/web-site
+            git pull --ff-only origin develop
+            docker compose -f docker-compose.prod.yml up -d --build backend frontend
+            docker image prune -f
+            echo "Deploy OK — $(date)"
