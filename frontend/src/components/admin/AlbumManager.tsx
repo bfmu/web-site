@@ -26,6 +26,7 @@ import {
   reorderAlbums,
   removeImageFromAlbum,
   setAlbumCover,
+  reorderAlbumImages,
   type Album,
   type MediaFile,
 } from '../../lib/admin-api';
@@ -169,6 +170,75 @@ function SortableAlbumCard({
   );
 }
 
+function SortableImageCard({
+  imageId,
+  imageUrl,
+  image,
+  onSetCover,
+  onRemove,
+  isReordering,
+}: {
+  imageId: string;
+  imageUrl: string;
+  image: MediaFile | null;
+  onSetCover: () => void;
+  onRemove: () => void;
+  isReordering: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: imageId,
+  });
+
+  const style = { transform: CSS.Transform.toString(transform), transition };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`relative group aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 ${
+        isDragging ? 'z-50 ring-2 ring-indigo-500 opacity-95' : ''
+      } ${isReordering ? 'pointer-events-none opacity-70' : ''}`}
+    >
+      <img
+        src={imageUrl}
+        alt={image?.alt || 'Imagen'}
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          const img = e.target as HTMLImageElement;
+          img.onerror = null;
+          img.src = '/default-avatar.svg';
+        }}
+      />
+      <div
+        className="absolute top-1 left-1 cursor-grab active:cursor-grabbing bg-black/50 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        {...attributes}
+        {...listeners}
+        title="Arrastrar para reordenar"
+      >
+        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+          <path d="M7 2a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V4a2 2 0 012-2h2zm6 0a2 2 0 012 2v12a2 2 0 01-2 2h-2a2 2 0 01-2-2V4a2 2 0 012-2h2z" />
+        </svg>
+      </div>
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all rounded-lg flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+        <button
+          onClick={onSetCover}
+          className="rounded-md bg-indigo-600 px-2 py-1.5 text-xs text-white hover:bg-indigo-700"
+          title="Establecer como portada"
+        >
+          Portada
+        </button>
+        <button
+          onClick={onRemove}
+          className="rounded-md bg-red-600 px-2 py-1.5 text-xs text-white hover:bg-red-700"
+          title="Quitar del álbum"
+        >
+          Quitar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function AlbumManager() {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,6 +259,7 @@ export default function AlbumManager() {
   const [lastTitleForSlug, setLastTitleForSlug] = useState('');
   const [albumLoading, setAlbumLoading] = useState(false);
   const [reorderSaving, setReorderSaving] = useState(false);
+  const [imageReorderSaving, setImageReorderSaving] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -380,6 +451,35 @@ export default function AlbumManager() {
     }
   };
 
+  const getImageId = (img: MediaFile | string): string =>
+    typeof img === 'string' ? img : (img as MediaFile)._id;
+
+  const handleReorderImages = async (event: DragEndEvent) => {
+    if (!selectedAlbum) return;
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const images = Array.isArray(selectedAlbum.images) ? selectedAlbum.images : [];
+    const oldIndex = images.findIndex((img) => getImageId(img) === active.id);
+    const newIndex = images.findIndex((img) => getImageId(img) === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newOrder = arrayMove(images as (MediaFile | string)[], oldIndex, newIndex);
+    setSelectedAlbum({ ...selectedAlbum, images: newOrder as any });
+
+    try {
+      setImageReorderSaving(true);
+      await reorderAlbumImages(selectedAlbum.slug, newOrder.map(getImageId));
+      showSuccess('Orden de fotos actualizado');
+    } catch (error: any) {
+      console.error('Error reordering images:', error);
+      showError(error.message || 'Error al reordenar fotos');
+      refreshSelectedAlbum();
+    } finally {
+      setImageReorderSaving(false);
+    }
+  };
+
   const getImageUrl = (url: string): string => getOptimizedImageUrl(url, 200);
 
   // Vista dentro del álbum (navegación)
@@ -502,49 +602,44 @@ export default function AlbumManager() {
           </div>
         ) : (
           <div>
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Fotos en el álbum
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {images.map((img: MediaFile | string) => {
-                const image = typeof img === 'string' ? null : (img as MediaFile);
-                const imageId = typeof img === 'string' ? img : image?._id;
-                const imageUrl = image
-                  ? getImageUrl(image.url)
-                  : '/default-avatar.svg';
-
-                return (
-                  <div key={imageId} className="relative group aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
-                    <img
-                      src={imageUrl}
-                      alt={image?.alt || 'Imagen'}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const img = e.target as HTMLImageElement;
-                        img.onerror = null;
-                        img.src = '/default-avatar.svg';
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all rounded-lg flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                      <button
-                        onClick={() => handleSetCover(imageId)}
-                        className="rounded-md bg-indigo-600 px-2 py-1.5 text-xs text-white hover:bg-indigo-700"
-                        title="Establecer como portada"
-                      >
-                        Portada
-                      </button>
-                      <button
-                        onClick={() => handleRemoveImage(imageId)}
-                        className="rounded-md bg-red-600 px-2 py-1.5 text-xs text-white hover:bg-red-700"
-                        title="Quitar del álbum"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Fotos en el álbum
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Arrastrá las fotos para cambiar el orden
+              </p>
             </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleReorderImages}
+            >
+              <SortableContext
+                items={images.map((img) => getImageId(img as MediaFile | string))}
+                strategy={rectSortingStrategy}
+              >
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {images.map((img: MediaFile | string) => {
+                    const image = typeof img === 'string' ? null : (img as MediaFile);
+                    const imageId = getImageId(img);
+                    const imageUrl = image ? getImageUrl(image.url) : '/default-avatar.svg';
+
+                    return (
+                      <SortableImageCard
+                        key={imageId}
+                        imageId={imageId}
+                        imageUrl={imageUrl}
+                        image={image}
+                        onSetCover={() => handleSetCover(imageId)}
+                        onRemove={() => handleRemoveImage(imageId)}
+                        isReordering={imageReorderSaving}
+                      />
+                    );
+                  })}
+                </div>
+              </SortableContext>
+            </DndContext>
           </div>
         )}
 
