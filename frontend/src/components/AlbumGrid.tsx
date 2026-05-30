@@ -24,28 +24,14 @@ export default function AlbumGrid({ images, albumTitle }: AlbumGridProps) {
     return <div className="text-center text-gray-500 dark:text-gray-400 py-8">No hay imágenes</div>;
   }
 
-  // Calcular tamaños para el grid estilo bento (Pinterest)
-  const getImageSize = (index: number, total: number): string => {
-    // Patrón más variado y visualmente interesante
-    const pattern = index % 8;
-    switch (pattern) {
-      case 0:
-        return 'col-span-2 row-span-2'; // Grande cuadrada
-      case 1:
-      case 2:
-        return 'col-span-1 row-span-1'; // Pequeñas
-      case 3:
-        return 'col-span-1 row-span-2'; // Vertical alta
-      case 4:
-        return 'col-span-2 row-span-1'; // Horizontal ancha
-      case 5:
-      case 6:
-        return 'col-span-1 row-span-1'; // Pequeñas
-      case 7:
-        return 'col-span-1 row-span-2'; // Vertical alta
-      default:
-        return 'col-span-1 row-span-1';
-    }
+  // El span se determina por el aspect ratio real de cada imagen.
+  // index 0 siempre es el hero (2×2). Dense rellena cualquier hueco restante.
+  const getImageSize = (index: number, image: Image): string => {
+    if (index === 0) return 'col-span-2 row-span-2';
+    const ratio = (image.width || 1) / (image.height || 1);
+    if (ratio >= 1.6) return 'col-span-2 row-span-1'; // landscape → wide
+    if (ratio <= 0.65) return 'col-span-1 row-span-2'; // portrait → tall
+    return 'col-span-1 row-span-1';
   };
 
   const handleImageClick = (index: number) => {
@@ -58,9 +44,9 @@ export default function AlbumGrid({ images, albumTitle }: AlbumGridProps) {
 
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 auto-rows-[150px] md:auto-rows-[200px]">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 auto-rows-[150px] md:auto-rows-[200px] grid-flow-row-dense">
         {images.map((image, index) => {
-          const sizeClass = getImageSize(index, images.length);
+          const sizeClass = getImageSize(index, image);
           return (
             <div
               key={image.id}
