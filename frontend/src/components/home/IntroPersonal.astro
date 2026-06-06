@@ -34,7 +34,7 @@ try {
     fetchBooks().catch(() => [] as any[]),
   ]);
   postsCount  = postsRes.pagination?.total ?? 0;
-  albumsCount = albumsRes.pagination?.total ?? 0;
+  albumsCount = albumsRes.pagination?.total || (albumsRes.albums?.length ?? 0);
   booksCount  = Array.isArray(booksRes) ? booksRes.length : 0;
 } catch (_) {}
 
@@ -68,15 +68,15 @@ const isExternal = ctaHref.startsWith('http');
       <!-- Stats: count-up animation on scroll -->
       <div class="about-card__stats" data-stats-root>
         <div class="about-card__stat" data-count={postsCount}>
-          <span class="about-card__stat-num" data-stat-num>0</span>
+          <span class="about-card__stat-num" data-stat-num>{postsCount}</span>
           <span class="about-card__stat-label">artículos</span>
         </div>
         <div class="about-card__stat" data-count={albumsCount}>
-          <span class="about-card__stat-num" data-stat-num>0</span>
+          <span class="about-card__stat-num" data-stat-num>{albumsCount}</span>
           <span class="about-card__stat-label">álbumes</span>
         </div>
         <div class="about-card__stat" data-count={booksCount}>
-          <span class="about-card__stat-num" data-stat-num>0</span>
+          <span class="about-card__stat-num" data-stat-num>{booksCount}</span>
           <span class="about-card__stat-label">libros</span>
         </div>
       </div>
@@ -293,9 +293,12 @@ const isExternal = ctaHref.startsWith('http');
       fetch(`${base}/api/gallery/albums`).then(r => r.ok ? r.json() : null),
       fetch(`${base}/api/books`).then(r => r.ok ? r.json() : null),
     ]);
+    const albumsVal = albumsRes.status === 'fulfilled' ? albumsRes.value : null;
     return {
       posts:  postsRes.status  === 'fulfilled' ? (postsRes.value?.pagination?.total  ?? null) : null,
-      albums: albumsRes.status === 'fulfilled' ? (albumsRes.value?.pagination?.total ?? null) : null,
+      albums: albumsVal != null
+        ? (albumsVal.pagination?.total || albumsVal.albums?.length || null)
+        : null,
       books:  booksRes.status  === 'fulfilled' && Array.isArray(booksRes.value) ? booksRes.value.length : null,
     };
   }
