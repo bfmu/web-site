@@ -30,7 +30,7 @@ const isBackendResource = src.startsWith('/uploads/')
 
 // TODO temporary workaround for images dynamic import
 // https://github.com/withastro/astro/issues/3373
-let img
+let img: ImageMetadata | undefined
 if (isLocal) {
   const files = import.meta.glob<ImageMetadata>('../../**', {
     import: 'default',

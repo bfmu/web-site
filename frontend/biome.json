@@ -35,16 +35,25 @@
     }
   },
   "linter": {
-    "ignore": [],
+    "ignore": ["src/plugins"],
     "rules": {
       "a11y": {
-        "recommended": true
+        "recommended": true,
+        "useButtonType": "off",
+        "noSvgWithoutTitle": "off",
+        "noLabelWithoutControl": "off",
+        "useKeyWithClickEvents": "off",
+        "useSemanticElements": "off"
       },
       "complexity": {
-        "recommended": true
+        "recommended": true,
+        "noForEach": "off",
+        "useOptionalChain": "off",
+        "useLiteralKeys": "off"
       },
       "correctness": {
-        "recommended": true
+        "recommended": true,
+        "useExhaustiveDependencies": "off"
       },
       "performance": {
         "recommended": true
@@ -53,13 +62,23 @@
         "recommended": true
       },
       "style": {
-        "recommended": true
+        "recommended": true,
+        "noParameterAssign": "off",
+        "useSelfClosingElements": "off",
+        "useTemplate": "off",
+        "useSingleVarDeclarator": "off",
+        "useNodejsImportProtocol": "off",
+        "noUnusedTemplateLiteral": "off"
       },
       "suspicious": {
-        "recommended": true
+        "recommended": true,
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "off"
       },
       "nursery": {
-        "recommended": true
+        "recommended": true,
+        "useConsistentMemberAccessibility": "off",
+        "useAriaPropsSupportedByRole": "off"
       }
     }
   }

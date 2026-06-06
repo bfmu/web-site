@@ -37,11 +37,10 @@ export default function SpotifyIntegrationCard() {
     console.log('✅ SpotifyIntegrationCard: Running on client, iniciando carga...');
     
     let isMounted = true;
-    let timeoutId: NodeJS.Timeout;
     let loadingFinished = false;
-    
+
         // Timeout de seguridad para evitar que se quede cargando indefinidamente
-        timeoutId = setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           if (isMounted && !loadingFinished) {
             console.warn('⏱️ Timeout al cargar configuración de Spotify - forzando carga del formulario');
             loadingFinished = true;
