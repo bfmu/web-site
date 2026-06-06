@@ -62,4 +62,3 @@ MediaSchema.index({ type: 1 });
 MediaSchema.index({ isPublic: 1 });
 MediaSchema.index({ albumId: 1 });
 MediaSchema.index({ createdAt: -1 });
-

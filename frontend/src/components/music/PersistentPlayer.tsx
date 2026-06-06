@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { usePlayerStore } from "./playerStore";
 
 declare global {
@@ -81,7 +81,7 @@ function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): T {
   }) as T;
 }
 
-export function PersistentPlayer() {
+export function PersistentPlayer(): ReactElement | null {
   const { trackId, trackInfo, isPlaying, isVisible, playerPosition, setPlayerPosition, setController, setPlaying, togglePlaying, savePosition, close } =
     usePlayerStore();
   const embedWrapperRef = useRef<HTMLDivElement>(null);

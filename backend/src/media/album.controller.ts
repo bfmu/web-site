@@ -49,11 +49,20 @@ export class AlbumController {
   @ApiOperation({ summary: 'Listar álbumes (requiere autenticación)' })
   @ApiQuery({ name: 'isPublic', required: false, description: 'Si es público' })
   @ApiQuery({ name: 'page', required: false, description: 'Página' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Límite por página' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Límite por página',
+  })
   @ApiResponse({ status: 200, description: 'Lista de álbumes' })
   async findAll(@Query() query: any) {
     return this.albumService.findAll({
-      isPublic: query.isPublic === 'true' ? true : query.isPublic === 'false' ? false : undefined,
+      isPublic:
+        query.isPublic === 'true'
+          ? true
+          : query.isPublic === 'false'
+            ? false
+            : undefined,
       page: query.page ? parseInt(query.page) : 1,
       limit: query.limit ? parseInt(query.limit) : 50,
     });
@@ -90,7 +99,10 @@ export class AlbumController {
   @ApiOperation({ summary: 'Actualizar álbum (requiere autenticación)' })
   @ApiParam({ name: 'slug', description: 'Slug del álbum' })
   @ApiResponse({ status: 200, description: 'Álbum actualizado' })
-  async update(@Param('slug') slug: string, @Body() updateAlbumDto: UpdateAlbumDto) {
+  async update(
+    @Param('slug') slug: string,
+    @Body() updateAlbumDto: UpdateAlbumDto,
+  ) {
     return this.albumService.update(slug, updateAlbumDto);
   }
 
@@ -110,7 +122,9 @@ export class AlbumController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'editor')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Agregar múltiples imágenes al álbum (requiere autenticación)' })
+  @ApiOperation({
+    summary: 'Agregar múltiples imágenes al álbum (requiere autenticación)',
+  })
   @ApiParam({ name: 'slug', description: 'Slug del álbum' })
   @ApiResponse({ status: 200, description: 'Imágenes agregadas al álbum' })
   async addImagesBatch(
@@ -130,7 +144,10 @@ export class AlbumController {
   @ApiOperation({ summary: 'Agregar imagen al álbum (requiere autenticación)' })
   @ApiParam({ name: 'slug', description: 'Slug del álbum' })
   @ApiResponse({ status: 200, description: 'Imagen agregada al álbum' })
-  async addImage(@Param('slug') slug: string, @Body() body: { mediaId: string }) {
+  async addImage(
+    @Param('slug') slug: string,
+    @Body() body: { mediaId: string },
+  ) {
     if (!body.mediaId) {
       throw new BadRequestException('Media ID is required');
     }
@@ -141,11 +158,16 @@ export class AlbumController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'editor')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Remover imagen del álbum (requiere autenticación)' })
+  @ApiOperation({
+    summary: 'Remover imagen del álbum (requiere autenticación)',
+  })
   @ApiParam({ name: 'slug', description: 'Slug del álbum' })
   @ApiParam({ name: 'mediaId', description: 'ID del media' })
   @ApiResponse({ status: 200, description: 'Imagen removida del álbum' })
-  async removeImage(@Param('slug') slug: string, @Param('mediaId') mediaId: string) {
+  async removeImage(
+    @Param('slug') slug: string,
+    @Param('mediaId') mediaId: string,
+  ) {
     return this.albumService.removeImage(slug, mediaId);
   }
 
@@ -153,10 +175,15 @@ export class AlbumController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'editor')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Reordenar imágenes del álbum (requiere autenticación)' })
+  @ApiOperation({
+    summary: 'Reordenar imágenes del álbum (requiere autenticación)',
+  })
   @ApiParam({ name: 'slug', description: 'Slug del álbum' })
   @ApiResponse({ status: 200, description: 'Imágenes reordenadas' })
-  async reorderImages(@Param('slug') slug: string, @Body() body: { imageIds: string[] }) {
+  async reorderImages(
+    @Param('slug') slug: string,
+    @Body() body: { imageIds: string[] },
+  ) {
     if (!body.imageIds || !Array.isArray(body.imageIds)) {
       throw new BadRequestException('imageIds must be an array');
     }
@@ -167,14 +194,18 @@ export class AlbumController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'editor')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Establecer portada del álbum (requiere autenticación)' })
+  @ApiOperation({
+    summary: 'Establecer portada del álbum (requiere autenticación)',
+  })
   @ApiParam({ name: 'slug', description: 'Slug del álbum' })
   @ApiResponse({ status: 200, description: 'Portada establecida' })
-  async setCover(@Param('slug') slug: string, @Body() body: { mediaId: string }) {
+  async setCover(
+    @Param('slug') slug: string,
+    @Body() body: { mediaId: string },
+  ) {
     if (!body.mediaId) {
       throw new BadRequestException('Media ID is required');
     }
     return this.albumService.setCover(slug, body.mediaId);
   }
 }
-

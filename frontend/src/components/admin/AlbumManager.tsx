@@ -239,7 +239,7 @@ function SortableImageCard({
   );
 }
 
-export default function AlbumManager() {
+export default function AlbumManager(): React.ReactElement {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('list');

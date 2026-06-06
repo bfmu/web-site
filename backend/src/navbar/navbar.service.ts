@@ -16,8 +16,14 @@ export interface NavBarLink {
 }
 
 function normalizeLink(
-  l: { name: string; url?: string; external?: boolean; openInNewTab?: boolean; children?: unknown[] },
-  order: number,
+  l: {
+    name: string;
+    url?: string;
+    external?: boolean;
+    openInNewTab?: boolean;
+    children?: unknown[];
+  },
+  _order: number,
 ): NavBarLink {
   const link: NavBarLink = {
     name: l.name,
@@ -47,7 +53,9 @@ export class NavbarService {
     }
     const links = [...doc.links]
       .sort((a, b) => ((a.order as number) ?? 0) - ((b.order as number) ?? 0))
-      .map((l, i) => normalizeLink(l as Parameters<typeof normalizeLink>[0], i));
+      .map((l, i) =>
+        normalizeLink(l as Parameters<typeof normalizeLink>[0], i),
+      );
     return { links };
   }
 

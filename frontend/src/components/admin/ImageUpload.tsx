@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, type ReactElement } from 'react';
 import { showError, showWarning } from '@/lib/notifications';
 import { uploadImage } from '../../lib/admin-api';
 import { ImageLibraryModal } from './ImageLibraryModal';
@@ -9,7 +9,7 @@ interface ImageUploadProps {
   label?: string;
 }
 
-export function ImageUpload({ currentImage, onUploadComplete, label = 'Imagen de portada' }: ImageUploadProps) {
+export function ImageUpload({ currentImage, onUploadComplete, label = 'Imagen de portada' }: ImageUploadProps): ReactElement {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentImage || null);
   const [dragActive, setDragActive] = useState(false);

@@ -23,7 +23,7 @@ export function ImageLibraryModal({
   onSelect,
   allowUpload = true,
   albumId,
-}: ImageLibraryModalProps) {
+}: ImageLibraryModalProps): React.ReactElement | null {
   const [activeTab, setActiveTab] = useState<'library' | 'upload'>('library');
   const [media, setMedia] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(false);

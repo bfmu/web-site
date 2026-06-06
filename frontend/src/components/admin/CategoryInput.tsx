@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactElement } from 'react';
 import { getCategories } from '../../lib/admin-api';
 import { showError } from '@/lib/notifications';
 
@@ -8,7 +8,7 @@ interface CategoryInputProps {
   label?: string;
 }
 
-export function CategoryInput({ value = '', onChange, label = 'Categoría' }: CategoryInputProps) {
+export function CategoryInput({ value = '', onChange, label = 'Categoría' }: CategoryInputProps): ReactElement {
   const [categories, setCategories] = useState<string[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);

@@ -35,7 +35,7 @@ function resolveFallbackLinks(): NavBarLink[] {
   });
 }
 
-export function NavbarEditor() {
+export function NavbarEditor(): React.ReactElement {
   const [links, setLinks] = useState<NavBarLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

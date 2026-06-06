@@ -12,7 +12,7 @@ import {
 import { getOptimizedImageUrl, getOriginalImageUrl } from '../../lib/image-utils';
 import { showSuccess, showError, showInfo } from '@/lib/notifications';
 
-export default function MediaLibrary() {
+export default function MediaLibrary(): React.ReactElement {
   const [media, setMedia] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({

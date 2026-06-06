@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ReactElement } from 'react';
 import { apiGet, apiPost, ApiException } from '@/lib/api';
 import { showSuccess, showError } from '@/lib/notifications';
 
@@ -14,7 +14,7 @@ interface User {
 
 type RoleFilter = 'all' | 'admin' | 'editor' | 'user';
 
-export function UsersManager() {
+export function UsersManager(): ReactElement {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');

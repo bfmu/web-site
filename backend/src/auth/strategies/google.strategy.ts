@@ -5,7 +5,10 @@ import { ConfigService } from '@nestjs/config';
 import { DynamicPassportService } from '../services/dynamic-passport.service';
 
 @Injectable()
-export class GoogleStrategy extends PassportStrategy(Strategy, 'google') implements OnModuleInit {
+export class GoogleStrategy
+  extends PassportStrategy(Strategy, 'google')
+  implements OnModuleInit
+{
   constructor(
     private configService: ConfigService,
     private dynamicPassport: DynamicPassportService,
@@ -27,7 +30,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') impleme
   async initialize() {
     try {
       const config = await this.dynamicPassport.getOAuthConfig('google');
-      
+
       if (config) {
         // Actualizar configuración de la strategy dinámicamente
         (this as any)._oauth2._clientId = config.clientID;
@@ -35,7 +38,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') impleme
         (this as any)._callbackURL = config.callbackURL;
         console.log('✅ Google OAuth strategy initialized with dynamic config');
       } else {
-        console.warn('⚠️ Google OAuth not configured. Login with Google will not work.');
+        console.warn(
+          '⚠️ Google OAuth not configured. Login with Google will not work.',
+        );
       }
     } catch (error) {
       console.error('Error initializing Google strategy:', error);

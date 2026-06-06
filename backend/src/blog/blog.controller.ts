@@ -95,7 +95,7 @@ export class BlogController {
 
     // Retornar URL relativa
     const imageUrl = `/uploads/images/${fileName}`;
-    
+
     return {
       url: imageUrl,
       filename: fileName,
@@ -166,7 +166,9 @@ export class BlogController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Eliminar una etiqueta de todos los posts (solo admin)' })
+  @ApiOperation({
+    summary: 'Eliminar una etiqueta de todos los posts (solo admin)',
+  })
   @ApiParam({ name: 'tag', description: 'Nombre de la etiqueta a eliminar' })
   @ApiResponse({ status: 200, description: 'Etiqueta eliminada' })
   async removeTag(@Param('tag') tag: string) {
@@ -177,8 +179,13 @@ export class BlogController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Eliminar una categoría de todos los posts (solo admin)' })
-  @ApiParam({ name: 'category', description: 'Nombre de la categoría a eliminar' })
+  @ApiOperation({
+    summary: 'Eliminar una categoría de todos los posts (solo admin)',
+  })
+  @ApiParam({
+    name: 'category',
+    description: 'Nombre de la categoría a eliminar',
+  })
   @ApiResponse({ status: 200, description: 'Categoría eliminada' })
   async removeCategory(@Param('category') category: string) {
     return this.blogService.removeCategoryFromAllPosts(category);
@@ -188,9 +195,15 @@ export class BlogController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'editor')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Validar si un slug está disponible (requiere autenticación)' })
+  @ApiOperation({
+    summary: 'Validar si un slug está disponible (requiere autenticación)',
+  })
   @ApiParam({ name: 'slug', description: 'Slug a validar' })
-  @ApiQuery({ name: 'currentSlug', required: false, description: 'Slug actual del post (para edición)' })
+  @ApiQuery({
+    name: 'currentSlug',
+    required: false,
+    description: 'Slug actual del post (para edición)',
+  })
   @ApiResponse({ status: 200, description: 'Resultado de la validación' })
   async validateSlug(
     @Param('slug') slug: string,

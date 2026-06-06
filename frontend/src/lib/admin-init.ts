@@ -204,11 +204,11 @@ function setupAdminHeaderUserMenu(): void {
   }
 
   function showDropdown(): void {
-    dropdown.classList.remove('hidden');
+    dropdown!.classList.remove('hidden');
   }
 
   function hideDropdown(): void {
-    dropdown.classList.add('hidden');
+    dropdown!.classList.add('hidden');
   }
 
   function scheduleHide(): void {

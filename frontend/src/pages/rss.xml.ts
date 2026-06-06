@@ -17,7 +17,7 @@ function contentToHtml(rawContent: string): string {
   return parser.render(trimmed);
 }
 
-export async function GET(context: APIContext) {
+export async function GET(context: APIContext): Promise<Response> {
   const res = await fetchPosts({ limit: 100, draft: false });
   const posts = res.posts || res.docs || (Array.isArray(res) ? res : []);
 

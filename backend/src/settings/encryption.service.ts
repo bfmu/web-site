@@ -12,9 +12,11 @@ export class EncryptionService {
 
   constructor(private configService: ConfigService) {
     const key = this.configService.get<string>('ENCRYPTION_KEY');
-    
+
     if (!key) {
-      console.warn('⚠️ ENCRYPTION_KEY not set. Using default key (NOT SECURE FOR PRODUCTION)');
+      console.warn(
+        '⚠️ ENCRYPTION_KEY not set. Using default key (NOT SECURE FOR PRODUCTION)',
+      );
       this.encryptionKey = Buffer.alloc(this.keyLength);
     } else if (key.length < this.keyLength) {
       // Pad key si es muy corto
@@ -35,13 +37,17 @@ export class EncryptionService {
 
     try {
       const iv = crypto.randomBytes(this.ivLength);
-      const cipher = crypto.createCipheriv(this.algorithm, this.encryptionKey, iv);
-      
+      const cipher = crypto.createCipheriv(
+        this.algorithm,
+        this.encryptionKey,
+        iv,
+      );
+
       let encrypted = cipher.update(text, 'utf8', 'hex');
       encrypted += cipher.final('hex');
-      
+
       const tag = cipher.getAuthTag();
-      
+
       // Formato: iv:encrypted:tag
       return `${iv.toString('hex')}:${encrypted}:${tag.toString('hex')}`;
     } catch (error) {
@@ -68,7 +74,11 @@ export class EncryptionService {
       const encrypted = parts[1];
       const tag = Buffer.from(parts[2], 'hex');
 
-      const decipher = crypto.createDecipheriv(this.algorithm, this.encryptionKey, iv);
+      const decipher = crypto.createDecipheriv(
+        this.algorithm,
+        this.encryptionKey,
+        iv,
+      );
       decipher.setAuthTag(tag);
 
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');

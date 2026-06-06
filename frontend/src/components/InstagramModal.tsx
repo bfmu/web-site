@@ -26,7 +26,7 @@ export default function InstagramModal({
   images,
   initialIndex,
   albumTitle,
-}: InstagramModalProps) {
+}: InstagramModalProps): React.ReactElement | null {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [mounted, setMounted] = useState(false);

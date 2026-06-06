@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsOptional, IsIn } from 'class-validator';
+import { IsString, IsBoolean, IsOptional } from 'class-validator';
 
 export class UpdateOAuthProviderDto {
   @IsString()

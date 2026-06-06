@@ -12,7 +12,11 @@ export class BooksService {
   ) {}
 
   async findAll(): Promise<BookDocument[]> {
-    return this.bookModel.find().sort({ readAt: -1, createdAt: -1 }).lean().exec();
+    return this.bookModel
+      .find()
+      .sort({ readAt: -1, createdAt: -1 })
+      .lean()
+      .exec();
   }
 
   async findOne(id: string): Promise<BookDocument> {

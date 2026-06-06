@@ -1,17 +1,17 @@
 import { toast } from 'sonner';
 
-export function showSuccess(message: string) {
+export function showSuccess(message: string): void {
   toast.success(message);
 }
 
-export function showError(message: string) {
+export function showError(message: string): void {
   toast.error(message);
 }
 
-export function showWarning(message: string) {
+export function showWarning(message: string): void {
   toast.warning(message);
 }
 
-export function showInfo(message: string) {
+export function showInfo(message: string): void {
   toast.info(message);
 }

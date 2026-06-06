@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactElement } from 'react';
 import { showSuccess, showError, showWarning } from '@/lib/notifications';
 import { getBackendUrl } from '../../lib/env';
 
@@ -9,7 +9,7 @@ interface OAuthProviderCardProps {
   icon: string;
 }
 
-export default function OAuthProviderCard({ provider, title, description, icon }: OAuthProviderCardProps) {
+export default function OAuthProviderCard({ provider, title, description, icon }: OAuthProviderCardProps): ReactElement {
   const [config, setConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactElement } from 'react';
 import { getUser, setUser } from '../../lib/auth';
 import { getProfile, updateProfile, uploadAvatar, changePassword } from '../../lib/admin-api';
 import { apiGet } from '../../lib/api';
 import { getOptimizedImageUrl } from '../../lib/image-utils';
 import { showSuccess, showError, showWarning } from '@/lib/notifications';
 
-export function ProfileEditor() {
+export function ProfileEditor(): ReactElement {
   const [loading, setLoading] = useState(false);
   const [user, setUserState] = useState<any>(null);
   const [name, setName] = useState('');

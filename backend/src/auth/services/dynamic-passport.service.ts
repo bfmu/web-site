@@ -33,10 +33,13 @@ export class DynamicPassportService implements OnModuleInit {
 
     try {
       // Intentar obtener credenciales completas de DB
-      const credentials = await this.settingsService.getOAuthCredentials(provider);
-      
+      const credentials =
+        await this.settingsService.getOAuthCredentials(provider);
+
       if (credentials && credentials.clientID) {
-        console.log(`✅ Using ${provider} OAuth config from ${credentials.source}`);
+        console.log(
+          `✅ Using ${provider} OAuth config from ${credentials.source}`,
+        );
         this.configCache.set(provider, credentials);
         return credentials;
       }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactElement } from 'react';
 import { getTags } from '../../lib/admin-api';
 
 interface TagInputProps {
@@ -7,7 +7,7 @@ interface TagInputProps {
   label?: string;
 }
 
-export function TagInput({ value = [], onChange, label = 'Tags' }: TagInputProps) {
+export function TagInput({ value = [], onChange, label = 'Tags' }: TagInputProps): ReactElement {
   const [tags, setTags] = useState<string[]>(value);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');

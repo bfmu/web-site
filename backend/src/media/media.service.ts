@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Media, MediaDocument } from './schemas/media.schema';
@@ -149,7 +154,9 @@ export class MediaService {
       try {
         fs.unlinkSync(filePath);
       } catch (error) {
-        this.logger.error(`Error deleting file ${filePath}: ${error instanceof Error ? error.message : error}`);
+        this.logger.error(
+          `Error deleting file ${filePath}: ${error instanceof Error ? error.message : error}`,
+        );
         // Continuar con la eliminación del registro aunque falle el archivo
       }
     }
@@ -158,10 +165,9 @@ export class MediaService {
     await this.mediaModel.findByIdAndDelete(id).exec();
 
     // Remover de álbumes que lo contengan
-    await this.albumModel.updateMany(
-      { images: id },
-      { $pull: { images: id } },
-    ).exec();
+    await this.albumModel
+      .updateMany({ images: id }, { $pull: { images: id } })
+      .exec();
   }
 
   async rename(id: string, newFilename: string): Promise<Media> {
@@ -175,14 +181,20 @@ export class MediaService {
     }
 
     // Verificar que el nuevo nombre no exista
-    const existing = await this.mediaModel.findOne({ filename: newFilename }).exec();
+    const existing = await this.mediaModel
+      .findOne({ filename: newFilename })
+      .exec();
     if (existing && existing._id.toString() !== id) {
       throw new BadRequestException(`Filename "${newFilename}" already exists`);
     }
 
     // Renombrar archivo en filesystem
     const oldPath = path.join(process.cwd(), media.path);
-    const newPath = path.join(process.cwd(), path.dirname(media.path), newFilename);
+    const newPath = path.join(
+      process.cwd(),
+      path.dirname(media.path),
+      newFilename,
+    );
 
     if (fs.existsSync(oldPath)) {
       try {
@@ -193,18 +205,22 @@ export class MediaService {
     }
 
     // Actualizar registro
-    const newPathRelative = path.join(path.dirname(media.path), newFilename).replace(/\\/g, '/');
+    const newPathRelative = path
+      .join(path.dirname(media.path), newFilename)
+      .replace(/\\/g, '/');
     const newUrl = media.url.replace(media.filename, newFilename);
 
-    return this.mediaModel.findByIdAndUpdate(
-      id,
-      {
-        filename: newFilename,
-        path: newPathRelative,
-        url: newUrl,
-      },
-      { new: true },
-    ).exec();
+    return this.mediaModel
+      .findByIdAndUpdate(
+        id,
+        {
+          filename: newFilename,
+          path: newPathRelative,
+          url: newUrl,
+        },
+        { new: true },
+      )
+      .exec();
   }
 
   async checkUsage(id: string): Promise<{
@@ -222,18 +238,24 @@ export class MediaService {
     }
 
     // Buscar en posts (campo image y en content HTML)
-    const posts = await this.postModel.find({
-      $or: [
-        { image: { $regex: media.filename, $options: 'i' } },
-        { content: { $regex: media.filename, $options: 'i' } },
-        { content: { $regex: media.url, $options: 'i' } },
-      ],
-    }).select('slug title').exec();
+    const posts = await this.postModel
+      .find({
+        $or: [
+          { image: { $regex: media.filename, $options: 'i' } },
+          { content: { $regex: media.filename, $options: 'i' } },
+          { content: { $regex: media.url, $options: 'i' } },
+        ],
+      })
+      .select('slug title')
+      .exec();
 
     // Buscar en álbumes
-    const albums = await this.albumModel.find({
-      images: id,
-    }).select('slug title').exec();
+    const albums = await this.albumModel
+      .find({
+        images: id,
+      })
+      .select('slug title')
+      .exec();
 
     return {
       inUse: posts.length > 0 || albums.length > 0,
@@ -242,7 +264,9 @@ export class MediaService {
     };
   }
 
-  async getImageDimensions(filePath: string): Promise<{ width?: number; height?: number }> {
+  async getImageDimensions(
+    _filePath: string,
+  ): Promise<{ width?: number; height?: number }> {
     // Por ahora retornar vacío, se puede implementar con sharp o image-size más adelante
     return {};
   }
@@ -266,21 +290,23 @@ export class MediaService {
     }
 
     // Actualizar media
-    const updatedMedia = await this.mediaModel.findByIdAndUpdate(
-      mediaId,
-      { albumId: new Types.ObjectId(albumId) },
-      { new: true },
-    ).exec();
+    const updatedMedia = await this.mediaModel
+      .findByIdAndUpdate(
+        mediaId,
+        { albumId: new Types.ObjectId(albumId) },
+        { new: true },
+      )
+      .exec();
 
     // Agregar a álbum si no está ya incluido
     if (!album.images.some((imgId) => imgId.toString() === mediaId)) {
-      await this.albumModel.findByIdAndUpdate(
-        albumId,
-        { $push: { images: new Types.ObjectId(mediaId) } },
-      ).exec();
+      await this.albumModel
+        .findByIdAndUpdate(albumId, {
+          $push: { images: new Types.ObjectId(mediaId) },
+        })
+        .exec();
     }
 
     return updatedMedia;
   }
 }
-

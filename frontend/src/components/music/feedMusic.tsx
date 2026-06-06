@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactElement } from "react";
 import { getBackendUrl } from "../../lib/env";
 import { usePlayerStore } from "./playerStore";
 import { showError } from "@/lib/notifications";
@@ -22,7 +22,7 @@ function timeAgo(dateString: string) {
   return `${seconds} segundo${seconds !== 1 ? "s" : ""} atrás`;
 }
 
-export const FeedMusic = () => {
+export const FeedMusic = (): ReactElement | null => {
   const [data, setData] = useState({
     lastPlayed: null,
     topArtists: null,

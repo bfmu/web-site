@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactElement } from 'react';
 import { PostEditor } from './PostEditor';
 import { ImageUpload } from './ImageUpload';
 import { CategoryInput } from './CategoryInput';
@@ -19,7 +19,7 @@ interface PostFormProps {
   onSuccess?: () => void;
 }
 
-export function PostForm({ post, onSuccess }: PostFormProps) {
+export function PostForm({ post, onSuccess }: PostFormProps): ReactElement {
   const [title, setTitle] = useState(post?.title || '');
   const [slug, setSlug] = useState(post?.slug || '');
   const [description, setDescription] = useState(post?.description || '');

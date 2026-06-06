@@ -1,4 +1,9 @@
-import { Injectable, HttpException, HttpStatus, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  HttpException,
+  HttpStatus,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosRequestConfig } from 'axios';
 import { SettingsService } from '../settings/settings.service';
@@ -20,11 +25,11 @@ export class SpotifyService implements OnModuleInit {
 
   async onModuleInit() {
     await this.loadConfiguration();
-    
+
     if (this.configLoaded && this.refreshToken) {
       await this.refreshAccessToken();
     }
-    
+
     // Escuchar cambios de configuración
     this.settingsService.onConfigChange((type, service) => {
       if (type === 'integration' && service === 'spotify') {
@@ -37,35 +42,42 @@ export class SpotifyService implements OnModuleInit {
   private async loadConfiguration() {
     try {
       // Intentar cargar de DB primero
-      const credentials = await this.settingsService.getIntegrationCredentials('spotify');
-      
+      const credentials =
+        await this.settingsService.getIntegrationCredentials('spotify');
+
       if (credentials && credentials.clientId) {
         this.clientId = credentials.clientId;
         this.clientSecret = credentials.clientSecret;
         this.refreshToken = credentials.refreshToken;
         this.redirectUri = credentials.redirectUri;
-        this.scopes = credentials.scopes?.join(' ') || 
+        this.scopes =
+          credentials.scopes?.join(' ') ||
           'user-top-read user-read-recently-played user-read-private user-read-email';
         this.configLoaded = true;
         console.log(`✅ Spotify config loaded from ${credentials.source}`);
         return;
       }
-    } catch (error) {
-      console.warn('Could not load Spotify config from database, trying environment variables');
+    } catch (_error) {
+      console.warn(
+        'Could not load Spotify config from database, trying environment variables',
+      );
     }
-    
+
     // Fallback a variables de entorno
     this.clientId = this.configService.get<string>('SPOTIFY_CLIENT_ID');
     this.clientSecret = this.configService.get<string>('SPOTIFY_CLIENT_SECRET');
     this.refreshToken = this.configService.get<string>('SPOTIFY_REFRESH_TOKEN');
     this.redirectUri = this.configService.get<string>('SPOTIFY_REDIRECT_URI');
-    this.scopes = 'user-top-read user-read-recently-played user-read-private user-read-email';
-    
+    this.scopes =
+      'user-top-read user-read-recently-played user-read-private user-read-email';
+
     if (this.clientId && this.clientSecret) {
       this.configLoaded = true;
       console.log('✅ Spotify config loaded from environment variables');
     } else {
-      console.warn('⚠️ Spotify not configured. Configure from dashboard or add to .env');
+      console.warn(
+        '⚠️ Spotify not configured. Configure from dashboard or add to .env',
+      );
     }
   }
 
@@ -84,7 +96,7 @@ export class SpotifyService implements OnModuleInit {
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
-    
+
     if (!this.refreshToken) {
       throw new HttpException(
         'Spotify refresh token not configured. Please authorize Spotify from the admin dashboard.',
@@ -231,12 +243,17 @@ export class SpotifyService implements OnModuleInit {
       // Mejorar el manejo de errores de Spotify
       if (error.response) {
         const spotifyError = error.response.data;
-        const errorMessage = spotifyError.error_description || spotifyError.error || 'Unknown error from Spotify';
-        
+        const errorMessage =
+          spotifyError.error_description ||
+          spotifyError.error ||
+          'Unknown error from Spotify';
+
         console.error('Spotify token exchange error:', {
           error: spotifyError.error,
           error_description: spotifyError.error_description,
-          client_id: this.clientId ? `${this.clientId.substring(0, 10)}...` : 'NOT SET',
+          client_id: this.clientId
+            ? `${this.clientId.substring(0, 10)}...`
+            : 'NOT SET',
           redirect_uri: this.redirectUri,
         });
 
@@ -245,7 +262,7 @@ export class SpotifyService implements OnModuleInit {
           HttpStatus.BAD_REQUEST,
         );
       }
-      
+
       throw new HttpException(
         'Failed to exchange authorization code for tokens',
         HttpStatus.INTERNAL_SERVER_ERROR,

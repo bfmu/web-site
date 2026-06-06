@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { HomepageConfig, HomepageConfigDocument } from './schemas/homepage-config.schema';
+import {
+  HomepageConfig,
+  HomepageConfigDocument,
+} from './schemas/homepage-config.schema';
 import { UpdateHomepageDto } from './dto/update-homepage.dto';
 
 const DEFAULT_SECTIONS = [
@@ -15,7 +18,8 @@ const DEFAULT_SECTIONS = [
       heightVh: 70,
       eyebrow: 'BRYAN F. MUÑOZ M. · BOGOTÁ',
       title: 'Desarrollo, Fotografía y Reflexión',
-      subtitle: 'Desarrollo soluciones. Capturo momentos. Reflexiono sobre historias. Aquí es donde todo converge.',
+      subtitle:
+        'Desarrollo soluciones. Capturo momentos. Reflexiono sobre historias. Aquí es donde todo converge.',
       ctaText: 'Explorar',
       ctaHref: '#explore',
     },
@@ -50,14 +54,46 @@ const DEFAULT_SECTIONS = [
     order: 4,
     config: {
       title: 'Explora mi contenido',
-      subtitle: 'Descubre mis proyectos, ideas y pasiones a través de estas secciones.',
+      subtitle:
+        'Descubre mis proyectos, ideas y pasiones a través de estas secciones.',
       items: [
-        { titulo: '🎧 Música que me inspira', descripcion: 'Canciones y playlists que forman parte de mi día a día.', enlace: '/music/', icono: 'music' },
-        { titulo: '🌟 Exploraciones artísticas', descripcion: 'Fotografía y momentos que inspiran.', enlace: '/gallery/', icono: 'gallery' },
-        { titulo: '📝 Resúmenes y opiniones', descripcion: 'Libros que leo y reflexiones sobre ellos.', enlace: '/blogs/', icono: 'blog' },
-        { titulo: '📚 Guías y artículos', descripcion: 'Soluciones y optimización de procesos.', enlace: '/archive/', icono: 'archive' },
-        { titulo: '📚 Libros', descripcion: 'Los libros que estoy leyendo y mis notas sobre ellos.', enlace: '/books/', icono: 'books' },
-        { titulo: '💻 Portafolio', descripcion: 'Proyectos destacados de desarrollo de software.', enlace: 'https://portfolio.bfmu.dev', icono: 'portfolio' },
+        {
+          titulo: '🎧 Música que me inspira',
+          descripcion:
+            'Canciones y playlists que forman parte de mi día a día.',
+          enlace: '/music/',
+          icono: 'music',
+        },
+        {
+          titulo: '🌟 Exploraciones artísticas',
+          descripcion: 'Fotografía y momentos que inspiran.',
+          enlace: '/gallery/',
+          icono: 'gallery',
+        },
+        {
+          titulo: '📝 Resúmenes y opiniones',
+          descripcion: 'Libros que leo y reflexiones sobre ellos.',
+          enlace: '/blogs/',
+          icono: 'blog',
+        },
+        {
+          titulo: '📚 Guías y artículos',
+          descripcion: 'Soluciones y optimización de procesos.',
+          enlace: '/archive/',
+          icono: 'archive',
+        },
+        {
+          titulo: '📚 Libros',
+          descripcion: 'Los libros que estoy leyendo y mis notas sobre ellos.',
+          enlace: '/books/',
+          icono: 'books',
+        },
+        {
+          titulo: '💻 Portafolio',
+          descripcion: 'Proyectos destacados de desarrollo de software.',
+          enlace: 'https://portfolio.bfmu.dev',
+          icono: 'portfolio',
+        },
       ],
     },
   },
@@ -102,16 +138,35 @@ export class HomepageService {
     private readonly homepageConfigModel: Model<HomepageConfigDocument>,
   ) {}
 
-  async getConfig(): Promise<{ sections: Array<{ id: string; enabled: boolean; order: number; config: Record<string, unknown> }> }> {
+  async getConfig(): Promise<{
+    sections: Array<{
+      id: string;
+      enabled: boolean;
+      order: number;
+      config: Record<string, unknown>;
+    }>;
+  }> {
     const doc = await this.homepageConfigModel.findOne().lean().exec();
     if (!doc || !doc.sections || doc.sections.length === 0) {
       return { sections: DEFAULT_SECTIONS };
     }
-    const sections = [...doc.sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const sections = [...doc.sections].sort(
+      (a, b) => (a.order ?? 0) - (b.order ?? 0),
+    );
     return { sections };
   }
 
-  async updateConfig(dto: UpdateHomepageDto, userId: string): Promise<{ sections: Array<{ id: string; enabled: boolean; order: number; config: Record<string, unknown> }> }> {
+  async updateConfig(
+    dto: UpdateHomepageDto,
+    _userId: string,
+  ): Promise<{
+    sections: Array<{
+      id: string;
+      enabled: boolean;
+      order: number;
+      config: Record<string, unknown>;
+    }>;
+  }> {
     if (!dto.sections || dto.sections.length === 0) {
       return this.getConfig();
     }

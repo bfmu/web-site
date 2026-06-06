@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { persist } from "zustand/middleware";
 
 export interface TrackInfo {
@@ -42,7 +42,7 @@ interface PlayerState {
   close: () => void;
 }
 
-export const usePlayerStore = create<PlayerState>()(
+export const usePlayerStore: UseBoundStore<StoreApi<PlayerState>> = create<PlayerState>()(
   persist(
     (set, get) => ({
       trackId: null,
