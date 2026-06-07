@@ -42,7 +42,8 @@ const COLLECTIONS = [
 ] as const;
 const EXTRA_COLLECTIONS = ['homepage_config', 'books'] as const;
 const RATE_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
-const MAX_BACKUP_SIZE = Number(process.env.BACKUP_MAX_SIZE) || 2 * 1024 * 1024 * 1024; // 2GB
+const MAX_BACKUP_SIZE =
+  Number(process.env.BACKUP_MAX_SIZE) || 2 * 1024 * 1024 * 1024; // 2GB
 
 /** Convierte URLs absolutas que apuntan a /uploads/ en rutas relativas (domínio-agnóstico) */
 function toRelativePath(val: unknown): string {
@@ -151,7 +152,9 @@ export class BackupService {
               const cfg = { ...sec.config };
               if (cfg.imageUrl) cfg.imageUrl = toRelativePath(cfg.imageUrl);
               if (Array.isArray(cfg.imageUrls)) {
-                cfg.imageUrls = cfg.imageUrls.map((u: any) => toRelativePath(u));
+                cfg.imageUrls = cfg.imageUrls.map((u: any) =>
+                  toRelativePath(u),
+                );
               }
               for (const f of imageFields) {
                 if (cfg[f]) cfg[f] = toRelativePath(cfg[f]);
@@ -200,7 +203,8 @@ export class BackupService {
       const data = await this.getModels()[col].find().lean().exec();
       const json = JSON.stringify(data, null, 2);
       const buf = Buffer.from(json, 'utf8');
-      checksums[`database/${col}.json` as keyof typeof checksums] = this.sha256(buf);
+      checksums[`database/${col}.json` as keyof typeof checksums] =
+        this.sha256(buf);
       archive.append(json, { name: `database/${col}.json` });
     }
 
@@ -210,7 +214,9 @@ export class BackupService {
       checksums,
       counts,
     };
-    archive.append(JSON.stringify(metadata, null, 2), { name: 'metadata.json' });
+    archive.append(JSON.stringify(metadata, null, 2), {
+      name: 'metadata.json',
+    });
 
     const uploadsPath = this.getUploadsPath();
     if (fs.existsSync(uploadsPath)) {
@@ -252,7 +258,8 @@ export class BackupService {
       const data = await this.getModels()[col].find().lean().exec();
       const json = JSON.stringify(data, null, 2);
       const buf = Buffer.from(json, 'utf8');
-      checksums[`database/${col}.json` as keyof typeof checksums] = this.sha256(buf);
+      checksums[`database/${col}.json` as keyof typeof checksums] =
+        this.sha256(buf);
       archive.append(json, { name: `database/${col}.json` });
     }
     const metadata: BackupMetadata = {
@@ -294,7 +301,11 @@ export class BackupService {
     try {
       extracted = await this.extractBackupToMap(fileBuffer);
     } catch {
-      return { valid: false, warnings, error: 'No se pudo extraer el archivo (corrupto o formato incorrecto).' };
+      return {
+        valid: false,
+        warnings,
+        error: 'No se pudo extraer el archivo (corrupto o formato incorrecto).',
+      };
     }
 
     const metadataBuf = extracted.get('metadata.json');
@@ -320,8 +331,9 @@ export class BackupService {
       }
     }
 
-    const hasUploads =
-      [...extracted.keys()].some((k) => k.startsWith('uploads/'));
+    const hasUploads = [...extracted.keys()].some((k) =>
+      k.startsWith('uploads/'),
+    );
     if (!hasUploads) {
       warnings.push('No se encontró carpeta uploads.');
     }
@@ -333,7 +345,9 @@ export class BackupService {
     };
   }
 
-  private async extractBackupToMap(fileBuffer: Buffer): Promise<Map<string, Buffer>> {
+  private async extractBackupToMap(
+    fileBuffer: Buffer,
+  ): Promise<Map<string, Buffer>> {
     const extracted = new Map<string, Buffer>();
     const extract = tar.extract();
 
@@ -458,7 +472,10 @@ export class BackupService {
     return restored;
   }
 
-  async restoreBackup(fileBuffer: Buffer, fileSize: number): Promise<RestoreResult> {
+  async restoreBackup(
+    fileBuffer: Buffer,
+    fileSize: number,
+  ): Promise<RestoreResult> {
     if (Date.now() - this.lastRestoreAt < RATE_LIMIT_MS) {
       throw new BadRequestException(
         'Debes esperar al menos 5 minutos entre restauraciones.',
@@ -489,7 +506,7 @@ export class BackupService {
 
     try {
       await this.createBackupToFile(preRestorePath);
-    } catch (e) {
+    } catch (_e) {
       throw new BadRequestException(
         'No se pudo crear el backup de seguridad previo a la restauración.',
       );
@@ -498,7 +515,7 @@ export class BackupService {
     let extracted: Map<string, Buffer>;
     try {
       extracted = await this.extractBackupToMap(fileBuffer);
-    } catch (e) {
+    } catch (_e) {
       throw new BadRequestException('No se pudo extraer el archivo de backup.');
     }
 

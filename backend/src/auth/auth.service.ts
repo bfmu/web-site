@@ -74,12 +74,16 @@ export class AuthService {
 
     // Verificar que el usuario tenga contraseña (no solo OAuth)
     if (!user.password) {
-      throw new UnauthorizedException('Esta cuenta solo puede usar autenticación OAuth (Google/GitHub)');
+      throw new UnauthorizedException(
+        'Esta cuenta solo puede usar autenticación OAuth (Google/GitHub)',
+      );
     }
 
     // Verificar si el usuario está activo
     if (!user.isActive) {
-      throw new UnauthorizedException('Usuario desactivado. Contacta al administrador.');
+      throw new UnauthorizedException(
+        'Usuario desactivado. Contacta al administrador.',
+      );
     }
 
     // Verificar contraseña
@@ -108,29 +112,36 @@ export class AuthService {
 
     if (user) {
       // Usuario existe, actualizar datos de OAuth sin eliminar password
-      console.log(`🔗 Vinculando cuenta Google a usuario existente: ${email} (provider: ${user.provider})`);
-      
+      console.log(
+        `🔗 Vinculando cuenta Google a usuario existente: ${email} (provider: ${user.provider})`,
+      );
+
       // Actualizar información solo si no tiene providerId de Google
       if (user.providerId !== id || user.provider !== 'google') {
         const avatarUrl = photos?.[0]?.value;
-        
+
         // Solo actualizar avatar si OAuth trae uno Y el usuario no tiene uno
-        if (avatarUrl && (!user.avatar || user.avatar === '/default-avatar.svg')) {
+        if (
+          avatarUrl &&
+          (!user.avatar || user.avatar === '/default-avatar.svg')
+        ) {
           user.avatar = avatarUrl;
         }
-        
+
         // Actualizar nombre solo si OAuth trae uno mejor
         if (displayName && displayName.trim()) {
           user.name = displayName;
         }
-        
+
         // Guardar providerId pero MANTENER provider original y password
         // Esto permite login con ambos métodos
         if (!user.providerId) {
           user.providerId = id;
-          console.log(`✅ OAuth vinculado. Usuario puede usar email/password O Google`);
+          console.log(
+            `✅ OAuth vinculado. Usuario puede usar email/password O Google`,
+          );
         }
-        
+
         await user.save();
       }
     } else {
@@ -158,7 +169,9 @@ export class AuthService {
 
     // Verificar si el usuario está activo
     if (!user.isActive) {
-      throw new UnauthorizedException('Usuario desactivado. Contacta al administrador.');
+      throw new UnauthorizedException(
+        'Usuario desactivado. Contacta al administrador.',
+      );
     }
 
     const tokens = await this.generateTokens(user);
@@ -182,30 +195,37 @@ export class AuthService {
 
     if (user) {
       // Usuario existe, actualizar datos de OAuth sin eliminar password
-      console.log(`🔗 Vinculando cuenta GitHub a usuario existente: ${email} (provider: ${user.provider})`);
-      
+      console.log(
+        `🔗 Vinculando cuenta GitHub a usuario existente: ${email} (provider: ${user.provider})`,
+      );
+
       // Actualizar información solo si no tiene providerId de GitHub
       if (user.providerId !== id.toString() || user.provider !== 'github') {
         const avatarUrl = photos?.[0]?.value || _json?.avatar_url;
-        
+
         // Solo actualizar avatar si OAuth trae uno Y el usuario no tiene uno
-        if (avatarUrl && (!user.avatar || user.avatar === '/default-avatar.svg')) {
+        if (
+          avatarUrl &&
+          (!user.avatar || user.avatar === '/default-avatar.svg')
+        ) {
           user.avatar = avatarUrl;
         }
-        
+
         // Actualizar nombre solo si OAuth trae uno mejor
         const newName = displayName || _json?.name;
         if (newName && newName.trim()) {
           user.name = newName;
         }
-        
+
         // Guardar providerId pero MANTENER provider original y password
         // Esto permite login con ambos métodos
         if (!user.providerId) {
           user.providerId = id.toString();
-          console.log(`✅ OAuth vinculado. Usuario puede usar email/password O GitHub`);
+          console.log(
+            `✅ OAuth vinculado. Usuario puede usar email/password O GitHub`,
+          );
         }
-        
+
         await user.save();
       }
     } else {
@@ -233,7 +253,9 @@ export class AuthService {
 
     // Verificar si el usuario está activo
     if (!user.isActive) {
-      throw new UnauthorizedException('Usuario desactivado. Contacta al administrador.');
+      throw new UnauthorizedException(
+        'Usuario desactivado. Contacta al administrador.',
+      );
     }
 
     const tokens = await this.generateTokens(user);
@@ -267,9 +289,11 @@ export class AuthService {
   }
 
   // Método especial para crear admins desde CLI
-  async createAdmin(
-    adminData: { name: string; email: string; password: string },
-  ): Promise<{ user: Partial<User>; tokens: any }> {
+  async createAdmin(adminData: {
+    name: string;
+    email: string;
+    password: string;
+  }): Promise<{ user: Partial<User>; tokens: any }> {
     const { email, password, name } = adminData;
 
     // Verificar si el usuario ya existe
@@ -328,7 +352,12 @@ export class AuthService {
 
   // Crear usuario desde el panel admin (solo admins)
   async createUser(
-    createUserDto: { email: string; password: string; name: string; role: 'admin' | 'editor' | 'user' },
+    createUserDto: {
+      email: string;
+      password: string;
+      name: string;
+      role: 'admin' | 'editor' | 'user';
+    },
     adminEmail: string,
   ): Promise<{ user: Partial<User>; message: string }> {
     const { email, password, name, role } = createUserDto;
@@ -364,7 +393,7 @@ export class AuthService {
       .select('-password -refreshToken')
       .sort({ createdAt: -1 });
 
-    return users.map(user => this.sanitizeUser(user));
+    return users.map((user) => this.sanitizeUser(user));
   }
 
   // Cambiar rol de usuario
@@ -382,7 +411,9 @@ export class AuthService {
     user.role = newRole;
     await user.save();
 
-    console.log(`🔄 ${adminEmail} cambió el rol de ${user.email}: ${oldRole} → ${newRole}`);
+    console.log(
+      `🔄 ${adminEmail} cambió el rol de ${user.email}: ${oldRole} → ${newRole}`,
+    );
 
     return {
       user: this.sanitizeUser(user),
@@ -441,7 +472,11 @@ export class AuthService {
   }
 
   private sanitizeUser(user: UserDocument): Partial<User> {
-    const { password, refreshToken, ...sanitizedUser } = user.toObject();
+    const {
+      password: _password,
+      refreshToken: _refreshToken,
+      ...sanitizedUser
+    } = user.toObject();
     // Asegurar que siempre haya un avatar por defecto
     if (!sanitizedUser.avatar) {
       sanitizedUser.avatar = '/default-avatar.svg';
@@ -451,8 +486,12 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userModel.findOne({ email });
-    if (user && user.password && (await bcrypt.compare(password, user.password))) {
-      const { password, ...result } = user.toObject();
+    if (
+      user &&
+      user.password &&
+      (await bcrypt.compare(password, user.password))
+    ) {
+      const { password: _password, ...result } = user.toObject();
       return result;
     }
     return null;
@@ -497,10 +536,15 @@ export class AuthService {
     // Si el usuario ya tiene contraseña, verificar la actual
     if (user.password) {
       if (!currentPassword) {
-        throw new UnauthorizedException('Debes proporcionar tu contraseña actual');
+        throw new UnauthorizedException(
+          'Debes proporcionar tu contraseña actual',
+        );
       }
-      
-      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+
+      const isPasswordValid = await bcrypt.compare(
+        currentPassword,
+        user.password,
+      );
       if (!isPasswordValid) {
         throw new UnauthorizedException('Contraseña actual incorrecta');
       }
@@ -513,7 +557,9 @@ export class AuthService {
     // Si el provider era solo OAuth, actualizarlo a 'local' para permitir login con password
     if (user.provider === 'google' || user.provider === 'github') {
       user.provider = 'local';
-      console.log(`🔑 Usuario ${user.email} estableció contraseña. Ahora puede usar email/password además de OAuth`);
+      console.log(
+        `🔑 Usuario ${user.email} estableció contraseña. Ahora puede usar email/password además de OAuth`,
+      );
     }
 
     await user.save();

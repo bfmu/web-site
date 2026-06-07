@@ -33,7 +33,7 @@ export class SettingsController {
   async listOAuthProviders() {
     try {
       return await this.settingsService.listOAuthProviders();
-    } catch (error) {
+    } catch (_error) {
       throw new HttpException(
         'Failed to list OAuth providers',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -50,7 +50,7 @@ export class SettingsController {
   async getOAuthProvider(@Param('provider') provider: string) {
     try {
       const config = await this.settingsService.getOAuthConfig(provider);
-      
+
       if (!config) {
         throw new HttpException(
           `OAuth provider ${provider} not found`,
@@ -90,7 +90,11 @@ export class SettingsController {
         );
       }
 
-      return await this.settingsService.updateOAuthProvider(provider, dto, user.sub);
+      return await this.settingsService.updateOAuthProvider(
+        provider,
+        dto,
+        user.sub,
+      );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -114,7 +118,7 @@ export class SettingsController {
       return {
         message: `OAuth provider ${provider} configuration deleted. Will use environment variables if available.`,
       };
-    } catch (error) {
+    } catch (_error) {
       throw new HttpException(
         'Failed to delete OAuth provider',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -164,7 +168,7 @@ export class SettingsController {
   async getOAuthProvidersStatus() {
     try {
       return await this.settingsService.getOAuthProvidersStatus();
-    } catch (error) {
+    } catch (_error) {
       throw new HttpException(
         'Failed to get OAuth providers status',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -183,7 +187,7 @@ export class SettingsController {
   async listIntegrations() {
     try {
       return await this.settingsService.listIntegrations();
-    } catch (error) {
+    } catch (_error) {
       throw new HttpException(
         'Failed to list integrations',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -200,7 +204,7 @@ export class SettingsController {
   async getIntegration(@Param('service') service: string) {
     try {
       const config = await this.settingsService.getIntegrationConfig(service);
-      
+
       if (!config) {
         throw new HttpException(
           `Integration ${service} not found`,
@@ -240,7 +244,11 @@ export class SettingsController {
         );
       }
 
-      return await this.settingsService.updateIntegration(service, dto, user.sub);
+      return await this.settingsService.updateIntegration(
+        service,
+        dto,
+        user.sub,
+      );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -264,7 +272,7 @@ export class SettingsController {
       return {
         message: `Integration ${service} configuration deleted. Will use environment variables if available.`,
       };
-    } catch (error) {
+    } catch (_error) {
       throw new HttpException(
         'Failed to delete integration',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -280,7 +288,7 @@ export class SettingsController {
   async getIntegrationsStatus() {
     try {
       return await this.settingsService.getIntegrationsStatus();
-    } catch (error) {
+    } catch (_error) {
       throw new HttpException(
         'Failed to get integrations status',
         HttpStatus.INTERNAL_SERVER_ERROR,

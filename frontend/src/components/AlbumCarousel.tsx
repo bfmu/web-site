@@ -16,7 +16,7 @@ interface AlbumCarouselProps {
   albumTitle: string;
 }
 
-export default function AlbumCarousel({ images, albumTitle }: AlbumCarouselProps) {
+export default function AlbumCarousel({ images, albumTitle }: AlbumCarouselProps): React.ReactElement {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
@@ -98,7 +98,7 @@ export default function AlbumCarousel({ images, albumTitle }: AlbumCarouselProps
             doubleTapAction: 'zoom',
           });
 
-          lightbox.addFilter('domItemData', (itemData, element) => {
+          lightbox.addFilter('domItemData', (itemData: any, element: any) => {
             if (element instanceof HTMLImageElement) {
               itemData.src = element.src;
               itemData.w = Number(element.naturalWidth || window.innerWidth);

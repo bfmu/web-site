@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { HomepageConfig, HomepageConfigSchema } from './schemas/homepage-config.schema';
+import {
+  HomepageConfig,
+  HomepageConfigSchema,
+} from './schemas/homepage-config.schema';
 import { HomepageService } from './homepage.service';
 import { HomepageController } from './homepage.controller';
 

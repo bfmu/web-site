@@ -17,7 +17,7 @@ interface AlbumGridProps {
   albumTitle: string;
 }
 
-export default function AlbumGrid({ images, albumTitle }: AlbumGridProps) {
+export default function AlbumGrid({ images, albumTitle }: AlbumGridProps): React.ReactElement {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
 
   if (images.length === 0) {

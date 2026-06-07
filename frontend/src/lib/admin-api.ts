@@ -335,6 +335,7 @@ export function generateSlug(title: string): string {
   return title
     .toLowerCase()
     .normalize('NFD')
+    // biome-ignore lint/suspicious/noMisleadingCharacterClass: intentional Unicode range for combining diacriticals
     .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
     .replace(/[^a-z0-9]+/g, '-') // Reemplazar caracteres especiales con guiones
     .replace(/^-+|-+$/g, ''); // Eliminar guiones al inicio y final

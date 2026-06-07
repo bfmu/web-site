@@ -20,7 +20,9 @@ async function bootstrap() {
   // Log de requests a backup para diagnóstico
   app.use((req, res, next) => {
     if (req.path?.startsWith('/api/backup')) {
-      logger.log(`Backup request: ${req.method} ${req.path} - ${req.get('content-type') || 'no content-type'}`);
+      logger.log(
+        `Backup request: ${req.method} ${req.path} - ${req.get('content-type') || 'no content-type'}`,
+      );
     }
     next();
   });

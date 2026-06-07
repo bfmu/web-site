@@ -17,7 +17,7 @@ function getBlogApiUrl(): string {
 // Permitir ver borradores en frontend si PUBLIC_SHOW_DRAFTS=true (solo para desarrollo/admin)
 const SHOW_DRAFTS = import.meta.env.PUBLIC_SHOW_DRAFTS === 'true';
 
-export async function fetchPosts(params: Record<string, any> = {}) {
+export async function fetchPosts(params: Record<string, any> = {}): Promise<any> {
   if (params.draft === undefined) {
     if (!SHOW_DRAFTS) params.draft = false;
   }
@@ -29,14 +29,14 @@ export async function fetchPosts(params: Record<string, any> = {}) {
   return res.json();
 }
 
-export async function fetchPostBySlug(slug: string) {
+export async function fetchPostBySlug(slug: string): Promise<any> {
   const url = buildUrl(getBlogApiUrl(), slug);
   const res = await fetch(url);
   if (!res.ok) throw new Error('Post no encontrado');
   return res.json();
 }
 
-export async function fetchRecentPosts(limit = 5) {
+export async function fetchRecentPosts(limit = 5): Promise<any> {
   const draftParam = SHOW_DRAFTS ? '' : '&draft=false';
   const url = `${buildUrl(getBlogApiUrl(), 'recent')}?limit=${limit}${draftParam}`;
   const res = await fetch(url);
@@ -44,7 +44,7 @@ export async function fetchRecentPosts(limit = 5) {
   return res.json();
 }
 
-export async function fetchCategories(params: Record<string, any> = {}) {
+export async function fetchCategories(params: Record<string, any> = {}): Promise<any> {
   const query = new URLSearchParams(params).toString();
   const url = `${buildUrl(getBlogApiUrl(), 'categories')}${query ? `?${query}` : ''}`;
   const res = await fetch(url);
@@ -52,7 +52,7 @@ export async function fetchCategories(params: Record<string, any> = {}) {
   return res.json();
 }
 
-export async function fetchTags(params: Record<string, any> = {}) {
+export async function fetchTags(params: Record<string, any> = {}): Promise<any> {
   const query = new URLSearchParams(params).toString();
   const url = `${buildUrl(getBlogApiUrl(), 'tags')}${query ? `?${query}` : ''}`;
   const res = await fetch(url);

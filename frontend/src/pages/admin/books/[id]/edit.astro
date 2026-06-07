@@ -3,10 +3,11 @@ import AdminLayout from '@components/admin/AdminLayout.astro'
 import { adminGetBook } from '../../../../lib/admin-api'
 
 const { id } = Astro.params
+if (!id) return Astro.redirect('/admin/books')
 
 let book: Awaited<ReturnType<typeof adminGetBook>> | null = null
 try {
-  book = await adminGetBook(id!)
+  book = await adminGetBook(id)
 } catch {
   return Astro.redirect('/admin/books')
 }

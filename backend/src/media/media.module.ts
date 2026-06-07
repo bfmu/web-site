@@ -22,4 +22,3 @@ import { Post, PostSchema } from '../blog/schemas/post.schema';
   exports: [MediaService, AlbumService],
 })
 export class MediaModule {}
-

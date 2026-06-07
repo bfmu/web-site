@@ -3,7 +3,8 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ChangePasswordDto {
   @ApiPropertyOptional({
-    description: 'Contraseña actual (requerida si el usuario ya tiene contraseña)',
+    description:
+      'Contraseña actual (requerida si el usuario ya tiene contraseña)',
     example: 'oldPassword123',
   })
   @IsOptional()

@@ -21,7 +21,7 @@ export function AddPhotosModal({
   onClose,
   album,
   onSuccess,
-}: AddPhotosModalProps) {
+}: AddPhotosModalProps): React.ReactElement | null {
   const [activeTab, setActiveTab] = useState<'library' | 'upload'>('library');
   const [media, setMedia] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(false);

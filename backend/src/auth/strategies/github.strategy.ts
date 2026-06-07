@@ -5,7 +5,10 @@ import { ConfigService } from '@nestjs/config';
 import { DynamicPassportService } from '../services/dynamic-passport.service';
 
 @Injectable()
-export class GithubStrategy extends PassportStrategy(Strategy, 'github') implements OnModuleInit {
+export class GithubStrategy
+  extends PassportStrategy(Strategy, 'github')
+  implements OnModuleInit
+{
   constructor(
     private configService: ConfigService,
     private dynamicPassport: DynamicPassportService,
@@ -27,7 +30,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') impleme
   async initialize() {
     try {
       const config = await this.dynamicPassport.getOAuthConfig('github');
-      
+
       if (config) {
         // Actualizar configuración de la strategy dinámicamente
         (this as any)._oauth2._clientId = config.clientID;
@@ -35,7 +38,9 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') impleme
         (this as any)._callbackURL = config.callbackURL;
         console.log('✅ GitHub OAuth strategy initialized with dynamic config');
       } else {
-        console.warn('⚠️ GitHub OAuth not configured. Login with GitHub will not work.');
+        console.warn(
+          '⚠️ GitHub OAuth not configured. Login with GitHub will not work.',
+        );
       }
     } catch (error) {
       console.error('Error initializing GitHub strategy:', error);

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactElement } from 'react';
 import { showSuccess, showError, showWarning, showInfo } from '@/lib/notifications';
 import { apiGet, apiPut, ApiException } from '../../lib/api';
 import { getBackendUrl } from '../../lib/env';
 
-export default function SpotifyIntegrationCard() {
+export default function SpotifyIntegrationCard(): ReactElement {
   const [config, setConfig] = useState<any>(null);
   // Solo mostrar loading si estamos en el cliente
   // En el servidor, no mostrar skeleton para evitar que se "congele"
@@ -37,11 +37,10 @@ export default function SpotifyIntegrationCard() {
     console.log('✅ SpotifyIntegrationCard: Running on client, iniciando carga...');
     
     let isMounted = true;
-    let timeoutId: NodeJS.Timeout;
     let loadingFinished = false;
-    
+
         // Timeout de seguridad para evitar que se quede cargando indefinidamente
-        timeoutId = setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           if (isMounted && !loadingFinished) {
             console.warn('⏱️ Timeout al cargar configuración de Spotify - forzando carga del formulario');
             loadingFinished = true;
@@ -168,7 +167,7 @@ export default function SpotifyIntegrationCard() {
           showError('⚠️ No tienes permisos. Por favor, cierra sesión y vuelve a iniciar sesión para obtener un token nuevo.');
         }
       } else {
-        showError(`Error de conexión: ${error.message || 'No se pudo conectar con el servidor'}`);
+        showError(`Error de conexión: ${(error as Error).message || 'No se pudo conectar con el servidor'}`);
       }
       
       // Siempre inicializar con valores por defecto para que el formulario se muestre

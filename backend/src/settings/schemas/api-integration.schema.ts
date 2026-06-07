@@ -42,4 +42,5 @@ export class ApiIntegration {
   updatedAt?: Date;
 }
 
-export const ApiIntegrationSchema = SchemaFactory.createForClass(ApiIntegration);
+export const ApiIntegrationSchema =
+  SchemaFactory.createForClass(ApiIntegration);

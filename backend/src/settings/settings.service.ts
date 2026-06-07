@@ -3,10 +3,22 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter } from 'events';
-import { OAuthProvider, OAuthProviderDocument } from './schemas/oauth-provider.schema';
-import { ApiIntegration, ApiIntegrationDocument } from './schemas/api-integration.schema';
-import { UpdateOAuthProviderDto, OAuthProviderResponseDto } from './dto/oauth-provider.dto';
-import { UpdateApiIntegrationDto, ApiIntegrationResponseDto } from './dto/api-integration.dto';
+import {
+  OAuthProvider,
+  OAuthProviderDocument,
+} from './schemas/oauth-provider.schema';
+import {
+  ApiIntegration,
+  ApiIntegrationDocument,
+} from './schemas/api-integration.schema';
+import {
+  UpdateOAuthProviderDto,
+  OAuthProviderResponseDto,
+} from './dto/oauth-provider.dto';
+import {
+  UpdateApiIntegrationDto,
+  ApiIntegrationResponseDto,
+} from './dto/api-integration.dto';
 import { EncryptionService } from './encryption.service';
 
 @Injectable()
@@ -14,8 +26,10 @@ export class SettingsService {
   private eventEmitter = new EventEmitter();
 
   constructor(
-    @InjectModel(OAuthProvider.name) private oauthProviderModel: Model<OAuthProviderDocument>,
-    @InjectModel(ApiIntegration.name) private apiIntegrationModel: Model<ApiIntegrationDocument>,
+    @InjectModel(OAuthProvider.name)
+    private oauthProviderModel: Model<OAuthProviderDocument>,
+    @InjectModel(ApiIntegration.name)
+    private apiIntegrationModel: Model<ApiIntegrationDocument>,
     private encryptionService: EncryptionService,
     private configService: ConfigService,
   ) {}
@@ -26,10 +40,12 @@ export class SettingsService {
    * Obtiene la configuración de un OAuth provider
    * Si existe en DB, la usa; si no, intenta leer de variables de entorno
    */
-  async getOAuthConfig(provider: string): Promise<OAuthProviderResponseDto | null> {
+  async getOAuthConfig(
+    provider: string,
+  ): Promise<OAuthProviderResponseDto | null> {
     try {
       const config = await this.oauthProviderModel.findOne({ provider });
-      
+
       if (config) {
         return {
           provider: config.provider,
@@ -37,7 +53,9 @@ export class SettingsService {
           callbackUrl: config.callbackUrl,
           enabled: config.enabled,
           source: 'database',
-          hasClientSecret: !!(config.clientSecret && config.clientSecret.length > 0),
+          hasClientSecret: !!(
+            config.clientSecret && config.clientSecret.length > 0
+          ),
           updatedAt: config.updatedAt,
           createdAt: config.createdAt,
         };
@@ -58,7 +76,7 @@ export class SettingsService {
   async getOAuthCredentials(provider: string): Promise<any> {
     try {
       const config = await this.oauthProviderModel.findOne({ provider });
-      
+
       if (config && config.enabled) {
         return {
           clientID: config.clientId,
@@ -71,7 +89,7 @@ export class SettingsService {
       // Fallback a variables de entorno
       const envPrefix = provider.toUpperCase();
       const clientId = this.configService.get(`${envPrefix}_CLIENT_ID`);
-      
+
       if (clientId) {
         return {
           clientID: clientId,
@@ -93,14 +111,16 @@ export class SettingsService {
    */
   async listOAuthProviders(): Promise<OAuthProviderResponseDto[]> {
     const configs = await this.oauthProviderModel.find();
-    
-    return configs.map(config => ({
+
+    return configs.map((config) => ({
       provider: config.provider,
       clientId: config.clientId,
       callbackUrl: config.callbackUrl,
       enabled: config.enabled,
       source: 'database',
-      hasClientSecret: !!(config.clientSecret && config.clientSecret.length > 0),
+      hasClientSecret: !!(
+        config.clientSecret && config.clientSecret.length > 0
+      ),
       updatedAt: config.updatedAt,
       createdAt: config.createdAt,
     }));
@@ -118,7 +138,9 @@ export class SettingsService {
 
     // Encriptar el secret si se proporciona
     if (dto.clientSecret) {
-      updateData.clientSecret = this.encryptionService.encrypt(dto.clientSecret);
+      updateData.clientSecret = this.encryptionService.encrypt(
+        dto.clientSecret,
+      );
     }
 
     const config = await this.oauthProviderModel.findOneAndUpdate(
@@ -136,7 +158,9 @@ export class SettingsService {
       callbackUrl: config.callbackUrl,
       enabled: config.enabled,
       source: 'database',
-      hasClientSecret: !!(config.clientSecret && config.clientSecret.length > 0),
+      hasClientSecret: !!(
+        config.clientSecret && config.clientSecret.length > 0
+      ),
       updatedAt: config.updatedAt,
       createdAt: config.createdAt,
     };
@@ -155,7 +179,7 @@ export class SettingsService {
    */
   async isOAuthEnabled(provider: string): Promise<boolean> {
     const config = await this.oauthProviderModel.findOne({ provider });
-    
+
     if (config) {
       return config.enabled;
     }
@@ -185,10 +209,12 @@ export class SettingsService {
   /**
    * Obtiene la configuración de una integración de API
    */
-  async getIntegrationConfig(service: string): Promise<ApiIntegrationResponseDto | null> {
+  async getIntegrationConfig(
+    service: string,
+  ): Promise<ApiIntegrationResponseDto | null> {
     try {
       const config = await this.apiIntegrationModel.findOne({ service });
-      
+
       if (config) {
         return {
           service: config.service,
@@ -219,12 +245,14 @@ export class SettingsService {
   async getIntegrationCredentials(service: string): Promise<any> {
     try {
       const config = await this.apiIntegrationModel.findOne({ service });
-      
+
       if (config && config.enabled) {
         return {
           clientId: config.clientId,
           clientSecret: this.encryptionService.decrypt(config.clientSecret),
-          refreshToken: config.refreshToken ? this.encryptionService.decrypt(config.refreshToken) : null,
+          refreshToken: config.refreshToken
+            ? this.encryptionService.decrypt(config.refreshToken)
+            : null,
           redirectUri: config.redirectUri,
           scopes: config.scopes,
           source: 'database',
@@ -234,7 +262,7 @@ export class SettingsService {
       // Fallback a variables de entorno
       const envPrefix = service.toUpperCase();
       const clientId = this.configService.get(`${envPrefix}_CLIENT_ID`);
-      
+
       if (clientId) {
         return {
           clientId,
@@ -248,7 +276,10 @@ export class SettingsService {
 
       return null;
     } catch (error) {
-      console.error(`Error getting integration credentials for ${service}:`, error);
+      console.error(
+        `Error getting integration credentials for ${service}:`,
+        error,
+      );
       return null;
     }
   }
@@ -258,8 +289,8 @@ export class SettingsService {
    */
   async listIntegrations(): Promise<ApiIntegrationResponseDto[]> {
     const configs = await this.apiIntegrationModel.find();
-    
-    return configs.map(config => ({
+
+    return configs.map((config) => ({
       service: config.service,
       clientId: config.clientId,
       redirectUri: config.redirectUri,
@@ -285,10 +316,14 @@ export class SettingsService {
 
     // Encriptar secrets si se proporcionan
     if (dto.clientSecret) {
-      updateData.clientSecret = this.encryptionService.encrypt(dto.clientSecret);
+      updateData.clientSecret = this.encryptionService.encrypt(
+        dto.clientSecret,
+      );
     }
     if (dto.refreshToken) {
-      updateData.refreshToken = this.encryptionService.encrypt(dto.refreshToken);
+      updateData.refreshToken = this.encryptionService.encrypt(
+        dto.refreshToken,
+      );
       // Actualizar fecha y estado del token cuando se guarda un nuevo refresh token
       updateData.lastTokenRefresh = new Date();
       updateData.tokenStatus = 'valid';
@@ -321,7 +356,10 @@ export class SettingsService {
   /**
    * Actualiza el estado del token de una integración
    */
-  async updateTokenStatus(service: string, status: 'valid' | 'expired' | 'invalid'): Promise<void> {
+  async updateTokenStatus(
+    service: string,
+    status: 'valid' | 'expired' | 'invalid',
+  ): Promise<void> {
     await this.apiIntegrationModel.findOneAndUpdate(
       { service },
       {
@@ -346,7 +384,7 @@ export class SettingsService {
    */
   async isIntegrationEnabled(service: string): Promise<boolean> {
     const config = await this.apiIntegrationModel.findOne({ service });
-    
+
     if (config) {
       return config.enabled;
     }
@@ -389,7 +427,9 @@ export class SettingsService {
 
   // ============ Helpers privados ============
 
-  private getOAuthConfigFromEnv(provider: string): OAuthProviderResponseDto | null {
+  private getOAuthConfigFromEnv(
+    provider: string,
+  ): OAuthProviderResponseDto | null {
     const envPrefix = provider.toUpperCase();
     const clientId = this.configService.get(`${envPrefix}_CLIENT_ID`);
 
@@ -409,7 +449,9 @@ export class SettingsService {
     };
   }
 
-  private getIntegrationConfigFromEnv(service: string): ApiIntegrationResponseDto | null {
+  private getIntegrationConfigFromEnv(
+    service: string,
+  ): ApiIntegrationResponseDto | null {
     const envPrefix = service.toUpperCase();
     const clientId = this.configService.get(`${envPrefix}_CLIENT_ID`);
 

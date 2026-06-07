@@ -18,7 +18,9 @@ export class HomepageSectionConfig {
   config: Record<string, unknown>;
 }
 
-export const HomepageSectionConfigSchema = SchemaFactory.createForClass(HomepageSectionConfig);
+export const HomepageSectionConfigSchema = SchemaFactory.createForClass(
+  HomepageSectionConfig,
+);
 
 @Schema({ timestamps: true, collection: 'homepage_config' })
 export class HomepageConfig {
@@ -29,4 +31,5 @@ export class HomepageConfig {
   createdAt?: Date;
 }
 
-export const HomepageConfigSchema = SchemaFactory.createForClass(HomepageConfig);
+export const HomepageConfigSchema =
+  SchemaFactory.createForClass(HomepageConfig);

@@ -1,7 +1,13 @@
 import { Controller, Post, Get, Body, Req, UseGuards } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Request } from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiBody,
+} from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
 import { TrackPageViewDto } from './dto/track-page-view.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -24,12 +30,7 @@ export class AnalyticsController {
     const userAgent = req.get('User-Agent');
     const referrer = dto.referrer ?? req.get('Referer') ?? undefined;
 
-    await this.analyticsService.track(
-      dto.path,
-      ip,
-      userAgent,
-      referrer,
-    );
+    await this.analyticsService.track(dto.path, ip, userAgent, referrer);
 
     return { ok: true };
   }
@@ -37,7 +38,9 @@ export class AnalyticsController {
   @Get('stats')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Obtener estadísticas de analytics (requiere admin)' })
+  @ApiOperation({
+    summary: 'Obtener estadísticas de analytics (requiere admin)',
+  })
   @ApiResponse({ status: 200, description: 'Estadísticas de visitas' })
   async getStats() {
     return this.analyticsService.getStats();

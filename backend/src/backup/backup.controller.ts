@@ -16,7 +16,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
-const MAX_BACKUP_SIZE = Number(process.env.BACKUP_MAX_SIZE) || 2 * 1024 * 1024 * 1024;
+const MAX_BACKUP_SIZE =
+  Number(process.env.BACKUP_MAX_SIZE) || 2 * 1024 * 1024 * 1024;
 
 @Controller('backup')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -47,10 +48,16 @@ export class BackupController {
       limits: { fileSize: MAX_BACKUP_SIZE },
     }),
   )
-  async validate(
-    @UploadedFile() file: Express.Multer.File,
-  ): Promise<{ valid: boolean; metadata?: any; warnings: string[]; error?: string }> {
-    this.logger.log('validate called, file=' + (file ? `${file.originalname} ${file.size}b` : 'null'));
+  async validate(@UploadedFile() file: Express.Multer.File): Promise<{
+    valid: boolean;
+    metadata?: any;
+    warnings: string[];
+    error?: string;
+  }> {
+    this.logger.log(
+      'validate called, file=' +
+        (file ? `${file.originalname} ${file.size}b` : 'null'),
+    );
     if (!file) {
       throw new BadRequestException('No se proporcionó ningún archivo.');
     }
@@ -67,10 +74,16 @@ export class BackupController {
       limits: { fileSize: MAX_BACKUP_SIZE },
     }),
   )
-  async restore(
-    @UploadedFile() file: Express.Multer.File,
-  ): Promise<{ success: boolean; restored: any; preRestoreBackupPath?: string; error?: string }> {
-    this.logger.log('restore called, file=' + (file ? `${file.originalname} ${file.size}b` : 'null'));
+  async restore(@UploadedFile() file: Express.Multer.File): Promise<{
+    success: boolean;
+    restored: any;
+    preRestoreBackupPath?: string;
+    error?: string;
+  }> {
+    this.logger.log(
+      'restore called, file=' +
+        (file ? `${file.originalname} ${file.size}b` : 'null'),
+    );
     if (!file) {
       throw new BadRequestException('No se proporcionó ningún archivo.');
     }

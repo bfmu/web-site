@@ -1,4 +1,12 @@
-import { Controller, Get, Put, Body, UseGuards, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Body,
+  UseGuards,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { HomepageService } from './homepage.service';
 import { UpdateHomepageDto } from './dto/update-homepage.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -13,7 +21,7 @@ export class HomepageController {
   async getConfig() {
     try {
       return await this.homepageService.getConfig();
-    } catch (error) {
+    } catch (_error) {
       throw new HttpException(
         'Failed to get homepage config',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -25,8 +33,11 @@ export class HomepageController {
   @UseGuards(JwtAuthGuard, AdminGuard)
   async updateConfig(@Body() dto: UpdateHomepageDto, @CurrentUser() user: any) {
     try {
-      return await this.homepageService.updateConfig(dto, user?.sub ?? user?._id);
-    } catch (error) {
+      return await this.homepageService.updateConfig(
+        dto,
+        user?.sub ?? user?._id,
+      );
+    } catch (_error) {
       throw new HttpException(
         'Failed to update homepage config',
         HttpStatus.INTERNAL_SERVER_ERROR,

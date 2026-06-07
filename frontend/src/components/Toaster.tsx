@@ -1,9 +1,10 @@
+import type { ReactElement } from 'react';
 import { Toaster as SonnerToaster } from 'sonner';
 
 const toastClassBase =
   'flex items-center gap-3 rounded-lg px-4 py-3 shadow-lg max-w-[400px] border-l-4';
 
-export function Toaster() {
+export function Toaster(): ReactElement {
   return (
     <SonnerToaster
       position="bottom-right"

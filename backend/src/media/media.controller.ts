@@ -61,9 +61,14 @@ export class MediaController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Subir archivo y crear registro de media (requiere autenticación)' })
+  @ApiOperation({
+    summary: 'Subir archivo y crear registro de media (requiere autenticación)',
+  })
   @ApiResponse({ status: 201, description: 'Media creado correctamente' })
-  @ApiResponse({ status: 429, description: 'Demasiados uploads, esperá 1 minuto' })
+  @ApiResponse({
+    status: 429,
+    description: 'Demasiados uploads, esperá 1 minuto',
+  })
   async upload(@UploadedFile() file: any, @Body() body?: any) {
     if (!file) {
       this.logger.warn('Upload attempt without file');
@@ -71,16 +76,28 @@ export class MediaController {
     }
 
     // Validar tipo de archivo
-    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
+    ];
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      this.logger.warn(`Upload rejected: invalid mimetype ${file.mimetype} for ${file.originalname}`);
-      throw new BadRequestException('El archivo debe ser una imagen (JPEG, PNG, GIF, WEBP, SVG)');
+      this.logger.warn(
+        `Upload rejected: invalid mimetype ${file.mimetype} for ${file.originalname}`,
+      );
+      throw new BadRequestException(
+        'El archivo debe ser una imagen (JPEG, PNG, GIF, WEBP, SVG)',
+      );
     }
 
     // Validar tamaño (máximo 100MB)
     const maxSize = 100 * 1024 * 1024; // 100MB
     if (file.size > maxSize) {
-      this.logger.warn(`Upload rejected: file too large ${file.size} bytes for ${file.originalname}`);
+      this.logger.warn(
+        `Upload rejected: file too large ${file.size} bytes for ${file.originalname}`,
+      );
       throw new BadRequestException('La imagen no puede ser mayor a 100MB');
     }
 
@@ -114,12 +131,15 @@ export class MediaController {
         width = meta.width;
         height = meta.height;
       } catch (err) {
-        this.logger.warn(`Could not extract dimensions from ${file.originalname}: ${err}`);
+        this.logger.warn(
+          `Could not extract dimensions from ${file.originalname}: ${err}`,
+        );
       }
     }
 
     // Extraer metadata del body (puede venir como objeto o como string desde FormData)
-    const isPublic = body?.isPublic === 'true' || body?.isPublic === true || false;
+    const isPublic =
+      body?.isPublic === 'true' || body?.isPublic === true || false;
     const alt = body?.alt || undefined;
     const description = body?.description || undefined;
     const albumId = body?.albumId || undefined;
@@ -137,7 +157,8 @@ export class MediaController {
       type: 'image',
       isPublic,
       alt: alt && alt.trim() ? alt.trim() : undefined,
-      description: description && description.trim() ? description.trim() : undefined,
+      description:
+        description && description.trim() ? description.trim() : undefined,
       albumId: albumId && albumId.trim() ? albumId.trim() : undefined,
     };
 
@@ -161,18 +182,31 @@ export class MediaController {
   @ApiOperation({ summary: 'Listar medios (requiere autenticación)' })
   @ApiQuery({ name: 'type', required: false, description: 'Tipo de medio' })
   @ApiQuery({ name: 'albumId', required: false, description: 'ID del álbum' })
-  @ApiQuery({ name: 'notInAlbum', required: false, description: 'Solo medios que no están en ningún álbum' })
+  @ApiQuery({
+    name: 'notInAlbum',
+    required: false,
+    description: 'Solo medios que no están en ningún álbum',
+  })
   @ApiQuery({ name: 'isPublic', required: false, description: 'Si es público' })
   @ApiQuery({ name: 'search', required: false, description: 'Búsqueda' })
   @ApiQuery({ name: 'page', required: false, description: 'Página' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Límite por página' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Límite por página',
+  })
   @ApiResponse({ status: 200, description: 'Lista de medios' })
   async findAll(@Query() query: any) {
     return this.mediaService.findAll({
       type: query.type,
       albumId: query.albumId,
       notInAlbum: query.notInAlbum === 'true',
-      isPublic: query.isPublic === 'true' ? true : query.isPublic === 'false' ? false : undefined,
+      isPublic:
+        query.isPublic === 'true'
+          ? true
+          : query.isPublic === 'false'
+            ? false
+            : undefined,
       search: query.search,
       page: query.page ? parseInt(query.page) : 1,
       limit: query.limit ? parseInt(query.limit) : 50,
@@ -181,12 +215,32 @@ export class MediaController {
 
   @Get('serve')
   @ApiOperation({ summary: 'Servir imagen optimizada (público)' })
-  @ApiQuery({ name: 'path', required: true, description: 'Ruta relativa, ej: /uploads/images/xxx.jpg' })
-  @ApiQuery({ name: 'w', required: false, description: 'Ancho máximo en píxeles' })
-  @ApiQuery({ name: 'h', required: false, description: 'Alto máximo en píxeles' })
-  @ApiQuery({ name: 'q', required: false, description: 'Calidad 1-100 (default: 80)' })
+  @ApiQuery({
+    name: 'path',
+    required: true,
+    description: 'Ruta relativa, ej: /uploads/images/xxx.jpg',
+  })
+  @ApiQuery({
+    name: 'w',
+    required: false,
+    description: 'Ancho máximo en píxeles',
+  })
+  @ApiQuery({
+    name: 'h',
+    required: false,
+    description: 'Alto máximo en píxeles',
+  })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    description: 'Calidad 1-100 (default: 80)',
+  })
   @ApiQuery({ name: 'format', required: false, description: 'webp | jpeg' })
-  @ApiQuery({ name: 'v', required: false, description: 'Cache buster (típicamente la orientación)' })
+  @ApiQuery({
+    name: 'v',
+    required: false,
+    description: 'Cache buster (típicamente la orientación)',
+  })
   @ApiResponse({ status: 200, description: 'Imagen optimizada' })
   async serve(
     @Query('path') pathParam: string,
@@ -204,7 +258,9 @@ export class MediaController {
     if (!cleanPath.startsWith('/uploads/') || cleanPath.includes('..')) {
       throw new BadRequestException('Path inválido');
     }
-    const normalizedPath = cleanPath.startsWith('/') ? cleanPath.slice(1) : cleanPath;
+    const normalizedPath = cleanPath.startsWith('/')
+      ? cleanPath.slice(1)
+      : cleanPath;
     const fullPath = path.resolve(process.cwd(), normalizedPath);
     const uploadsDir = path.resolve(process.cwd(), 'uploads');
     if (!fullPath.startsWith(uploadsDir)) {
@@ -229,7 +285,10 @@ export class MediaController {
 
     // Cache largo PERO sin `immutable` (la imagen SÍ puede cambiar al rotarla).
     // El frontend bustea con &v=<orientation> para forzar URL nueva ante cambios.
-    res.setHeader('Cache-Control', 'public, max-age=2592000, stale-while-revalidate=86400');
+    res.setHeader(
+      'Cache-Control',
+      'public, max-age=2592000, stale-while-revalidate=86400',
+    );
     res.setHeader('ETag', etag);
     res.setHeader('Vary', 'Accept');
 
@@ -247,7 +306,9 @@ export class MediaController {
     const mimeType = outputFormat === 'webp' ? 'image/webp' : 'image/jpeg';
     const cacheKey = crypto
       .createHash('sha256')
-      .update(`${cleanPath}-${userOrientation}-${width ?? 0}-${height ?? 0}-${quality}-${outputFormat}`)
+      .update(
+        `${cleanPath}-${userOrientation}-${width ?? 0}-${height ?? 0}-${quality}-${outputFormat}`,
+      )
       .digest('hex');
     const cachePath = path.join(CACHE_DIR, `${cacheKey}.${outputFormat}`);
 
@@ -258,21 +319,25 @@ export class MediaController {
     }
 
     try {
-      let pipeline = sharp(fullPath)
-        .rotate(); // Sin argumentos aplica EXIF orientation (equivale a autoOrient)
+      let pipeline = sharp(fullPath).rotate(); // Sin argumentos aplica EXIF orientation (equivale a autoOrient)
       if (userOrientation) {
         pipeline = pipeline.rotate(userOrientation);
       }
 
       const metadata = await pipeline.metadata();
-      const needsResize = (width && metadata.width && metadata.width > width) ||
+      const needsResize =
+        (width && metadata.width && metadata.width > width) ||
         (height && metadata.height && metadata.height > height);
       if (needsResize && (width || height)) {
-        pipeline = pipeline.resize(width, height, { fit: 'inside', withoutEnlargement: true });
+        pipeline = pipeline.resize(width, height, {
+          fit: 'inside',
+          withoutEnlargement: true,
+        });
       }
-      const buffer = outputFormat === 'webp'
-        ? await pipeline.webp({ quality }).toBuffer()
-        : await pipeline.jpeg({ quality }).toBuffer();
+      const buffer =
+        outputFormat === 'webp'
+          ? await pipeline.webp({ quality }).toBuffer()
+          : await pipeline.jpeg({ quality }).toBuffer();
 
       try {
         fs.writeFileSync(cachePath + '.tmp', buffer);
@@ -295,7 +360,9 @@ export class MediaController {
   @Roles('admin')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Limpiar cache de variantes procesadas (solo admin)' })
+  @ApiOperation({
+    summary: 'Limpiar cache de variantes procesadas (solo admin)',
+  })
   @ApiResponse({ status: 200, description: 'Cache eliminado' })
   clearCache(): { deleted: number } {
     if (!fs.existsSync(CACHE_DIR)) return { deleted: 0 };
@@ -332,10 +399,15 @@ export class MediaController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'editor')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Actualizar metadata del media (requiere autenticación)' })
+  @ApiOperation({
+    summary: 'Actualizar metadata del media (requiere autenticación)',
+  })
   @ApiParam({ name: 'id', description: 'ID del media' })
   @ApiResponse({ status: 200, description: 'Media actualizado' })
-  async update(@Param('id') id: string, @Body() updateMediaDto: UpdateMediaDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateMediaDto: UpdateMediaDto,
+  ) {
     return this.mediaService.update(id, updateMediaDto);
   }
 
@@ -343,7 +415,9 @@ export class MediaController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'editor')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Renombrar archivo del media (requiere autenticación)' })
+  @ApiOperation({
+    summary: 'Renombrar archivo del media (requiere autenticación)',
+  })
   @ApiParam({ name: 'id', description: 'ID del media' })
   @ApiResponse({ status: 200, description: 'Media renombrado' })
   async rename(@Param('id') id: string, @Body() body: { filename: string }) {
@@ -372,11 +446,13 @@ export class MediaController {
   @ApiOperation({ summary: 'Mover media a álbum (requiere autenticación)' })
   @ApiParam({ name: 'id', description: 'ID del media' })
   @ApiResponse({ status: 200, description: 'Media movido a álbum' })
-  async moveToAlbum(@Param('id') id: string, @Body() body: { albumId: string }) {
+  async moveToAlbum(
+    @Param('id') id: string,
+    @Body() body: { albumId: string },
+  ) {
     if (!body.albumId) {
       throw new BadRequestException('Album ID is required');
     }
     return this.mediaService.moveToAlbum(id, body.albumId);
   }
 }
-

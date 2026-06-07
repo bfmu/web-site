@@ -20,7 +20,7 @@ const query: PostQuery = {
   sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
 };
 
-let response;
+let response: Awaited<ReturnType<typeof getPosts>>;
 try {
   response = await getPosts(query);
 } catch (error) {

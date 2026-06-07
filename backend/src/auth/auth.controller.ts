@@ -55,7 +55,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Iniciar sesión' })
   @ApiResponse({ status: 200, description: 'Login exitoso' })
-  @ApiResponse({ status: 429, description: 'Demasiados intentos, esperá 1 minuto' })
+  @ApiResponse({
+    status: 429,
+    description: 'Demasiados intentos, esperá 1 minuto',
+  })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
@@ -72,7 +75,7 @@ export class AuthController {
   async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
     // Verificar si es un test
     const isTest = req.query.test === 'true';
-    
+
     if (isTest) {
       // En modo test, enviar mensaje al window.opener (popup)
       return res.send(`
@@ -94,7 +97,7 @@ export class AuthController {
         </html>
       `);
     }
-    
+
     // Flujo normal de login
     const result = await this.authService.googleLogin(req.user);
 
@@ -119,7 +122,7 @@ export class AuthController {
   async githubAuthRedirect(@Req() req: Request, @Res() res: Response) {
     // Verificar si es un test
     const isTest = req.query.test === 'true';
-    
+
     if (isTest) {
       // En modo test, enviar mensaje al window.opener (popup)
       return res.send(`
@@ -141,7 +144,7 @@ export class AuthController {
         </html>
       `);
     }
-    
+
     // Flujo normal de login
     const result = await this.authService.githubLogin(req.user);
 
@@ -192,11 +195,18 @@ export class AuthController {
   @Post('create-super-admin')
   @ApiOperation({ summary: 'Crear super administrador con clave secreta' })
   async createSuperAdmin(
-    @Body() body: { email: string; password: string; name: string; secretKey: string },
+    @Body()
+    body: {
+      email: string;
+      password: string;
+      name: string;
+      secretKey: string;
+    },
   ) {
     // Clave secreta para crear el primer admin (configurable via .env)
-    const SUPER_ADMIN_SECRET = process.env.SUPER_ADMIN_SECRET || 'mi_clave_super_secreta_2024';
-    
+    const SUPER_ADMIN_SECRET =
+      process.env.SUPER_ADMIN_SECRET || 'mi_clave_super_secreta_2024';
+
     if (body.secretKey !== SUPER_ADMIN_SECRET) {
       throw new UnauthorizedException('Clave secreta incorrecta');
     }
@@ -213,7 +223,7 @@ export class AuthController {
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar todos los usuarios (solo admins)' })
-  async getAllUsers(@CurrentUser() currentUser: any) {
+  async getAllUsers(@CurrentUser() _currentUser: any) {
     return this.authService.getAllUsers();
   }
 
@@ -239,7 +249,11 @@ export class AuthController {
     @Body() body: { userId: string; newRole: 'user' | 'admin' | 'editor' },
     @CurrentUser() currentUser: any,
   ) {
-    return this.authService.changeUserRole(body.userId, body.newRole, currentUser.email);
+    return this.authService.changeUserRole(
+      body.userId,
+      body.newRole,
+      currentUser.email,
+    );
   }
 
   @Post('toggle-user-status')
@@ -270,7 +284,9 @@ export class AuthController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Subir avatar del usuario (requiere autenticación)' })
+  @ApiOperation({
+    summary: 'Subir avatar del usuario (requiere autenticación)',
+  })
   @ApiResponse({ status: 201, description: 'Avatar subido correctamente' })
   async uploadAvatar(@UploadedFile() file: any, @CurrentUser() user: any) {
     if (!file) {
@@ -279,7 +295,9 @@ export class AuthController {
 
     // Validar tipo de archivo
     if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-      throw new BadRequestException('Solo se permiten archivos de imagen (jpg, jpeg, png, gif, webp)');
+      throw new BadRequestException(
+        'Solo se permiten archivos de imagen (jpg, jpeg, png, gif, webp)',
+      );
     }
 
     // Validar tamaño (máximo 5MB para avatares)
@@ -320,8 +338,13 @@ export class AuthController {
   @Post('change-password')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Cambiar/establecer contraseña del usuario autenticado' })
-  @ApiResponse({ status: 200, description: 'Contraseña actualizada exitosamente' })
+  @ApiOperation({
+    summary: 'Cambiar/establecer contraseña del usuario autenticado',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Contraseña actualizada exitosamente',
+  })
   async changePassword(
     @CurrentUser() user: any,
     @Body() changePasswordDto: ChangePasswordDto,

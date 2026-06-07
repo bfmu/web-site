@@ -85,7 +85,7 @@ function VisualizerBars({ playing }: { playing: boolean }) {
   );
 }
 
-export default function SpotifyChip() {
+export default function SpotifyChip(): React.ReactElement | null {
   const [data, setData] = useState<NowPlayingData | null>(null);
 
   useEffect(() => {

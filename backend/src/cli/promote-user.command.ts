@@ -12,7 +12,7 @@ program
   .requiredOption('-e, --email <email>', 'Email del usuario a promover')
   .action(async (options) => {
     console.log('🚀 Iniciando promoción de usuario...\n');
-    
+
     try {
       const app = await NestFactory.createApplicationContext(AppModule);
       const authService = app.get(AuthService);
@@ -54,7 +54,3 @@ if (require.main === module) {
 }
 
 export { program };
-
-
-
-

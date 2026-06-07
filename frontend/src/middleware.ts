@@ -4,11 +4,12 @@
  * Sin cookie de sesión = 404 (no mostrar información ni hacer peticiones al backend)
  */
 
+import type { MiddlewareHandler } from 'astro';
 import { defineMiddleware } from 'astro:middleware';
 
 const AUTH_SESSION_COOKIE = 'auth_session';
 
-export const onRequest = defineMiddleware(async (context, next) => {
+export const onRequest: MiddlewareHandler = defineMiddleware(async (context, next) => {
   const { url } = context;
 
   // Solo proteger rutas que empiecen con /admin

@@ -67,11 +67,11 @@ export class SpotifyController {
     try {
       // Recargar configuración antes de intercambiar tokens (por si acaso cambió)
       await this.spotifyService.reloadConfiguration();
-      
+
       const tokens = await this.spotifyService.exchangeCodeForTokens(code);
-      
+
       console.log('✅ Tokens received from Spotify, sending to frontend...');
-      
+
       // Enviar tokens al opener y cerrar ventana
       return res.send(`
         <!DOCTYPE html>
@@ -234,7 +234,8 @@ export class SpotifyController {
             name: t.name,
             artist: t.artists?.map((a: any) => a.name).join(', '),
             album: t.album?.name,
-            coverUrl: t.album?.images?.[1]?.url ?? t.album?.images?.[0]?.url ?? null,
+            coverUrl:
+              t.album?.images?.[1]?.url ?? t.album?.images?.[0]?.url ?? null,
             spotifyUrl: t.external_urls?.spotify ?? null,
           },
         };
@@ -249,7 +250,8 @@ export class SpotifyController {
             name: t.name,
             artist: t.artists?.map((a: any) => a.name).join(', '),
             album: t.album?.name,
-            coverUrl: t.album?.images?.[1]?.url ?? t.album?.images?.[0]?.url ?? null,
+            coverUrl:
+              t.album?.images?.[1]?.url ?? t.album?.images?.[0]?.url ?? null,
             spotifyUrl: t.external_urls?.spotify ?? null,
           },
         };

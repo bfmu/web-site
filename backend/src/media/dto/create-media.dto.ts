@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsBoolean, IsMimeType } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateMediaDto {
@@ -6,15 +6,24 @@ export class CreateMediaDto {
   @IsString()
   filename: string;
 
-  @ApiProperty({ example: 'Mi Imagen.jpg', description: 'Nombre original del archivo' })
+  @ApiProperty({
+    example: 'Mi Imagen.jpg',
+    description: 'Nombre original del archivo',
+  })
   @IsString()
   originalName: string;
 
-  @ApiProperty({ example: '/uploads/images/image.jpg', description: 'Ruta relativa del archivo' })
+  @ApiProperty({
+    example: '/uploads/images/image.jpg',
+    description: 'Ruta relativa del archivo',
+  })
   @IsString()
   path: string;
 
-  @ApiProperty({ example: 'http://localhost:4000/uploads/images/image.jpg', description: 'URL completa del archivo' })
+  @ApiProperty({
+    example: 'http://localhost:4000/uploads/images/image.jpg',
+    description: 'URL completa del archivo',
+  })
   @IsString()
   url: string;
 
@@ -26,22 +35,34 @@ export class CreateMediaDto {
   @IsNumber()
   size: number;
 
-  @ApiPropertyOptional({ example: 1920, description: 'Ancho de la imagen en píxeles' })
+  @ApiPropertyOptional({
+    example: 1920,
+    description: 'Ancho de la imagen en píxeles',
+  })
   @IsOptional()
   @IsNumber()
   width?: number;
 
-  @ApiPropertyOptional({ example: 1080, description: 'Alto de la imagen en píxeles' })
+  @ApiPropertyOptional({
+    example: 1080,
+    description: 'Alto de la imagen en píxeles',
+  })
   @IsOptional()
   @IsNumber()
   height?: number;
 
-  @ApiPropertyOptional({ example: 'image', description: 'Tipo de medio (image, video, document)' })
+  @ApiPropertyOptional({
+    example: 'image',
+    description: 'Tipo de medio (image, video, document)',
+  })
   @IsOptional()
   @IsString()
   type?: string;
 
-  @ApiPropertyOptional({ example: false, description: 'Si está en galería pública' })
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Si está en galería pública',
+  })
   @IsOptional()
   @IsBoolean()
   isPublic?: boolean;
@@ -51,12 +72,18 @@ export class CreateMediaDto {
   @IsString()
   albumId?: string;
 
-  @ApiPropertyOptional({ example: 'Descripción de la imagen', description: 'Texto alternativo' })
+  @ApiPropertyOptional({
+    example: 'Descripción de la imagen',
+    description: 'Texto alternativo',
+  })
   @IsOptional()
   @IsString()
   alt?: string;
 
-  @ApiPropertyOptional({ example: 'Descripción detallada', description: 'Descripción del medio' })
+  @ApiPropertyOptional({
+    example: 'Descripción detallada',
+    description: 'Descripción del medio',
+  })
   @IsOptional()
   @IsString()
   description?: string;
@@ -66,9 +93,11 @@ export class CreateMediaDto {
   @IsNumber()
   order?: number;
 
-  @ApiPropertyOptional({ example: 0, description: 'Rotación en grados: 0, 90, 180, 270' })
+  @ApiPropertyOptional({
+    example: 0,
+    description: 'Rotación en grados: 0, 90, 180, 270',
+  })
   @IsOptional()
   @IsNumber()
   orientation?: number;
 }
-

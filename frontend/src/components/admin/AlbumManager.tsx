@@ -239,7 +239,7 @@ function SortableImageCard({
   );
 }
 
-export default function AlbumManager() {
+export default function AlbumManager(): React.ReactElement {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -310,6 +310,7 @@ export default function AlbumManager() {
     return title
       .toLowerCase()
       .normalize('NFD')
+      // biome-ignore lint/suspicious/noMisleadingCharacterClass: intentional Unicode range for combining diacriticals
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');

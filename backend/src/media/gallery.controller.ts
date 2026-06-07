@@ -1,15 +1,5 @@
-import {
-  Controller,
-  Get,
-  Param,
-  NotFoundException,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-} from '@nestjs/swagger';
+import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { AlbumService } from './album.service';
 import { MediaService } from './media.service';
 
@@ -46,18 +36,20 @@ export class GalleryController {
   @ApiResponse({ status: 200, description: 'Álbum encontrado' })
   async getPublicAlbum(@Param('slug') slug: string) {
     const album = await this.albumService.findOne(slug);
-    
+
     // Verificar que sea público
     if (!album.isPublic) {
       throw new NotFoundException(`Album with slug "${slug}" not found`);
     }
 
     // Incrementar contador de vistas (sin esperar para no bloquear la respuesta)
-    this.albumService.update(slug, {
-      viewCount: (album.viewCount || 0) + 1,
-    } as any).catch((err) => {
-      console.error('Error updating view count:', err);
-    });
+    this.albumService
+      .update(slug, {
+        viewCount: (album.viewCount || 0) + 1,
+      } as any)
+      .catch((err) => {
+        console.error('Error updating view count:', err);
+      });
 
     return album;
   }
@@ -68,7 +60,7 @@ export class GalleryController {
   @ApiResponse({ status: 200, description: 'Imagen encontrada' })
   async getPublicImage(@Param('id') id: string) {
     const media = await this.mediaService.findOne(id);
-    
+
     // Verificar que sea público
     if (!media.isPublic) {
       throw new NotFoundException(`Image with ID "${id}" not found`);
@@ -77,4 +69,3 @@ export class GalleryController {
     return media;
   }
 }
-

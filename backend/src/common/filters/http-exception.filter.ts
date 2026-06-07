@@ -29,8 +29,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
           ? exception.message
           : 'Internal server error';
 
-    const stack =
-      exception instanceof Error ? exception.stack : undefined;
+    const stack = exception instanceof Error ? exception.stack : undefined;
 
     this.logger.error(
       `${request.method} ${request.url} - ${status} - ${message}`,

@@ -44,4 +44,3 @@ AlbumSchema.index({ isPublic: 1 });
 AlbumSchema.index({ publishedAt: -1 });
 AlbumSchema.index({ createdAt: -1 });
 AlbumSchema.index({ order: 1 });
-

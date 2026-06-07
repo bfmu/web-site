@@ -53,46 +53,66 @@ export class AnalyticsService {
 
   async getStats(): Promise<AnalyticsStats> {
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
     const startOfLast24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    const [totalPageViews, uniqueVisitors, viewsToday, topPages, topLocations, recentVisits] =
-      await Promise.all([
-        this.pageViewModel.countDocuments(),
-        this.pageViewModel.distinct('ip', { createdAt: { $gte: startOfLast24h } }).then((ips) => ips.length),
-        this.pageViewModel.countDocuments({ createdAt: { $gte: startOfToday } }),
-        this.pageViewModel
-          .aggregate<{ path: string; count: number }>([
-            { $group: { _id: '$path', count: { $sum: 1 } } },
-            { $sort: { count: -1 } },
-            { $limit: 10 },
-            { $project: { path: '$_id', count: 1, _id: 0 } },
-          ])
-          .exec(),
-        this.pageViewModel
-          .aggregate<{ country?: string; city?: string; count: number }>([
-            { $match: { country: { $exists: true, $ne: null } } },
-            { $group: { _id: { country: '$country', city: '$city' }, count: { $sum: 1 } } },
-            { $sort: { count: -1 } },
-            { $limit: 10 },
-            {
-              $project: {
-                country: '$_id.country',
-                city: '$_id.city',
-                count: 1,
-                _id: 0,
-              },
+    const [
+      totalPageViews,
+      uniqueVisitors,
+      viewsToday,
+      topPages,
+      topLocations,
+      recentVisits,
+    ] = await Promise.all([
+      this.pageViewModel.countDocuments(),
+      this.pageViewModel
+        .distinct('ip', { createdAt: { $gte: startOfLast24h } })
+        .then((ips) => ips.length),
+      this.pageViewModel.countDocuments({ createdAt: { $gte: startOfToday } }),
+      this.pageViewModel
+        .aggregate<{
+          path: string;
+          count: number;
+        }>([
+          { $group: { _id: '$path', count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+          { $limit: 10 },
+          { $project: { path: '$_id', count: 1, _id: 0 } },
+        ])
+        .exec(),
+      this.pageViewModel
+        .aggregate<{ country?: string; city?: string; count: number }>([
+          { $match: { country: { $exists: true, $ne: null } } },
+          {
+            $group: {
+              _id: { country: '$country', city: '$city' },
+              count: { $sum: 1 },
             },
-          ])
-          .exec(),
-        this.pageViewModel
-          .find()
-          .sort({ createdAt: -1 })
-          .limit(20)
-          .lean()
-          .select('ip country city path createdAt')
-          .exec(),
-      ]);
+          },
+          { $sort: { count: -1 } },
+          { $limit: 10 },
+          {
+            $project: {
+              country: '$_id.country',
+              city: '$_id.city',
+              count: 1,
+              _id: 0,
+            },
+          },
+        ])
+        .exec(),
+      this.pageViewModel
+        .find()
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .lean()
+        .select('ip country city path createdAt')
+        .exec(),
+    ]);
 
     return {
       totalPageViews,

@@ -18,7 +18,7 @@ const SECTION_LABELS: Record<string, string> = {
   'now-footer': 'Footer /now (reloj · esta semana · contacto)',
 };
 
-export function HomepageEditor() {
+export function HomepageEditor(): React.ReactElement {
   const [sections, setSections] = useState<HomepageSectionConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

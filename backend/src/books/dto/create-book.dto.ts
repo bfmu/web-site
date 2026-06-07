@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsOptional, IsDateString, IsInt, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsDateString,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateBookDto {
@@ -12,7 +20,9 @@ export class CreateBookDto {
   @IsNotEmpty()
   author: string;
 
-  @ApiPropertyOptional({ description: 'URL de la portada (media library o externa)' })
+  @ApiPropertyOptional({
+    description: 'URL de la portada (media library o externa)',
+  })
   @IsOptional()
   @IsString()
   cover?: string;

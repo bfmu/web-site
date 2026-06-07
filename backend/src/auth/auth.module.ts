@@ -27,7 +27,13 @@ import { SettingsModule } from '../settings/settings.module';
     SettingsModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy, GithubStrategy, DynamicPassportService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    GoogleStrategy,
+    GithubStrategy,
+    DynamicPassportService,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

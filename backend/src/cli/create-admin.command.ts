@@ -70,7 +70,7 @@ program
 
       // Crear el admin
       console.log('\n⏳ Creando administrador...');
-      
+
       const result = await authService.createAdmin({
         name,
         email,

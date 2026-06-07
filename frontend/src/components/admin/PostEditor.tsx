@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { filterSuggestionItems } from '@blocknote/core/extensions';
 import {
   useCreateBlockNote,
@@ -44,7 +45,7 @@ export function PostEditor({
   content,
   onChange,
   placeholder = 'Escribe tu contenido aquí...',
-}: PostEditorProps) {
+}: PostEditorProps): ReactElement {
   const [showImageModal, setShowImageModal] = useState(false);
   const hasLoadedInitial = useRef(false);
   const isDark = useIsDarkMode();

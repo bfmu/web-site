@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
@@ -107,7 +111,10 @@ export class BlogService {
     ]);
 
     console.log(`Found ${posts.length} posts, total: ${total}`);
-    console.log('Posts drafts status:', posts.map(p => ({ slug: p.slug, draft: p.draft })));
+    console.log(
+      'Posts drafts status:',
+      posts.map((p) => ({ slug: p.slug, draft: p.draft })),
+    );
 
     // Enriquecer con excerpt calculado si no hay descripción
     const enriched = posts.map((p: any) => {
@@ -248,7 +255,9 @@ export class BlogService {
    * Elimina una categoría de todos los posts que la usan (la deja vacía).
    * Útil para "eliminar" categorías no deseadas.
    */
-  async removeCategoryFromAllPosts(category: string): Promise<{ modifiedCount: number }> {
+  async removeCategoryFromAllPosts(
+    category: string,
+  ): Promise<{ modifiedCount: number }> {
     const decoded = decodeURIComponent(category.trim());
     if (!decoded) {
       throw new BadRequestException('Category name is required');
@@ -317,9 +326,12 @@ export class BlogService {
     return uniqueSlug;
   }
 
-  async validateSlug(slug: string, currentSlug?: string): Promise<{ isValid: boolean; suggestedSlug?: string }> {
+  async validateSlug(
+    slug: string,
+    currentSlug?: string,
+  ): Promise<{ isValid: boolean; suggestedSlug?: string }> {
     const exists = await this.checkSlugExists(slug);
-    
+
     // Si es el mismo slug del post actual (en edición), es válido
     if (currentSlug && slug === currentSlug) {
       return { isValid: true };

@@ -23,7 +23,7 @@ function getApiUrl(): string {
   return `${base.replace(/\/$/, '')}/api/spotify/now-playing`;
 }
 
-export default function NowListening() {
+export default function NowListening(): React.ReactElement | null {
   const [data, setData] = useState<NowPlayingData | null>(null);
 
   useEffect(() => {

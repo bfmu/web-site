@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Album, AlbumDocument } from './schemas/album.schema';
@@ -17,12 +22,17 @@ export class AlbumService {
 
   async create(createAlbumDto: CreateAlbumDto): Promise<Album> {
     // Verificar que el slug no exista
-    const existing = await this.albumModel.findOne({ slug: createAlbumDto.slug }).exec();
+    const existing = await this.albumModel
+      .findOne({ slug: createAlbumDto.slug })
+      .exec();
     if (existing) {
-      throw new BadRequestException(`Album with slug "${createAlbumDto.slug}" already exists`);
+      throw new BadRequestException(
+        `Album with slug "${createAlbumDto.slug}" already exists`,
+      );
     }
 
-    const images = createAlbumDto.images?.map((id) => new Types.ObjectId(id)) || [];
+    const images =
+      createAlbumDto.images?.map((id) => new Types.ObjectId(id)) || [];
     const maxOrder = await this.albumModel
       .findOne()
       .sort({ order: -1 })
@@ -45,7 +55,11 @@ export class AlbumService {
     return album.save();
   }
 
-  async findAll(query: { isPublic?: boolean; page?: number; limit?: number }): Promise<{
+  async findAll(query: {
+    isPublic?: boolean;
+    page?: number;
+    limit?: number;
+  }): Promise<{
     albums: Album[];
     pagination: any;
   }> {
@@ -97,7 +111,9 @@ export class AlbumService {
     const updateData: any = { ...updateAlbumDto };
 
     if (updateAlbumDto.images) {
-      updateData.images = updateAlbumDto.images.map((id) => new Types.ObjectId(id));
+      updateData.images = updateAlbumDto.images.map(
+        (id) => new Types.ObjectId(id),
+      );
     }
 
     if (updateAlbumDto.publishedAt) {
@@ -127,10 +143,9 @@ export class AlbumService {
     }
 
     // Desvincular imágenes del álbum (no eliminar las imágenes)
-    await this.mediaModel.updateMany(
-      { albumId: album._id },
-      { $unset: { albumId: 1 } },
-    ).exec();
+    await this.mediaModel
+      .updateMany({ albumId: album._id }, { $unset: { albumId: 1 } })
+      .exec();
 
     // Eliminar álbum
     await this.albumModel.deleteOne({ slug }).exec();
@@ -153,16 +168,16 @@ export class AlbumService {
 
     // Agregar a álbum si no está ya incluido
     if (!album.images.some((imgId) => imgId.toString() === mediaId)) {
-      await this.albumModel.findByIdAndUpdate(
-        album._id,
-        { $push: { images: new Types.ObjectId(mediaId) } },
-      ).exec();
+      await this.albumModel
+        .findByIdAndUpdate(album._id, {
+          $push: { images: new Types.ObjectId(mediaId) },
+        })
+        .exec();
 
       // Actualizar albumId en media
-      await this.mediaModel.findByIdAndUpdate(
-        mediaId,
-        { albumId: album._id },
-      ).exec();
+      await this.mediaModel
+        .findByIdAndUpdate(mediaId, { albumId: album._id })
+        .exec();
     }
 
     return this.findOne(slug);
@@ -185,16 +200,20 @@ export class AlbumService {
       return this.findOne(slug);
     }
 
-    this.logger.log(`addImagesBatch: adding ${newIds.length} images to album ${slug}`);
-    await this.albumModel.findByIdAndUpdate(
-      album._id,
-      { $push: { images: { $each: newIds.map((id) => new Types.ObjectId(id)) } } },
-    ).exec();
+    this.logger.log(
+      `addImagesBatch: adding ${newIds.length} images to album ${slug}`,
+    );
+    await this.albumModel
+      .findByIdAndUpdate(album._id, {
+        $push: {
+          images: { $each: newIds.map((id) => new Types.ObjectId(id)) },
+        },
+      })
+      .exec();
 
-    await this.mediaModel.updateMany(
-      { _id: { $in: newIds } },
-      { albumId: album._id },
-    ).exec();
+    await this.mediaModel
+      .updateMany({ _id: { $in: newIds } }, { albumId: album._id })
+      .exec();
 
     return this.findOne(slug);
   }
@@ -219,17 +238,18 @@ export class AlbumService {
       .exec();
 
     // Desvincular albumId en media
-    await this.mediaModel.findByIdAndUpdate(
-      mediaId,
-      { $unset: { albumId: 1 } },
-    ).exec();
+    await this.mediaModel
+      .findByIdAndUpdate(mediaId, { $unset: { albumId: 1 } })
+      .exec();
 
     // Si el álbum quedó vacío, marcarlo como no público automáticamente
-    if (updatedAlbum && (!updatedAlbum.images || updatedAlbum.images.length === 0)) {
-      await this.albumModel.findByIdAndUpdate(
-        album._id,
-        { isPublic: false },
-      ).exec();
+    if (
+      updatedAlbum &&
+      (!updatedAlbum.images || updatedAlbum.images.length === 0)
+    ) {
+      await this.albumModel
+        .findByIdAndUpdate(album._id, { isPublic: false })
+        .exec();
     }
 
     return this.findOne(slug);
@@ -248,17 +268,13 @@ export class AlbumService {
 
     // Actualizar orden en media
     validIds.forEach((mediaId, index) => {
-      this.mediaModel.findByIdAndUpdate(
-        mediaId,
-        { order: index },
-      ).exec();
+      this.mediaModel.findByIdAndUpdate(mediaId, { order: index }).exec();
     });
 
     // Actualizar orden en álbum
-    await this.albumModel.findByIdAndUpdate(
-      album._id,
-      { images: validIds },
-    ).exec();
+    await this.albumModel
+      .findByIdAndUpdate(album._id, { images: validIds })
+      .exec();
 
     return this.findOne(slug);
   }
@@ -305,13 +321,8 @@ export class AlbumService {
 
     // Actualizar portada
     return this.albumModel
-      .findOneAndUpdate(
-        { slug },
-        { coverImage: media.url },
-        { new: true },
-      )
+      .findOneAndUpdate({ slug }, { coverImage: media.url }, { new: true })
       .populate('images', 'filename url alt description')
       .exec();
   }
 }
-
