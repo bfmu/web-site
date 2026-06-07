@@ -13,7 +13,6 @@ const hasBannerCredit =
 
   interface Props {
   title?: string
-  banner?: string
   description?: string
   lang?: string
   setOGTypeArticle?: boolean;
@@ -25,7 +24,7 @@ const hasBannerCredit =
   hideSidebar?: boolean
 }
 
-const { title, banner, description, lang, setOGTypeArticle, headings = [], showProfile, showCategories, showTags, showArchiveLink, hideSidebar = false } = Astro.props
+const { title, description, lang, setOGTypeArticle, headings = [], showProfile, showCategories, showTags, showArchiveLink, hideSidebar = false } = Astro.props
 ---
 
 <MainLayout>
