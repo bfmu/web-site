@@ -13,13 +13,22 @@ try {
 } catch (e) {
   console.error('[index] Error loading homepage config:', e);
 }
+
+// Secciones que se presentan como capítulos editoriales (numerados)
+const CHAPTERED = new Set(['actividad-reciente', 'intro', 'secciones', 'gallery-preview', 'ultimos-posts']);
+let chapterCount = 0;
+const sectionsWithChapter = sections.map((section) => ({
+  section,
+  chapter: CHAPTERED.has(section.id) ? ++chapterCount : 0,
+}));
 ---
 
 <MainLayout>
+  <div class="grain-overlay" aria-hidden="true"></div>
   <div class="relative max-w-[var(--page-width)] mx-auto pointer-events-auto">
     <div id="main-grid" class="transition duration-700 w-full left-0 right-0 mx-auto gap-4 px-0 md:px-4 onload-animation">
-      {sections.map((section, index) => (
-        <HomeSection section={section} index={index} />
+      {sectionsWithChapter.map(({ section, chapter }, index) => (
+        <HomeSection section={section} index={index} chapter={chapter} />
       ))}
     </div>
   </div>

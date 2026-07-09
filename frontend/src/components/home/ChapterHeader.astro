@@ -1,0 +1,80 @@
+---
+/**
+ * Encabezado de capítulo editorial: número mono + regla + título descomunal.
+ * Es el lenguaje visual que une las secciones de la homepage como una historia.
+ */
+interface Props {
+  number: number
+  label: string
+  sub?: string
+}
+
+const { number, label, sub } = Astro.props
+const num = String(number).padStart(2, '0')
+---
+
+<header class="chapter">
+  <div class="chapter__meta">
+    <span class="chapter__num" aria-hidden="true">{num}</span>
+    <span class="chapter__rule" aria-hidden="true"></span>
+    {sub && <p class="chapter__sub">{sub}</p>}
+  </div>
+  <h2 class="chapter__title">{label}</h2>
+</header>
+
+<style>
+  .chapter {
+    margin: 0 0 clamp(2rem, 4vw, 3.25rem);
+  }
+
+  .chapter__meta {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    margin-bottom: clamp(0.9rem, 2vw, 1.4rem);
+  }
+
+  .chapter__num {
+    font-family: 'JetBrains Mono Variable', monospace;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    color: var(--primary);
+    flex-shrink: 0;
+  }
+
+  .chapter__rule {
+    flex: 1;
+    height: 1px;
+    background: var(--line-divider);
+    min-width: 2rem;
+  }
+
+  .chapter__sub {
+    font-family: 'JetBrains Mono Variable', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--deep-text);
+    opacity: 0.55;
+    margin: 0;
+    flex-shrink: 0;
+    max-width: 46%;
+    text-align: right;
+  }
+
+  @media (max-width: 640px) {
+    .chapter__sub { display: none; }
+  }
+
+  .chapter__title {
+    font-family: 'Space Grotesk Variable', sans-serif;
+    font-size: clamp(2.5rem, 6.5vw, 5rem);
+    font-weight: 600;
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    margin: 0;
+    color: color-mix(in oklab, var(--deep-text) 92%, transparent);
+    text-wrap: balance;
+  }
+</style>
