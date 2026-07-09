@@ -1,46 +1,57 @@
 ---
-import bannerImage from '@/assets/images/DSC_2453.jpg';
-import { getOptimizedImageUrl } from '@/lib/image-utils';
+import bannerImage from '@/assets/images/DSC_2453.jpg'
+import { getOptimizedImageUrl } from '@/lib/image-utils'
 
 interface Props {
-  config?: Record<string, unknown>;
+  config?: Record<string, unknown>
 }
 
-const { config = {} } = Astro.props;
+const { config = {} } = Astro.props
 
-const title = (config.title as string) ?? 'Desarrollo, Fotografía y Reflexión';
+const title = (config.title as string) ?? 'Desarrollo, Fotografía y Reflexión'
 const subtitle =
   (config.subtitle as string) ??
-  'Desarrollo soluciones. Capturo momentos. Reflexiono sobre historias. Aquí es donde todo converge.';
-const ctaText  = (config.ctaText  as string) ?? 'Explorar';
-const ctaHref  = (config.ctaHref  as string) ?? '#explore';
-const eyebrow  = (config.eyebrow  as string) ?? 'BRYAN F. MUÑOZ M. · BOGOTÁ';
+  'Desarrollo soluciones. Capturo momentos. Reflexiono sobre historias. Aquí es donde todo converge.'
+const ctaText = (config.ctaText as string) ?? 'Explorar'
+const ctaHref = (config.ctaHref as string) ?? '#explore'
+const eyebrow = (config.eyebrow as string) ?? 'BRYAN F. MUÑOZ M. · BOGOTÁ'
 const carouselIntervalSeconds =
-  typeof config.carouselIntervalSeconds === 'number' ? config.carouselIntervalSeconds : 5.5;
+  typeof config.carouselIntervalSeconds === 'number'
+    ? config.carouselIntervalSeconds
+    : 5.5
 const heightVh =
-  typeof config.heightVh === 'number' ? Math.max(30, Math.min(100, config.heightVh)) : 70;
+  typeof config.heightVh === 'number'
+    ? Math.max(30, Math.min(100, config.heightVh))
+    : 70
 
-const defaultBannerUrl = typeof bannerImage === 'string' ? bannerImage : bannerImage.src;
+const defaultBannerUrl =
+  typeof bannerImage === 'string' ? bannerImage : bannerImage.src
 
 function resolveUrl(url: string): string {
-  if (!url || !(url.startsWith('http') || url.startsWith('/'))) return '';
-  return getOptimizedImageUrl(url, 2560, 90);
+  if (!url || !(url.startsWith('http') || url.startsWith('/'))) return ''
+  return getOptimizedImageUrl(url, 2560, 90)
 }
 
-const imageUrlsRaw = (config.imageUrls as string[] | undefined) ?? [];
-const imageUrlLegacy = config.imageUrl as string | undefined;
+const imageUrlsRaw = (config.imageUrls as string[] | undefined) ?? []
+const imageUrlLegacy = config.imageUrl as string | undefined
 
-let imageUrls: string[];
+let imageUrls: string[]
 if (imageUrlsRaw.length > 0) {
-  imageUrls = imageUrlsRaw.map(resolveUrl).filter(Boolean);
-} else if (imageUrlLegacy && (imageUrlLegacy.startsWith('http') || imageUrlLegacy.startsWith('/'))) {
-  imageUrls = [resolveUrl(imageUrlLegacy)];
+  imageUrls = imageUrlsRaw.map(resolveUrl).filter(Boolean)
+} else if (
+  imageUrlLegacy &&
+  (imageUrlLegacy.startsWith('http') || imageUrlLegacy.startsWith('/'))
+) {
+  imageUrls = [resolveUrl(imageUrlLegacy)]
 } else {
-  imageUrls = [];
+  imageUrls = []
 }
 
-const slides = imageUrls.length > 0 ? imageUrls : [defaultBannerUrl];
-const intervalMs = Math.max(2000, Math.min(30000, carouselIntervalSeconds * 1000));
+const slides = imageUrls.length > 0 ? imageUrls : [defaultBannerUrl]
+const intervalMs = Math.max(
+  2000,
+  Math.min(30000, carouselIntervalSeconds * 1000),
+)
 ---
 
 <section
@@ -346,9 +357,3 @@ const intervalMs = Math.max(2000, Math.min(30000, carouselIntervalSeconds * 1000
   }
 </style>
 
-<script data-swup-reload-script>
-  import { initHeroPage } from '../../lib/hero-init';
-  import { initHeroAnimations } from '../../lib/hero-animations';
-  initHeroPage();
-  initHeroAnimations();
-</script>

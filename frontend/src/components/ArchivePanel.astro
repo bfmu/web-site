@@ -12,13 +12,15 @@ interface Props {
 }
 const { keyword, tags, categories } = Astro.props
 
-let params: Record<string, any> = {}
+const params: Record<string, any> = {}
 if (Array.isArray(tags) && tags.length > 0) params.tag = tags[0]
-if (Array.isArray(categories) && categories.length > 0) params.category = categories[0]
+if (Array.isArray(categories) && categories.length > 0)
+  params.category = categories[0]
 if (keyword) params.search = keyword
 
 const res = await fetchPosts({ ...params, draft: false })
-let posts = res.posts || res.docs || res
+// El backend puede responder {posts}, {docs} o el array directo según el endpoint
+const posts: any[] = res.posts || res.docs || res
 
 const groups: { year: number; posts: typeof posts }[] = (() => {
   const groupedPosts = posts.reduce(

@@ -53,6 +53,8 @@ describe('BlogService', () => {
       published: new Date().toISOString(),
     };
     model.create.mockResolvedValue(dto);
+    // generateUniqueSlug() consulta findOne().exec() para verificar el slug
+    model.findOne.mockReturnValue({ exec: () => Promise.resolve(null) });
     // Simula new this.postModel({...}).save()
     const result = await service.create(dto as any);
     expect(result.slug).toBe(dto.slug);
@@ -63,9 +65,15 @@ describe('BlogService', () => {
 
   it('findAll() debe devolver posts y paginación', async () => {
     model.find.mockReturnValue({
-      sort: () => ({
-        skip: () => ({
-          limit: () => ({ exec: () => Promise.resolve([{ slug: 'test' }]) }),
+      select: () => ({
+        sort: () => ({
+          skip: () => ({
+            limit: () => ({
+              lean: () => ({
+                exec: () => Promise.resolve([{ slug: 'test' }]),
+              }),
+            }),
+          }),
         }),
       }),
     });
@@ -77,7 +85,7 @@ describe('BlogService', () => {
 
   it('findOne() debe devolver un post', async () => {
     model.findOne.mockReturnValue({
-      exec: () => Promise.resolve({ slug: 'test' }),
+      lean: () => ({ exec: () => Promise.resolve({ slug: 'test' }) }),
     });
     model.updateOne.mockReturnValue({ exec: () => Promise.resolve() });
     const result = await service.findOne('test');

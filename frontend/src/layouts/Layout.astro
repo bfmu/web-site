@@ -12,12 +12,12 @@ import { profileConfig, siteConfig } from '@/config'
 import ConfigCarrier from '@components/ConfigCarrier.astro'
 import {
   AUTO_MODE,
-  DARK_MODE,
-  DEFAULT_THEME,
-  LIGHT_MODE,
   BANNER_HEIGHT,
   BANNER_HEIGHT_EXTEND,
   BANNER_HEIGHT_HOME,
+  DARK_MODE,
+  DEFAULT_THEME,
+  LIGHT_MODE,
   PAGE_WIDTH,
 } from '../constants/constants'
 import { defaultFavicons } from '../constants/icon'
@@ -32,7 +32,13 @@ interface Props {
   authPage?: boolean
 }
 
-let { title, description, lang, setOGTypeArticle, authPage = false } = Astro.props
+let {
+  title,
+  description,
+  lang,
+  setOGTypeArticle,
+  authPage = false,
+} = Astro.props
 
 // apply a class to the body element to decide the height of the banner, only used for initial page load
 // Swup can update the body for each page visit, but it's after the page transition, causing a delay for banner height change
@@ -344,11 +350,44 @@ function init() {
 	}
 }
 
+/* Inits específicos por página. Único punto de entrada: corre en carga
+   directa y tras cada transición Swup (content:replace). Cada init es
+   idempotente y se auto-guarda por pathname o presencia de su DOM. */
+function initPageSpecific() {
+	const path = window.location.pathname.replace(/\/$/, '');
+
+	if (path === '/admin/login') {
+		import('../lib/login-init').then(({ initLoginPage }) => initLoginPage());
+	}
+	if (path.endsWith('/admin/backup')) {
+		import('../lib/backup-init').then(({ initBackupPage }) => requestAnimationFrame(() => initBackupPage()));
+	}
+	if (path.endsWith('/admin/register')) {
+		import('../lib/register-init').then(({ initRegisterPage }) => requestAnimationFrame(() => initRegisterPage()));
+	}
+	if (path.endsWith('/admin/posts')) {
+		import('../lib/posts-init').then(({ initPostsPage }) => requestAnimationFrame(() => initPostsPage()));
+	}
+	if (path.endsWith('/admin/tags')) {
+		import('../lib/tags-init').then(({ initTagsPage }) => requestAnimationFrame(() => initTagsPage()));
+	}
+	if (pathsEqual(window.location.pathname, url('/'))) {
+		import('../lib/hero-init').then(({ initHeroPage }) => requestAnimationFrame(() => initHeroPage()));
+		import('../lib/hero-animations').then(({ initHeroAnimations }) => requestAnimationFrame(() => initHeroAnimations()));
+		import('../lib/intro-stats').then(({ initIntroStats }) => requestAnimationFrame(() => initIntroStats()));
+		import('../lib/now-clock').then(({ initNowClock }) => initNowClock());
+	}
+	if (/^\/posts\/[^/]+(\/)?$/.test(window.location.pathname)) {
+		import('../lib/post-view-init').then(({ initPostViewPage }) => requestAnimationFrame(() => initPostViewPage()));
+	}
+}
+
 /* Load settings when entering the site */
 syncAuthSessionCookieIfNeeded();
 init();
 initAdmin();
 initLoginForm();
+initPageSpecific();
 import('../lib/analytics-track').then(({ trackPageView }) => trackPageView());
 /* Navbar: asegurar init en página principal (p.ej. tras reload) por si el script del Navbar corre antes de estar listo */
 import('../lib/navbar-init').then(({ initNavbar }) => {
@@ -368,10 +407,6 @@ window.addEventListener('pageshow', (event) => {
 		}
 	}
 });
-if (/^\/posts\/[^/]+(\/)?$/.test(window.location.pathname)) {
-	import('../lib/post-view-init').then(({ initPostViewPage }) => requestAnimationFrame(() => initPostViewPage()));
-}
-
 /* Load settings before swapping */
 /* astro:after-swap event happened before swap animation */
 document.addEventListener('astro:after-swap', () => {
@@ -379,9 +414,7 @@ document.addEventListener('astro:after-swap', () => {
 	init();
 	initAdmin();
 	initLoginForm();
-	if (/^\/posts\/[^/]+(\/)?$/.test(window.location.pathname)) {
-		import('../lib/post-view-init').then(({ initPostViewPage }) => requestAnimationFrame(() => initPostViewPage()));
-	}
+	initPageSpecific();
 });
 
 const setup = () => {
@@ -408,50 +441,10 @@ const setup = () => {
 		initAdmin()
 		import('../lib/analytics-track').then(({ trackPageView }) => trackPageView())
 		setTimeout(() => { (window as any).initScrollReveal?.(); }, 50)
-		// Login page: cargar OAuth providers y redirigir si ya autenticado
-		if (window.location.pathname.replace(/\/$/, '') === '/admin/login') {
-			import('../lib/login-init').then(({ loadOAuthProviders }) => loadOAuthProviders());
-			import('../lib/auth').then(({ isAuthenticated }) => {
-				if (isAuthenticated()) {
-					const returnUrl = sessionStorage.getItem('returnUrl');
-					sessionStorage.removeItem('returnUrl');
-					const dest = !returnUrl || /\/admin\/(login|register)|auth/.test(returnUrl) ? '/' : returnUrl;
-					import('../lib/navigation').then(({ navigateTo }) => navigateTo(dest));
-				}
-			});
-		}
-		// Backup page: inicializar listeners del botón Crear Backup (tras DOM actualizado por Swup)
-		if (window.location.pathname.replace(/\/$/, '').endsWith('/admin/backup')) {
-			import('../lib/backup-init').then(({ initBackupPage }) => {
-				requestAnimationFrame(() => initBackupPage());
-			});
-		}
-		// Register page: inicializar formulario de registro
-		if (window.location.pathname.replace(/\/$/, '').endsWith('/admin/register')) {
-			import('../lib/register-init').then(({ initRegisterPage }) => {
-				requestAnimationFrame(() => initRegisterPage());
-			});
-		}
 		// Navbar: reinicializar tras Swup (páginas con MainLayout)
 		import('../lib/navbar-init').then(({ initNavbar }) => initNavbar());
-		// Hero: carrusel en página principal
-		if (pathsEqual(window.location.pathname, url('/'))) {
-			import('../lib/hero-init').then(({ initHeroPage }) => {
-				requestAnimationFrame(() => initHeroPage());
-			});
-		}
-		// Posts index: handler delegado para eliminar posts
-		if (window.location.pathname.replace(/\/$/, '').endsWith('/admin/posts')) {
-			import('../lib/posts-init').then(({ initPostsPage }) => {
-				requestAnimationFrame(() => initPostsPage());
-			});
-		}
-		// Post individual: botón editar para admin/editor
-		if (/^\/posts\/[^/]+(\/)?$/.test(window.location.pathname)) {
-			import('../lib/post-view-init').then(({ initPostViewPage }) => {
-				requestAnimationFrame(() => initPostViewPage());
-			});
-		}
+		// Inits específicos por página (login, admin, home, posts…)
+		initPageSpecific();
 	})
 	window.swup.hooks.on('visit:start', (visit: {to: {url: string}}) => {
 		// change banner height immediately when a link is clicked

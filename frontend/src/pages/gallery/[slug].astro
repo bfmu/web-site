@@ -1,48 +1,50 @@
 ---
+import I18nKey from '@i18n/i18nKey'
+import { i18n } from '@i18n/translation'
 import MainGridLayout from '@layouts/MainGridLayout.astro'
-import { fetchPublicAlbum } from '../../utils/api-blog'
 import AlbumGrid from '../../components/AlbumGrid.tsx'
 import Breadcrumb from '../../components/Breadcrumb.astro'
-import { i18n } from '@i18n/translation'
-import I18nKey from '@i18n/i18nKey'
 import { getBackendResourceUrl } from '../../lib/env'
+import { fetchPublicAlbum } from '../../utils/api-blog'
 
-const { slug } = Astro.params;
+const { slug } = Astro.params
 
 if (!slug) {
-  return new Response(undefined, { status: 404 });
+  return new Response(undefined, { status: 404 })
 }
 
-let album = null;
+let album = null
 try {
-  album = await fetchPublicAlbum(slug);
+  album = await fetchPublicAlbum(slug)
 } catch (error) {
-  console.error('Error loading album:', error);
-  return new Response(undefined, { status: 404 });
+  console.error('Error loading album:', error)
+  return new Response(undefined, { status: 404 })
 }
 
 if (!album) {
-  return new Response(undefined, { status: 404 });
+  return new Response(undefined, { status: 404 })
 }
 
 // Construir URLs completas de imágenes
-const images = Array.isArray(album.images) ? album.images : [];
-const processedImages = images.map((img: any) => {
-  const image = typeof img === 'string' ? null : img;
-  if (!image) return null;
-  
-  const imageUrl = getBackendResourceUrl(image.url);
-  
-  return {
-    id: image._id || image.id,
-    url: imageUrl,
-    alt: image.alt || image.originalName || album.title,
-    description: image.description,
-    width: image.width,
-    height: image.height,
-    orientation: image.orientation ?? 0,
-  };
-}).filter(Boolean);
+const images = Array.isArray(album.images) ? album.images : []
+const processedImages = images
+  .map((img: any) => {
+    const image = typeof img === 'string' ? null : img
+    if (!image) return null
+
+    const imageUrl = getBackendResourceUrl(image.url)
+
+    return {
+      id: image._id || image.id,
+      url: imageUrl,
+      alt: image.alt || image.originalName || album.title,
+      description: image.description,
+      width: image.width,
+      height: image.height,
+      orientation: image.orientation ?? 0,
+    }
+  })
+  .filter((img): img is NonNullable<typeof img> => img !== null)
 ---
 
 <MainGridLayout title={album.title} description={album.description} showProfile={false} showCategories={false} showTags={false} hideSidebar={true}>

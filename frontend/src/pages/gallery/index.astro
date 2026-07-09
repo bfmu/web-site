@@ -1,20 +1,21 @@
 ---
-import MainGridLayout from '@layouts/MainGridLayout.astro'
-import { i18n } from '@i18n/translation'
 import I18nKey from '@i18n/i18nKey'
-import { fetchPublicAlbums } from '../../utils/api-blog'
+import { i18n } from '@i18n/translation'
+import MainGridLayout from '@layouts/MainGridLayout.astro'
 import AlbumCard from '../../components/AlbumCard.astro'
 import Breadcrumb from '../../components/Breadcrumb.astro'
+import { fetchPublicAlbums } from '../../utils/api-blog'
+import type { GalleryAlbum } from '../../utils/api-blog'
 
-let albums = [];
-let error = null;
+let albums: GalleryAlbum[] = []
+let error = null
 
 try {
-  const response = await fetchPublicAlbums();
-  albums = response.albums || [];
+  const response = await fetchPublicAlbums()
+  albums = response.albums || []
 } catch (e) {
-  console.error('Error loading albums:', e);
-  error = e;
+  console.error('Error loading albums:', e)
+  error = e
 }
 ---
 
@@ -49,7 +50,7 @@ try {
                 </div>
             ) : (
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                    {albums.map((album: any) => (
+                    {albums.map((album) => (
                         <AlbumCard album={album} />
                     ))}
                 </div>

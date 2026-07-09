@@ -1,44 +1,54 @@
 ---
-import { getOptimizedImageUrl } from '@/lib/image-utils';
-import { fetchPosts } from '@utils/api-blog';
-import { fetchPublicAlbums } from '@utils/api-blog';
-import { fetchBooks } from '@/lib/api-books';
-import profileAvatar from '@/assets/images/DSC_1024.jpg';
+import profileAvatar from '@/assets/images/DSC_1024.jpg'
+import { fetchBooks } from '@/lib/api-books'
+import { getOptimizedImageUrl } from '@/lib/image-utils'
+import { fetchPosts } from '@utils/api-blog'
+import { fetchPublicAlbums } from '@utils/api-blog'
 
 interface Props {
-  config?: Record<string, unknown>;
+  config?: Record<string, unknown>
 }
 
-const { config = {} } = Astro.props;
+const { config = {} } = Astro.props
 
-const title   = (config.title as string)   ?? '¡Hola! Soy Bryan Muñoz';
-const bio     = (config.bio as string)     ?? 'Bienvenido a mi espacio digital, donde comparto mis proyectos, ideas y pasiones. Aquí podrás explorar mi portafolio de desarrollo, aprender con mis artículos técnicos, descubrir mis fotografías y reflexiones sobre libros y música.';
-const ctaText = (config.ctaText as string) ?? 'Ver portafolio';
-const ctaHref = (config.ctaHref as string) ?? 'https://portfolio.bfmu.dev';
+const title = (config.title as string) ?? '¡Hola! Soy Bryan Muñoz'
+const bio =
+  (config.bio as string) ??
+  'Bienvenido a mi espacio digital, donde comparto mis proyectos, ideas y pasiones. Aquí podrás explorar mi portafolio de desarrollo, aprender con mis artículos técnicos, descubrir mis fotografías y reflexiones sobre libros y música.'
+const ctaText = (config.ctaText as string) ?? 'Ver portafolio'
+const ctaHref = (config.ctaHref as string) ?? 'https://portfolio.bfmu.dev'
 
-let avatarUrl: string;
-const configAvatar = config.avatarUrl as string | undefined;
-if (configAvatar && (configAvatar.startsWith('http') || configAvatar.startsWith('/'))) {
-  avatarUrl = configAvatar.startsWith('/uploads/') ? getOptimizedImageUrl(configAvatar, 288) : configAvatar;
+let avatarUrl: string
+const configAvatar = config.avatarUrl as string | undefined
+if (
+  configAvatar &&
+  (configAvatar.startsWith('http') || configAvatar.startsWith('/'))
+) {
+  avatarUrl = configAvatar.startsWith('/uploads/')
+    ? getOptimizedImageUrl(configAvatar, 288)
+    : configAvatar
 } else {
-  avatarUrl = typeof profileAvatar === 'string' ? profileAvatar : profileAvatar.src;
+  avatarUrl =
+    typeof profileAvatar === 'string' ? profileAvatar : profileAvatar.src
 }
 
-let postsCount = 0;
-let albumsCount = 0;
-let booksCount = 0;
+let postsCount = 0
+let albumsCount = 0
+let booksCount = 0
 try {
   const [postsRes, albumsRes, booksRes] = await Promise.all([
-    fetchPosts({ limit: 1, page: 1 }).catch(() => ({ pagination: { total: 0 } })),
+    fetchPosts({ limit: 1, page: 1 }).catch(() => ({
+      pagination: { total: 0 },
+    })),
     fetchPublicAlbums().catch(() => ({ albums: [], pagination: { total: 0 } })),
     fetchBooks().catch(() => [] as any[]),
-  ]);
-  postsCount  = postsRes.pagination?.total ?? 0;
-  albumsCount = albumsRes.pagination?.total || (albumsRes.albums?.length ?? 0);
-  booksCount  = Array.isArray(booksRes) ? booksRes.length : 0;
+  ])
+  postsCount = postsRes.pagination?.total ?? 0
+  albumsCount = albumsRes.pagination?.total || (albumsRes.albums?.length ?? 0)
+  booksCount = Array.isArray(booksRes) ? booksRes.length : 0
 } catch (_) {}
 
-const isExternal = ctaHref.startsWith('http');
+const isExternal = ctaHref.startsWith('http')
 ---
 
 <section class="about-card" id="explore">
@@ -274,79 +284,3 @@ const isExternal = ctaHref.startsWith('http');
   }
 </style>
 
-<script data-swup-reload-script>
-  function easeOutCubic(t: number) { return 1 - Math.pow(1 - t, 3); }
-
-  function countUp(el: HTMLElement, target: number, duration = 1300) {
-    const start = performance.now();
-    (function step(now: number) {
-      const p = Math.min((now - start) / duration, 1);
-      el.textContent = String(Math.round(easeOutCubic(p) * target));
-      if (p < 1) requestAnimationFrame(step);
-    })(performance.now());
-  }
-
-  async function fetchStatCounts() {
-    const base = (import.meta.env.PUBLIC_BACKEND_URL as string | undefined)?.replace(/\/$/, '') ?? 'http://localhost:3000';
-    const [postsRes, albumsRes, booksRes] = await Promise.allSettled([
-      fetch(`${base}/api/blog?limit=1&page=1&draft=false`).then(r => r.ok ? r.json() : null),
-      fetch(`${base}/api/gallery/albums`).then(r => r.ok ? r.json() : null),
-      fetch(`${base}/api/books`).then(r => r.ok ? r.json() : null),
-    ]);
-    const albumsVal = albumsRes.status === 'fulfilled' ? albumsRes.value : null;
-    return {
-      posts:  postsRes.status  === 'fulfilled' ? (postsRes.value?.pagination?.total  ?? null) : null,
-      albums: albumsVal != null
-        ? (albumsVal.pagination?.total || albumsVal.albums?.length || null)
-        : null,
-      books:  booksRes.status  === 'fulfilled' && Array.isArray(booksRes.value) ? booksRes.value.length : null,
-    };
-  }
-
-  function initCountStats() {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const root = document.querySelector<HTMLElement>('[data-stats-root]');
-    if (!root) return;
-
-    const stats = root.querySelectorAll<HTMLElement>('[data-count]');
-
-    let intersected = false;
-    let fetchDone = false;
-
-    function runAnimation() {
-      if (!intersected || !fetchDone) return;
-      stats.forEach((stat) => {
-        const target = parseInt(stat.dataset.count ?? '0', 10);
-        const num = stat.querySelector<HTMLElement>('[data-stat-num]');
-        if (!num) return;
-        if (reduced) { num.textContent = String(target); return; }
-        countUp(num, target);
-      });
-    }
-
-    // Fetch client-side para corregir ceros cuando el SSR no alcanzó el backend
-    fetchStatCounts().then((counts) => {
-      stats.forEach((stat) => {
-        const label = stat.querySelector<HTMLElement>('[data-stat-label]')?.textContent?.trim()
-          ?? stat.querySelector<HTMLElement>('.about-card__stat-label')?.textContent?.trim()
-          ?? '';
-        if (label.includes('artículos') && counts.posts   !== null) stat.dataset.count = String(counts.posts);
-        if (label.includes('álbum')     && counts.albums  !== null) stat.dataset.count = String(counts.albums);
-        if (label.includes('libro')     && counts.books   !== null) stat.dataset.count = String(counts.books);
-      });
-      fetchDone = true;
-      runAnimation();
-    }).catch(() => { fetchDone = true; runAnimation(); });
-
-    const obs = new IntersectionObserver((entries) => {
-      if (!entries[0].isIntersecting) return;
-      obs.disconnect();
-      intersected = true;
-      runAnimation();
-    }, { threshold: 0.3 });
-
-    obs.observe(root);
-  }
-
-  initCountStats();
-</script>

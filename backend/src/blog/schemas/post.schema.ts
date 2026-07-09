@@ -48,7 +48,7 @@ export class Post {
 export const PostSchema = SchemaFactory.createForClass(Post);
 
 // Índices para mejorar el rendimiento de las consultas
-PostSchema.index({ slug: 1 });
+// (slug ya tiene índice único vía unique: true en @Prop)
 PostSchema.index({ published: -1 });
 PostSchema.index({ tags: 1 });
 PostSchema.index({ category: 1 });

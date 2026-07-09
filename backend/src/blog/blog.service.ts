@@ -46,9 +46,6 @@ export class BlogService {
       sortOrder = 'desc',
     } = queryDto;
 
-    console.log('BlogService.findAll - queryDto:', queryDto);
-    console.log('BlogService.findAll - draft parameter:', draft, typeof draft);
-
     // Construir filtros
     const filter: any = {};
 
@@ -56,13 +53,8 @@ export class BlogService {
     // Si draft es undefined, mostrar todos los posts (tanto borradores como publicados)
     if (draft === false) {
       filter.draft = false;
-      console.log('Draft false - filtering only published posts');
     } else if (draft === true) {
       filter.draft = true;
-      console.log('Draft true - filtering only draft posts');
-    } else {
-      // draft es undefined - no filtrar por draft, mostrar todos
-      console.log('Draft undefined - showing all posts (drafts and published)');
     }
 
     if (category) {
@@ -92,9 +84,6 @@ export class BlogService {
     const sort: any = {};
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-    console.log('Final filter:', JSON.stringify(filter));
-    console.log('Sort:', JSON.stringify(sort));
-
     // Ejecutar consulta (seleccionar solo campos necesarios para listados)
     const [posts, total] = await Promise.all([
       this.postModel
@@ -109,12 +98,6 @@ export class BlogService {
         .exec(),
       this.postModel.countDocuments(filter).exec(),
     ]);
-
-    console.log(`Found ${posts.length} posts, total: ${total}`);
-    console.log(
-      'Posts drafts status:',
-      posts.map((p) => ({ slug: p.slug, draft: p.draft })),
-    );
 
     // Enriquecer con excerpt calculado si no hay descripción
     const enriched = posts.map((p: any) => {
