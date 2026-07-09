@@ -1,23 +1,24 @@
 ---
-import { profileConfig } from '@/config';
+import { profileConfig } from '@/config'
 
 interface Props {
-  config?: Record<string, unknown>;
+  config?: Record<string, unknown>
 }
 
-const { config = {} } = Astro.props;
+const { config = {} } = Astro.props
 
 const defaultWeek = [
   'Explorando NestJS guards y decoradores personalizados',
   'Leyendo sobre sistemas distribuidos',
   'Fotografiando en las calles del centro de Bogotá',
-];
+]
 
-const thisWeek = (Array.isArray(config.thisWeek) && config.thisWeek.length > 0)
-  ? (config.thisWeek as string[])
-  : defaultWeek;
+const thisWeek =
+  Array.isArray(config.thisWeek) && config.thisWeek.length > 0
+    ? (config.thisWeek as string[])
+    : defaultWeek
 
-const email = (config.email as string) ?? 'bfmumo@gmail.com';
+const email = (config.email as string) ?? 'bfmumo@gmail.com'
 ---
 
 <section class="now-footer">
@@ -214,25 +215,3 @@ const email = (config.email as string) ?? 'bfmumo@gmail.com';
   }
 </style>
 
-<script data-swup-reload-script>
-  function startClock() {
-    const el = document.getElementById('now-clock');
-    if (!el) return;
-
-    function tick() {
-      const now = new Date(
-        new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' })
-      );
-      const hh = String(now.getHours()).padStart(2, '0');
-      const mm = String(now.getMinutes()).padStart(2, '0');
-      const ss = String(now.getSeconds()).padStart(2, '0');
-      el.textContent = `${hh}:${mm}:${ss}`;
-      el.setAttribute('datetime', now.toISOString());
-    }
-
-    tick();
-    setInterval(tick, 1000);
-  }
-
-  startClock();
-</script>

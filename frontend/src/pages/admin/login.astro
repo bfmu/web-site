@@ -1,5 +1,5 @@
 ---
-import Layout from '@layouts/Layout.astro';
+import Layout from '@layouts/Layout.astro'
 
 // No verificar autenticación en SSR (localStorage no está disponible)
 // La redirección si ya está autenticado se manejará en el cliente (ver script al final)
@@ -117,39 +117,4 @@ import Layout from '@layouts/Layout.astro';
   </div>
 </Layout>
 
-<script data-swup-reload-script lang="ts">
-  import { handleOAuthCallback, isAuthenticated, syncAuthSessionCookieIfNeeded } from '../../lib/auth';
-  import { loadOAuthProviders } from '../../lib/login-init';
-  import { navigateTo } from '../../lib/navigation';
-
-  function getReturnUrl() {
-    const returnUrl = sessionStorage.getItem('returnUrl');
-    sessionStorage.removeItem('returnUrl');
-    if (!returnUrl || /\/admin\/(login|register)|auth/.test(returnUrl)) return '/';
-    return returnUrl;
-  }
-
-  // Si ya está autenticado, sincronizar cookie (por si tenía sesión antigua sin cookie) y redirigir
-  if (isAuthenticated()) {
-    syncAuthSessionCookieIfNeeded();
-    navigateTo(getReturnUrl());
-  }
-
-  // Cargar OAuth providers (full page load; Swup ya los carga vía Layout content:replace)
-  loadOAuthProviders();
-
-  // Callback OAuth: cuando volvemos de Google/GitHub con ?token= & refresh=
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
-  const refresh = urlParams.get('refresh');
-
-  if (token && refresh) {
-    handleOAuthCallback(token, refresh)
-      .then(() => navigateTo(getReturnUrl()))
-      .catch(async (err) => {
-        const { showError } = await import('../../lib/notifications');
-        showError(err instanceof Error ? err.message : 'Error al procesar autenticación');
-      });
-  }
-</script>
 

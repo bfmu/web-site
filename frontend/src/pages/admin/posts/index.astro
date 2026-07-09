@@ -1,30 +1,35 @@
 ---
-import AdminLayout from '@components/admin/AdminLayout.astro';
-import { Fragment } from 'react';
-import { getPosts } from '../../../lib/admin-api';
-import type { BlogPost, PostQuery } from '../../../lib/admin-api';
-import { getBackendResourceUrl } from '../../../lib/env';
-import { getOptimizedImageUrl } from '../../../lib/image-utils';
+import AdminLayout from '@components/admin/AdminLayout.astro'
+import { Fragment } from 'react'
+import { getPosts } from '../../../lib/admin-api'
+import type { BlogPost, PostQuery } from '../../../lib/admin-api'
+import { getBackendResourceUrl } from '../../../lib/env'
+import { getOptimizedImageUrl } from '../../../lib/image-utils'
 
-const url = Astro.url;
-const searchParams = url.searchParams;
+const url = Astro.url
+const searchParams = url.searchParams
 
 const query: PostQuery = {
-  page: parseInt(searchParams.get('page') || '1'),
-  limit: parseInt(searchParams.get('limit') || '10'),
+  page: Number.parseInt(searchParams.get('page') || '1'),
+  limit: Number.parseInt(searchParams.get('limit') || '10'),
   search: searchParams.get('search') || undefined,
   category: searchParams.get('category') || undefined,
   tag: searchParams.get('tag') || undefined,
-  draft: searchParams.get('draft') === 'true' ? true : searchParams.get('draft') === 'false' ? false : undefined,
+  draft:
+    searchParams.get('draft') === 'true'
+      ? true
+      : searchParams.get('draft') === 'false'
+        ? false
+        : undefined,
   sortBy: searchParams.get('sortBy') || 'published',
   sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc',
-};
+}
 
-let response: Awaited<ReturnType<typeof getPosts>>;
+let response: Awaited<ReturnType<typeof getPosts>>
 try {
-  response = await getPosts(query);
+  response = await getPosts(query)
 } catch (error) {
-  console.error('Error loading posts:', error);
+  console.error('Error loading posts:', error)
   response = {
     posts: [],
     pagination: {
@@ -33,27 +38,27 @@ try {
       total: 0,
       pages: 0,
     },
-  };
+  }
 }
 
-const { posts, pagination } = response;
+const { posts, pagination } = response
 
 // Función auxiliar para filtrar páginas de paginación
 function getVisiblePages(totalPages: number, currentPage: number): number[] {
-  const pages: number[] = [];
+  const pages: number[] = []
   for (let i = 1; i <= totalPages; i++) {
     if (
       i === 1 ||
       i === totalPages ||
       (i >= currentPage - 1 && i <= currentPage + 1)
     ) {
-      pages.push(i);
+      pages.push(i)
     }
   }
-  return pages;
+  return pages
 }
 
-const visiblePages = getVisiblePages(pagination.pages, pagination.page);
+const visiblePages = getVisiblePages(pagination.pages, pagination.page)
 ---
 
 <AdminLayout title="Posts">
@@ -369,8 +374,4 @@ const visiblePages = getVisiblePages(pagination.pages, pagination.page);
   </div>
 </AdminLayout>
 
-<script data-swup-reload-script>
-  import { initPostsPage } from '../../../lib/posts-init';
-  initPostsPage();
-</script>
 

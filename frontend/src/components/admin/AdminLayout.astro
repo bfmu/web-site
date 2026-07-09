@@ -1,21 +1,21 @@
 ---
-import Layout from '@layouts/Layout.astro';
-import AdminThemeSwitch from '@components/admin/AdminThemeSwitch.svelte';
-import { getUser } from '../../lib/auth';
-import { getGrafanaUrl } from '../../lib/env';
+import AdminThemeSwitch from '@components/admin/AdminThemeSwitch.svelte'
+import Layout from '@layouts/Layout.astro'
+import { getUser } from '../../lib/auth'
+import { getGrafanaUrl } from '../../lib/env'
 
 interface Props {
-  title?: string;
+  title?: string
 }
 
-const { title = 'Admin' } = Astro.props;
+const { title = 'Admin' } = Astro.props
 
 // En SSR, no podemos acceder a localStorage, así que getUser() retornará null
 // No hacer redirect aquí, el middleware y el cliente se encargan de la protección
 // Solo obtener el usuario si está disponible (en el cliente)
-let user = null;
+let user = null
 if (typeof window !== 'undefined') {
-  user = getUser();
+  user = getUser()
 }
 ---
 
@@ -513,37 +513,6 @@ if (typeof window !== 'undefined') {
   </div>
 </Layout>
 
-<script data-swup-reload-script>
-  import { getUser, isAuthenticated, isAdmin } from '../../lib/auth';
-  import { navigateTo } from '../../lib/navigation';
-  import { initAdmin } from '../../lib/admin-init';
-
-  // Verificar autenticación en el cliente y redirigir si es necesario
-  if (!isAuthenticated()) {
-    navigateTo('/admin/login');
-    // initAdmin no se ejecuta si hay redirect
-  } else {
-    initAdmin();
-  }
-
-  // Si el usuario NO es admin ni editor, solo puede ver su perfil
-  const currentUser = getUser();
-  const userIsAdmin = currentUser && isAdmin();
-  const userIsEditor = currentUser && currentUser.role === 'editor';
-  const hasAdminAccess = userIsAdmin || userIsEditor;
-  if (currentUser && !hasAdminAccess) {
-    const currentPath = window.location.pathname;
-    if (currentPath !== '/admin/profile') {
-      import('../../lib/notifications').then(({ showWarning }) => {
-        showWarning('No tienes permisos para acceder al panel de administración.');
-      });
-      navigateTo('/admin/profile');
-    }
-  }
-
-  // Los event listeners (logout, sidebar) se configuran en admin-init.ts
-  // para funcionar tanto en carga directa como en transiciones Swup.
-</script>
 
 <style>
   /* Admin: sidebar colapsable en desktop, empuja contenido */

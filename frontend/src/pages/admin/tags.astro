@@ -1,19 +1,19 @@
 ---
-import AdminLayout from '@components/admin/AdminLayout.astro';
-import { getTagsWithCount, getCategories, deleteTag, deleteCategory } from '../../lib/admin-api';
+import AdminLayout from '@components/admin/AdminLayout.astro'
+import { getCategories, getTagsWithCount } from '../../lib/admin-api'
 
-let tags: Array<{ name: string; count: number }> = [];
-let categories: Array<{ name: string; count: number }> = [];
+let tags: Array<{ name: string; count: number }> = []
+let categories: Array<{ name: string; count: number }> = []
 
 try {
   const [tagsRes, categoriesRes] = await Promise.all([
     getTagsWithCount(),
     getCategories(true) as Promise<Array<{ name: string; count: number }>>,
-  ]);
-  tags = Array.isArray(tagsRes) ? tagsRes : [];
-  categories = Array.isArray(categoriesRes) ? categoriesRes : [];
+  ])
+  tags = Array.isArray(tagsRes) ? tagsRes : []
+  categories = Array.isArray(categoriesRes) ? categoriesRes : []
 } catch (error) {
-  console.error('Error loading tags/categories:', error);
+  console.error('Error loading tags/categories:', error)
 }
 ---
 
@@ -103,53 +103,3 @@ try {
   </div>
 </AdminLayout>
 
-<script data-swup-reload-script>
-  import { deleteTag, deleteCategory } from '../../lib/admin-api';
-  import { showError, showSuccess } from '../../lib/notifications';
-
-  let handlerAttached = false;
-
-  function initTagsPage() {
-    if (typeof window === 'undefined') return;
-    const isTagsPage = window.location.pathname.replace(/\/$/, '').endsWith('/admin/tags');
-    if (!isTagsPage) return;
-    if (handlerAttached) return;
-    handlerAttached = true;
-
-    document.addEventListener('click', async (e) => {
-      const target = e.target as HTMLElement;
-      const deleteTagBtn = target.closest('[data-action="delete-tag"]');
-      const deleteCategoryBtn = target.closest('[data-action="delete-category"]');
-
-      if (deleteTagBtn) {
-        e.preventDefault();
-        const tag = (deleteTagBtn as HTMLElement).dataset.tag;
-        if (!tag) return;
-        if (!confirm(`¿Eliminar la etiqueta "${tag}" de todos los posts?`)) return;
-        try {
-          const { modifiedCount } = await deleteTag(tag);
-          showSuccess(`Etiqueta eliminada de ${modifiedCount} post(s)`);
-          window.location.reload();
-        } catch (err: unknown) {
-          showError(`Error: ${(err as { message?: string })?.message || 'Error desconocido'}`);
-        }
-      }
-
-      if (deleteCategoryBtn) {
-        e.preventDefault();
-        const category = (deleteCategoryBtn as HTMLElement).dataset.category;
-        if (!category) return;
-        if (!confirm(`¿Eliminar la categoría "${category}" de todos los posts?`)) return;
-        try {
-          const { modifiedCount } = await deleteCategory(category);
-          showSuccess(`Categoría eliminada de ${modifiedCount} post(s)`);
-          window.location.reload();
-        } catch (err: unknown) {
-          showError(`Error: ${(err as { message?: string })?.message || 'Error desconocido'}`);
-        }
-      }
-    });
-  }
-
-  initTagsPage();
-</script>
