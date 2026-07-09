@@ -22,6 +22,61 @@ function timeAgo(dateString: string) {
   return `${seconds} segundo${seconds !== 1 ? "s" : ""} atrás`;
 }
 
+/** Encabezado editorial de sección: número mono + regla + título display */
+function SectionHeader({ number, title }: { number: number; title: string }): ReactElement {
+  return (
+    <div className="flex items-center gap-4 mb-4">
+      <span className="font-mono text-[0.7rem] tracking-[0.22em] text-[var(--primary)] flex-shrink-0">
+        {String(number).padStart(2, "0")}
+      </span>
+      <span className="h-px flex-1 bg-[var(--line-divider)]" aria-hidden="true" />
+      <h2 className="font-display font-semibold tracking-tight text-xl text-black/90 dark:text-white/90 flex-shrink-0">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+/** Fila de track: cover + título display + artista mono, hover con acento */
+function TrackRow({
+  cover,
+  name,
+  artist,
+  meta,
+  onClick,
+}: {
+  cover: string;
+  name: string;
+  artist: string;
+  meta?: string;
+  onClick: () => void;
+}): ReactElement {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex w-full items-center gap-4 py-3 text-left border-b border-[var(--line-divider)] transition hover:bg-[var(--btn-plain-bg-hover)] px-2 -mx-2"
+    >
+      <img
+        src={cover || "https://via.placeholder.com/150"}
+        alt=""
+        className="w-14 h-14 flex-shrink-0 object-cover grayscale contrast-[1.04] transition-[filter] duration-300 group-hover:grayscale-0"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="font-display font-semibold tracking-tight text-base text-black/90 dark:text-white/90 truncate transition-colors group-hover:text-[var(--primary)]">
+          {name}
+        </p>
+        <p className="font-mono text-[0.72rem] tracking-wide text-black/45 dark:text-white/45 truncate mt-0.5">
+          {artist}{meta ? ` · ${meta}` : ""}
+        </p>
+      </div>
+      <span className="font-mono text-[0.65rem] tracking-widest uppercase text-black/25 dark:text-white/25 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
+        reproducir
+      </span>
+    </button>
+  );
+}
+
 export const FeedMusic = (): ReactElement | null => {
   const [data, setData] = useState({
     lastPlayed: null,
@@ -106,13 +161,13 @@ export const FeedMusic = (): ReactElement | null => {
 
   if (loading)
     return (
-      <div className="text-center py-8 text-2xl font-semibold text-[var(--primary)] dark:text-neutral-50">
-        Cargando datos de Spotify...
+      <div className="text-center py-16 font-mono text-xs tracking-widest uppercase text-black/40 dark:text-white/40">
+        Cargando datos de Spotify…
       </div>
     );
   if (error)
     return (
-      <div className="text-center py-8 text-2xl font-semibold text-[var(--primary)] dark:text-neutral-50">
+      <div className="text-center py-16 font-mono text-xs tracking-widest uppercase text-red-500">
         Error: {error}
       </div>
     );
@@ -130,17 +185,17 @@ export const FeedMusic = (): ReactElement | null => {
           </h1>
         </header>
 
-        <p className="mb-4 rounded-lg bg-[var(--btn-regular-bg)] px-4 py-3 text-sm text-[var(--deep-text)] dark:text-neutral-50">
+        <p className="mb-8 px-2 md:px-0 font-mono text-[0.72rem] tracking-wide text-[var(--deep-text)] opacity-60">
           Toca una canción para escucharla en el reproductor de la parte inferior. Puedes seguir navegando y la música seguirá sonando.
         </p>
-        {/* Última Canción Escuchada */}
+
+        {/* Última Canción Escuchada — pieza destacada, sin chrome de card */}
         {lastPlayed && (
-          <section className="mt-4 bg-[var(--card-bg)] p-6 rounded-[var(--radius-large)] shadow-md">
-            <h2 className="font-display font-semibold tracking-tight text-2xl text-[var(--primary)] dark:text-neutral-50">
-              Última Canción Escuchada
-            </h2>
-            <div
-              className="flex items-center gap-4 p-4 bg-[var(--btn-regular-bg)] rounded-lg hover:bg-[var(--btn-regular-bg-hover)] cursor-pointer transition"
+          <section className="mb-10 px-2 md:px-0">
+            <SectionHeader number={1} title="Última canción" />
+            <button
+              type="button"
+              className="group flex items-center gap-5 w-full text-left"
               data-type="track"
               data-id={(lastPlayed as any).id}
               onClick={() => handleMusicClick("track", (lastPlayed as any).id, lastPlayed as any)}
@@ -148,34 +203,32 @@ export const FeedMusic = (): ReactElement | null => {
               <img
                 src={(lastPlayed as any).album.images[0].url}
                 alt={(lastPlayed as any).album.name}
-                className="w-20 h-20 rounded-md"
+                className="w-24 h-24 flex-shrink-0 object-cover grayscale contrast-[1.04] transition-[filter] duration-300 group-hover:grayscale-0"
               />
-              <div>
-                <p className="text-lg font-bold text-[var(--deep-text)] dark:text-neutral-50">
+              <div className="min-w-0">
+                <p className="font-display font-semibold tracking-tight text-2xl text-black/90 dark:text-white/90 truncate transition-colors group-hover:text-[var(--primary)]">
                   {(lastPlayed as any).name}
                 </p>
-                <p className="text-sm text-[var(--meta-divider)] dark:text-gray-300">
-                  de{" "}
+                <p className="font-mono text-xs tracking-wide text-black/45 dark:text-white/45 mt-1.5">
                   <a
                     href={(lastPlayed as any).artists[0].external_urls.spotify}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[var(--primary)] hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                    className="hover:text-[var(--primary)] hover:underline"
                   >
                     {(lastPlayed as any).artists[0].name}
                   </a>
                 </p>
               </div>
-            </div>
+            </button>
           </section>
         )}
 
         {recentlyPlayed && (
-          <section className="mt-4 bg-[var(--card-bg)] p-6 rounded-[var(--radius-large)] shadow-md">
-            <h2 className="font-display font-semibold tracking-tight text-2xl text-[var(--primary)] dark:text-neutral-50">
-              Últimas Canciones Escuchadas
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <section className="mb-10 px-2 md:px-0">
+            <SectionHeader number={2} title="Últimas escuchadas" />
+            <div>
               {(recentlyPlayed as any[])
                 .sort(
                   (a, b) =>
@@ -183,68 +236,32 @@ export const FeedMusic = (): ReactElement | null => {
                     new Date(a.played_at).getTime(),
                 )
                 .map((data, index) => (
-                  <div
+                  <TrackRow
                     key={data.track.id + index}
-                    className="flex items-center gap-4 p-4 rounded-lg hover:bg-[var(--btn-card-bg-hover)] bg-[var(--btn-regular-bg)] transition cursor-pointer"
-                    data-type="track"
-                    data-id={data.track.id}
+                    cover={data.track.album.images[0]?.url}
+                    name={data.track.name}
+                    artist={data.track.artists[0].name}
+                    meta={timeAgo(data.played_at)}
                     onClick={() => handleMusicClick("track", data.track.id, data.track)}
-                  >
-                    <img
-                      src={
-                        data.track.album.images[0].url
-                          ? data.track.album.images[0].url
-                          : "https://via.placeholder.com/150"
-                      }
-                      alt={data.track.name}
-                      className="w-16 h-16 rounded-md"
-                    />
-                    <div>
-                      <p className="text-[var(--deep-text)] font-bold dark:text-neutral-50">
-                        {data.track.name}
-                      </p>
-                      <p className="text-sm text-[var(--primary)]">
-                        {data.track.artists[0].name}
-                      </p>
-                      <p className="text-sm text-[var(--meta-divider)] dark:text-gray-300">
-                        {timeAgo(data.played_at)}
-                      </p>
-                    </div>
-                  </div>
+                  />
                 ))}
             </div>
           </section>
         )}
 
-        {/* ✅ Top Canciones */}
+        {/* Top Canciones */}
         {topTracks && (
-          <section className="mt-4 bg-[var(--card-bg)] p-6 rounded-[var(--radius-large)] shadow-md">
-            <h2 className="font-display font-semibold tracking-tight text-2xl text-[var(--primary)] dark:text-neutral-50">
-              Top Canciones
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <section className="mb-10 px-2 md:px-0">
+            <SectionHeader number={3} title="Top canciones" />
+            <div>
               {(topTracks as any[]).map((track) => (
-                <div
+                <TrackRow
                   key={track.id}
-                  className="flex items-center gap-4 p-4 rounded-lg hover:bg-[var(--btn-card-bg-hover)] bg-[var(--btn-regular-bg)] transition cursor-pointer"
-                  data-type="track"
-                  data-id={track.id}
+                  cover={track.album.images[0]?.url}
+                  name={track.name}
+                  artist={track.artists[0].name}
                   onClick={() => handleMusicClick("track", track.id, track)}
-                >
-                  <img
-                    src={track.album.images[0].url}
-                    alt={track.name}
-                    className="w-16 h-16 rounded-md"
-                  />
-                  <div>
-                    <p className="text-[var(--deep-text)] font-bold dark:text-neutral-50">
-                      {track.name}
-                    </p>
-                    <p className="text-sm text-[var(--primary)]">
-                      {track.artists[0].name}
-                    </p>
-                  </div>
-                </div>
+                />
               ))}
             </div>
           </section>
@@ -252,28 +269,29 @@ export const FeedMusic = (): ReactElement | null => {
 
         {/* Top Artistas */}
         {topArtists && (
-          <section className="mt-4 bg-[var(--card-bg)] p-6 rounded-[var(--radius-large)] shadow-md mb-10">
-            <h2 className="font-display font-semibold tracking-tight text-2xl text-[var(--primary)] dark:text-neutral-50">
-              Top Artistas
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          <section className="mb-16 px-2 md:px-0">
+            <SectionHeader number={4} title="Top artistas" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-6">
               {((topArtists as any).items as any[]).map((artist) => (
-                <div
+                <button
+                  type="button"
                   key={artist.id}
-                  className="block p-4 rounded-lg hover:scale-105 transition bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-card-bg-hover)] cursor-pointer"
+                  className="group text-left"
                   data-type="artist"
                   data-id={artist.id}
                   onClick={() => handleMusicClick("artist", artist.id)}
                 >
-                  <img
-                    src={artist.images[0].url}
-                    alt={artist.name}
-                    className="w-full h-32 object-cover rounded-md"
-                  />
-                  <p className="mt-2 text-[var(--deep-text)] text-center font-bold dark:text-neutral-50">
+                  <div className="aspect-square overflow-hidden bg-[var(--btn-regular-bg)]">
+                    <img
+                      src={artist.images[0].url}
+                      alt={artist.name}
+                      className="w-full h-full object-cover grayscale contrast-[1.04] scale-[1.02] transition-[filter,transform] duration-500 group-hover:grayscale-0 group-hover:contrast-100 group-hover:scale-[1.06]"
+                    />
+                  </div>
+                  <p className="mt-2 font-mono text-xs tracking-wide text-black/70 dark:text-white/70 truncate transition-colors group-hover:text-[var(--primary)]">
                     {artist.name}
                   </p>
-                </div>
+                </button>
               ))}
             </div>
           </section>

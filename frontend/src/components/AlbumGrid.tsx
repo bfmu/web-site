@@ -21,7 +21,11 @@ export default function AlbumGrid({ images, albumTitle }: AlbumGridProps): React
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
 
   if (images.length === 0) {
-    return <div className="text-center text-gray-500 dark:text-gray-400 py-8">No hay imágenes</div>;
+    return (
+      <div className="text-center font-mono text-xs tracking-widest uppercase text-black/40 dark:text-white/40 py-8">
+        No hay imágenes
+      </div>
+    );
   }
 
   // El span se determina por el aspect ratio real de cada imagen.
@@ -51,14 +55,14 @@ export default function AlbumGrid({ images, albumTitle }: AlbumGridProps): React
             <div
               key={image.id}
               onClick={() => handleImageClick(index)}
-              className={`group relative overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 ${sizeClass} cursor-pointer`}
+              className={`group relative overflow-hidden bg-[var(--btn-regular-bg)] ${sizeClass} cursor-pointer`}
             >
               <img
                 src={getOptimizedImageUrl(image.url, 600, 90, image.orientation ?? 0)}
                 alt={image.alt}
                 width={image.width}
                 height={image.height}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                className="w-full h-full object-cover grayscale contrast-[1.04] scale-[1.02] transition-[filter,transform] duration-500 group-hover:grayscale-0 group-hover:contrast-100 group-hover:scale-[1.06]"
                 loading="lazy"
                 onError={(e) => {
                   const img = e.target as HTMLImageElement;
@@ -68,8 +72,8 @@ export default function AlbumGrid({ images, albumTitle }: AlbumGridProps): React
               />
               {/* Overlay con descripción si existe */}
               {image.description && (
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="absolute bottom-0 left-0 right-0 p-3 text-white text-sm">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute bottom-0 left-0 right-0 p-3 font-mono text-xs tracking-wide text-white">
                     {image.description}
                   </div>
                 </div>
