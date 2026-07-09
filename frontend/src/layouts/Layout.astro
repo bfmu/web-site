@@ -378,6 +378,10 @@ function initPageSpecific() {
 		import('../lib/hero-animations').then(({ initHeroAnimations }) => requestAnimationFrame(() => initHeroAnimations()));
 		import('../lib/intro-stats').then(({ initIntroStats }) => requestAnimationFrame(() => initIntroStats()));
 		import('../lib/now-clock').then(({ initNowClock }) => initNowClock());
+		import('../lib/scroll-choreography').then(({ initScrollChoreography }) => requestAnimationFrame(() => initScrollChoreography()));
+	} else {
+		// Salimos de home vía Swup: destruir triggers para que no apunten a nodos ya reemplazados
+		import('../lib/scroll-choreography').then(({ killScrollChoreography }) => killScrollChoreography());
 	}
 	if (/^\/posts\/[^/]+(\/)?$/.test(window.location.pathname)) {
 		import('../lib/post-view-init').then(({ initPostViewPage }) => requestAnimationFrame(() => initPostViewPage()));
