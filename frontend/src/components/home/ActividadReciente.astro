@@ -36,8 +36,6 @@ try {
 ---
 
 <div class="activity-strip">
-  <p class="activity-strip__label">Actividad reciente</p>
-
   <div class="activity-strip__grid">
     <!-- Music chip: React island with RAF visualizer -->
     <SpotifyChip client:only="react" />
@@ -98,15 +96,6 @@ try {
     width: 100%;
   }
 
-  .activity-strip__label {
-    font-size: 0.68rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--deep-text);
-    opacity: 0.55;
-    margin: 0 0 0.6rem 0.15rem;
-  }
 
   .activity-strip__grid {
     display: grid;

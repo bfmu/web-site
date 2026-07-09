@@ -1,7 +1,7 @@
 ---
-import { fetchPublicAlbums } from '@utils/api-blog';
 import { getOptimizedImageUrl } from '@/lib/image-utils';
 import type { GalleryAlbum } from '@utils/api-blog';
+import { fetchPublicAlbums } from '@utils/api-blog';
 
 interface Props {
   config?: Record<string, unknown>;
@@ -9,7 +9,6 @@ interface Props {
 
 const { config = {} } = Astro.props;
 
-const title   = (config.title as string)   ?? 'Galería';
 const ctaText = (config.ctaText as string) ?? 'Ver galería completa';
 const ctaHref = (config.ctaHref as string) ?? '/gallery/';
 
@@ -22,148 +21,161 @@ try {
   if (albumSlugsFilter.length > 0) {
     albums = albums.filter((a) => albumSlugsFilter.includes(a.slug));
   }
-  // Solo mostrar álbumes con cover image para evitar placeholders vacíos
-  albums = albums.filter((a) => a.coverImage).slice(0, 2);
+  // Solo álbumes con cover para evitar placeholders vacíos
+  albums = albums.filter((a) => a.coverImage).slice(0, 6);
 } catch (_) {}
 ---
 
-<section class="gallery-teaser">
-  <div class="gallery-teaser__header">
-    <h2 class="gallery-teaser__title">{title}</h2>
-    <a href={ctaHref} class="gallery-teaser__cta-inline">
-      {ctaText} <span aria-hidden="true">→</span>
-    </a>
-  </div>
-
-  {albums.length > 0 && (
-    <div class="gallery-teaser__grid">
-      {albums.map((album) => {
-        const cover = getOptimizedImageUrl(album.coverImage!, 800);
+{albums.length > 0 && (
+  <div class="filmstrip full-bleed">
+    <div class="filmstrip__track hide-scrollbar">
+      {albums.map((album, i) => {
+        const cover = getOptimizedImageUrl(album.coverImage!, 1200, 85);
         return (
-          <a href={`/gallery/${album.slug}/`} class="gallery-photo" aria-label={album.title}>
-            <img src={cover} alt={album.title} class="gallery-photo__img" loading="lazy" />
-            <div class="gallery-photo__caption">
-              <span>{album.title}</span>
-              <span class="gallery-photo__arrow" aria-hidden="true">→</span>
+          <a href={`/gallery/${album.slug}/`} class="filmstrip__item" aria-label={album.title}>
+            <img
+              src={cover}
+              alt={album.title}
+              class="filmstrip__img"
+              loading="lazy"
+              draggable="false"
+            />
+            <div class="filmstrip__caption">
+              <span class="filmstrip__index" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+              <span class="filmstrip__name">{album.title}</span>
             </div>
           </a>
         );
       })}
+
+      <a href={ctaHref} class="filmstrip__more" aria-label={ctaText}>
+        <span class="filmstrip__more-text">{ctaText}</span>
+        <span class="filmstrip__more-arrow" aria-hidden="true">→</span>
+      </a>
     </div>
-  )}
-</section>
+  </div>
+)}
 
 <style>
-  .gallery-teaser {
-    width: 100%;
-    padding: 2.5rem 1.5rem;
-    background: var(--card-bg);
-    border-radius: var(--radius-large);
-    box-shadow: 0 2px 16px -4px rgb(0 0 0 / 0.07);
-    border-top: 3px solid #06b6d4;
-  }
-
-  .gallery-teaser__header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-  }
-
-  .gallery-teaser__title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin: 0;
-  }
-
-  .gallery-teaser__cta-inline {
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: var(--btn-content);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.4rem 1rem;
-    border-radius: 9999px;
-    background: var(--btn-regular-bg);
-    transition: background 0.2s, transform 0.2s;
-    flex-shrink: 0;
-  }
-  .gallery-teaser__cta-inline:hover { background: var(--btn-regular-bg-hover); transform: translateY(-1px); }
-  .gallery-teaser__cta-inline:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
-
-  .gallery-teaser__grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  @media (min-width: 480px) { .gallery-teaser__grid { grid-template-columns: repeat(2, 1fr); } }
-
-  /* Photo card */
-  .gallery-photo {
+  .filmstrip {
     position: relative;
-    display: block;
-    border-radius: 0.875rem;
-    overflow: hidden;
-    aspect-ratio: 4 / 3;
-    background: var(--btn-regular-bg);
-    text-decoration: none;
   }
 
-  .gallery-photo__img {
+  /* Pista horizontal con snap; padding lateral alinea la primera foto con el contenido */
+  .filmstrip__track {
+    display: flex;
+    gap: clamp(0.5rem, 1vw, 0.85rem);
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding-inline: max(calc(50vw - var(--page-width, 75rem) / 2 + 1rem), 1.5rem);
+    padding-block: 0.25rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filmstrip__item {
+    position: relative;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    height: clamp(20rem, 52vh, 32rem);
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    text-decoration: none;
+    background: var(--btn-regular-bg);
+  }
+
+  .filmstrip__img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    filter: grayscale(100%);
-    transition: filter 0.45s ease, transform 0.45s ease;
     display: block;
+    filter: grayscale(100%) contrast(1.04);
+    transform: scale(1.02);
+    transition: filter 0.5s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    user-select: none;
   }
-  .gallery-photo:hover .gallery-photo__img {
-    filter: grayscale(0%);
-    transform: scale(1.04);
-  }
-
-  .gallery-photo__placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3rem;
-    opacity: 0.3;
+  .filmstrip__item:hover .filmstrip__img,
+  .filmstrip__item:focus-visible .filmstrip__img {
+    filter: grayscale(0%) contrast(1);
+    transform: scale(1.06);
   }
 
-  .gallery-photo__caption {
+  .filmstrip__caption {
     position: absolute;
-    bottom: 0;
     left: 0;
     right: 0;
-    padding: 0.75rem 1rem;
-    background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);
-    color: white;
-    font-size: 0.85rem;
-    font-weight: 600;
+    bottom: 0;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transform: translateY(5px);
-    opacity: 0;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 2.25rem 1.1rem 0.9rem;
+    background: linear-gradient(to top, rgba(3,6,10,0.72), transparent);
+    color: white;
   }
-  .gallery-photo:hover .gallery-photo__caption { transform: translateY(0); opacity: 1; }
 
-  .gallery-photo__arrow { transition: transform 0.2s ease; }
-  .gallery-photo:hover .gallery-photo__arrow { transform: translateX(3px); }
+  .filmstrip__index {
+    font-family: 'JetBrains Mono Variable', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    opacity: 0.75;
+  }
 
-  .gallery-photo--cta { opacity: 0.6; }
+  .filmstrip__name {
+    font-family: 'Space Grotesk Variable', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Tile final: CTA editorial */
+  .filmstrip__more {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    height: clamp(20rem, 52vh, 32rem);
+    aspect-ratio: 3 / 4;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem;
+    border: 1px solid var(--line-divider);
+    text-decoration: none;
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
+  .filmstrip__more:hover {
+    background: var(--btn-plain-bg-hover);
+    border-color: var(--primary);
+  }
+  .filmstrip__more:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  .filmstrip__more-text {
+    font-family: 'Space Grotesk Variable', sans-serif;
+    font-size: clamp(1.4rem, 2.2vw, 1.9rem);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: color-mix(in oklab, var(--deep-text) 92%, transparent);
+    max-width: 12ch;
+  }
+
+  .filmstrip__more-arrow {
+    font-size: 1.6rem;
+    color: var(--primary);
+    transition: transform 0.25s ease;
+  }
+  .filmstrip__more:hover .filmstrip__more-arrow {
+    transform: translateX(6px);
+  }
 
   @media (prefers-reduced-motion: reduce) {
-    .gallery-photo__img      { transition: none; filter: none; }
-    .gallery-photo:hover .gallery-photo__img { transform: none; filter: none; }
-    .gallery-photo__caption  { opacity: 1; transform: none; transition: none; }
+    .filmstrip__img { transition: none; filter: none; transform: none; }
+    .filmstrip__item:hover .filmstrip__img { transform: none; }
+    .filmstrip__more-arrow { transition: none; }
   }
 </style>

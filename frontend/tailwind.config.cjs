@@ -7,6 +7,8 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ["Roboto", "sans-serif", ...defaultTheme.fontFamily.sans],
+        display: ["'Space Grotesk Variable'", "Roboto", "sans-serif"],
+        mono: ["'JetBrains Mono Variable'", ...defaultTheme.fontFamily.mono],
       },
     },
   },

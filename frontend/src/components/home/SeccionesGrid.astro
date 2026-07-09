@@ -5,185 +5,136 @@ interface Props {
 
 const { config = {} } = Astro.props;
 
-const title    = (config.title as string)    ?? 'Explora mi contenido';
-const subtitle = (config.subtitle as string) ?? 'Descubre mis proyectos, ideas y pasiones a través de estas secciones.';
-
 const defaultItems = [
-  { titulo: '🎧 Música que me inspira', descripcion: 'Canciones y playlists que forman parte de mi día a día.', enlace: '/music/' },
-  { titulo: '🌟 Exploraciones artísticas', descripcion: 'Fotografía y momentos que inspiran.', enlace: '/gallery/' },
-  { titulo: '📝 Resúmenes y opiniones', descripcion: 'Libros que leo y reflexiones sobre ellos.', enlace: '/blogs/' },
-  { titulo: '📚 Guías y artículos', descripcion: 'Soluciones y optimización de procesos.', enlace: '/archive/' },
-  { titulo: '📖 Libros', descripcion: 'Los libros que estoy leyendo y mis notas sobre ellos.', enlace: '/books/' },
-  { titulo: '💻 Portafolio', descripcion: 'Proyectos destacados de desarrollo de software.', enlace: 'https://portfolio.bfmu.dev' },
+  { titulo: 'Música que me inspira', descripcion: 'Canciones y playlists que forman parte de mi día a día.', enlace: '/music/' },
+  { titulo: 'Exploraciones artísticas', descripcion: 'Fotografía y momentos que inspiran.', enlace: '/gallery/' },
+  { titulo: 'Resúmenes y opiniones', descripcion: 'Libros que leo y reflexiones sobre ellos.', enlace: '/blogs/' },
+  { titulo: 'Guías y artículos', descripcion: 'Soluciones y optimización de procesos.', enlace: '/archive/' },
+  { titulo: 'Libros', descripcion: 'Los libros que estoy leyendo y mis notas sobre ellos.', enlace: '/books/' },
+  { titulo: 'Portafolio', descripcion: 'Proyectos destacados de desarrollo de software.', enlace: 'https://portfolio.bfmu.dev' },
 ];
 
-const items =
+const rawItems =
   Array.isArray(config.items) && config.items.length > 0
     ? (config.items as Array<{ titulo: string; descripcion: string; enlace: string }>)
     : defaultItems;
+
+// El CMS puede traer emojis heredados en los títulos — el índice editorial es tipográfico
+function cleanTitle(t: string): string {
+  // Pictogramas + variation selector (FE0F) + zero-width joiner (200D)
+  return t.replace(/^(?:\p{Extended_Pictographic}|\uFE0F|\u200D|\s)+/gu, '').trim() || t;
+}
+
+const items = rawItems.map((item) => ({ ...item, titulo: cleanTitle(item.titulo) }));
 ---
 
-<section class="bento" id="work">
-  <div class="bento__header">
-    <h2 class="bento__title">{title}</h2>
-    <p class="bento__subtitle">{subtitle}</p>
-  </div>
-
-  <div class="bento__grid">
-    {items.map((item, i) => {
-      const isExternal = item.enlace.startsWith('http');
-      return (
-        <a
-          href={item.enlace}
-          class="bento-card"
-          style={`--delay: ${i * 60}ms`}
-          target={isExternal ? '_blank' : undefined}
-          rel={isExternal ? 'noopener noreferrer' : undefined}
-          aria-label={item.titulo}
-        >
-          <!-- Animated cyan accent bar -->
-          <span class="bento-card__accent" aria-hidden="true"></span>
-
-          <div class="bento-card__body">
-            <h3 class="bento-card__name">{item.titulo}</h3>
-            <p class="bento-card__desc">{item.descripcion}</p>
-          </div>
-
-          <div class="bento-card__footer">
-            <span class="bento-card__arrow" aria-hidden="true">→</span>
-          </div>
-        </a>
-      );
-    })}
-  </div>
-</section>
+<nav class="index-list" aria-label="Secciones del sitio">
+  {items.map((item, i) => {
+    const isExternal = item.enlace.startsWith('http');
+    return (
+      <a
+        href={item.enlace}
+        class="index-row"
+        target={isExternal ? '_blank' : undefined}
+        rel={isExternal ? 'noopener noreferrer' : undefined}
+      >
+        <span class="index-row__num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+        <span class="index-row__title">{item.titulo}</span>
+        <span class="index-row__desc">{item.descripcion}</span>
+        <span class="index-row__arrow" aria-hidden="true">{isExternal ? '↗' : '→'}</span>
+      </a>
+    );
+  })}
+</nav>
 
 <style>
-  .bento {
-    width: 100%;
-    padding: 3rem 1.5rem;
-    background: var(--card-bg);
-    border-radius: var(--radius-large);
-    box-shadow: 0 2px 16px -4px rgb(0 0 0 / 0.07);
-    border-top: 3px solid #06b6d4;
+  .index-list {
+    display: block;
+    border-top: 1px solid var(--line-divider);
   }
 
-  .bento__header {
-    max-width: 44rem;
-    margin: 0 auto 2.25rem;
-    text-align: center;
-  }
-
-  .bento__title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin: 0 0 0.5rem;
-  }
-
-  .bento__subtitle {
-    font-size: 1rem;
-    color: var(--deep-text);
-    margin: 0;
-    opacity: 0.8;
-    line-height: 1.6;
-  }
-
-  .bento__grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
-    max-width: 56rem;
-    margin: 0 auto;
-  }
-
-  @media (min-width: 480px) { .bento__grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (min-width: 720px) { .bento__grid { grid-template-columns: repeat(3, 1fr); } }
-
-  /* ── Card ── */
-  .bento-card {
+  .index-row {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    padding: 1.35rem 1.25rem 1rem;
-    border-radius: 0.875rem;
-    background: var(--btn-regular-bg);
-    border: 1px solid transparent;
+    display: grid;
+    grid-template-columns: 3rem 1fr auto;
+    grid-template-areas: 'num title arrow' 'num desc arrow';
+    align-items: baseline;
+    column-gap: 1rem;
+    padding: clamp(1.2rem, 2.6vw, 1.9rem) 0.5rem;
+    border-bottom: 1px solid var(--line-divider);
     text-decoration: none;
-    overflow: hidden;
-    transition: background 0.22s ease, border-color 0.22s ease,
-                transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
-                box-shadow 0.22s ease;
-    animation: card-in 0.45s ease both;
-    animation-delay: var(--delay, 0ms);
+    transition: background 0.25s ease;
   }
-  .bento-card:hover {
-    background: var(--btn-regular-bg-hover);
-    border-color: var(--primary);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.14);
+  .index-row:hover {
+    background: var(--btn-plain-bg-hover);
   }
-  .bento-card:focus-visible {
+  .index-row:focus-visible {
     outline: 2px solid var(--primary);
-    outline-offset: 2px;
+    outline-offset: -2px;
   }
 
-  /* Animated left accent bar */
-  .bento-card__accent {
-    position: absolute;
-    top: 12%;
-    left: 0;
-    width: 3px;
-    height: 0%;
-    background: #06b6d4;
-    border-radius: 0 2px 2px 0;
-    transition: height 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  .index-row__num {
+    grid-area: num;
+    font-family: 'JetBrains Mono Variable', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    color: var(--primary);
+    align-self: start;
+    padding-top: 0.45em;
   }
-  .bento-card:hover .bento-card__accent { height: 76%; }
 
-  .bento-card__body { flex: 1; padding-left: 0.25rem; }
-
-  .bento-card__name {
-    font-size: 0.95rem;
+  .index-row__title {
+    grid-area: title;
+    font-family: 'Space Grotesk Variable', sans-serif;
+    font-size: clamp(1.35rem, 3vw, 2.1rem);
     font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: color-mix(in oklab, var(--deep-text) 90%, transparent);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), color 0.25s ease;
+  }
+  .index-row:hover .index-row__title {
+    transform: translateX(0.6rem);
     color: var(--primary);
-    margin: 0 0 0.4rem;
-    line-height: 1.35;
   }
 
-  .bento-card__desc {
-    font-size: 0.83rem;
+  .index-row__desc {
+    grid-area: desc;
+    font-size: 0.85rem;
+    line-height: 1.5;
     color: var(--deep-text);
-    margin: 0;
-    line-height: 1.55;
-    opacity: 0.85;
-  }
-
-  .bento-card__footer {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 1rem;
-  }
-
-  .bento-card__arrow {
-    font-size: 0.9rem;
-    color: var(--primary);
     opacity: 0.6;
-    transition: transform 0.2s ease, opacity 0.2s;
-  }
-  .bento-card:hover .bento-card__arrow {
-    transform: translateX(4px);
-    opacity: 1;
+    margin-top: 0.3rem;
+    max-width: 34rem;
   }
 
-  @keyframes card-in {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
+  .index-row__arrow {
+    grid-area: arrow;
+    align-self: center;
+    font-size: 1.3rem;
+    color: var(--primary);
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .index-row:hover .index-row__arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  @media (max-width: 560px) {
+    .index-row {
+      grid-template-columns: 2.2rem 1fr auto;
+    }
+    .index-row__desc { display: none; }
+    .index-row__arrow { opacity: 0.5; transform: none; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .bento-card { animation: none; transition: none; }
-    .bento-card__accent { transition: none; }
-    .bento-card:hover { transform: none; }
+    .index-row,
+    .index-row__title,
+    .index-row__arrow { transition: none; }
+    .index-row:hover .index-row__title { transform: none; }
+    .index-row__arrow { opacity: 0.5; transform: none; }
   }
 </style>

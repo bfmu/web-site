@@ -1,72 +1,107 @@
 ---
-import Hero from './Hero.astro';
-import IntroPersonal from './IntroPersonal.astro';
-import SeccionesGrid from './SeccionesGrid.astro';
-import GalleryPreview from './GalleryPreview.astro';
-import UltimosPosts from './UltimosPosts.astro';
-import ActividadReciente from './ActividadReciente.astro';
-import NowFooter from './NowFooter.astro';
-import ScrollReveal from './ScrollReveal.astro';
-import type { HomepageSection } from './componentRegistry';
+import type { HomepageSection } from './componentRegistry'
+import ActividadReciente from './ActividadReciente.astro'
+import ChapterHeader from './ChapterHeader.astro'
+import GalleryPreview from './GalleryPreview.astro'
+import Hero from './Hero.astro'
+import IntroPersonal from './IntroPersonal.astro'
+import NowFooter from './NowFooter.astro'
+import ScrollReveal from './ScrollReveal.astro'
+import SeccionesGrid from './SeccionesGrid.astro'
+import UltimosPosts from './UltimosPosts.astro'
 
 interface Props {
-  section: HomepageSection;
-  index?: number;
+  section: HomepageSection
+  index?: number
+  /** Número de capítulo editorial (0 = sin capítulo) */
+  chapter?: number
 }
 
-const { section, index = 0 } = Astro.props;
-const staggerDelay = index * 80;
+const { section, index = 0, chapter = 0 } = Astro.props
+const staggerDelay = index * 80
+
+/** Etiqueta de capítulo por sección — usa el título del CMS cuando aplica */
+function chapterMeta(): { label: string; sub?: string } | null {
+  const cfg = section.config ?? {}
+  switch (section.id) {
+    case 'actividad-reciente':
+    case 'now-listening':
+      return { label: 'Ahora', sub: 'actividad reciente' }
+    case 'intro':
+      return { label: 'Sobre mí' }
+    case 'secciones':
+      return { label: (cfg.title as string) ?? 'Explora', sub: (cfg.subtitle as string) || undefined }
+    case 'gallery-preview':
+      return { label: (cfg.title as string) ?? 'Fotografía', sub: 'fotografía' }
+    case 'ultimos-posts':
+      return { label: (cfg.title as string) ?? 'Escritura', sub: (cfg.subtitle as string) || undefined }
+    default:
+      return null
+  }
+}
+
+const meta = chapter > 0 ? chapterMeta() : null
+/* Ritmo editorial: aire generoso entre capítulos */
+const sectionClass = 'mb-24 md:mb-36'
 ---
 
 {section.id === 'hero' && (
-  <section class="mb-12">
+  <section class="mb-16 md:mb-28">
     <Hero config={section.config} />
   </section>
 )}
 {section.id === 'intro' && (
-  <ScrollReveal delay={staggerDelay} class="mb-12">
-    <section id="explore">
+  <ScrollReveal delay={staggerDelay} class={sectionClass}>
+    <section id="explore" class="px-6 md:px-4">
+      {meta && <ChapterHeader number={chapter} label={meta.label} sub={meta.sub} />}
       <IntroPersonal config={section.config} />
     </section>
   </ScrollReveal>
 )}
 {section.id === 'secciones' && (
-  <ScrollReveal delay={staggerDelay} class="mb-12">
-    <section id="work">
+  <ScrollReveal delay={staggerDelay} class={sectionClass}>
+    <section id="work" class="px-6 md:px-4">
+      {meta && <ChapterHeader number={chapter} label={meta.label} sub={meta.sub} />}
       <SeccionesGrid config={section.config} />
     </section>
   </ScrollReveal>
 )}
 {section.id === 'gallery-preview' && (
-  <ScrollReveal delay={staggerDelay} class="mb-12">
+  <ScrollReveal delay={staggerDelay} class={sectionClass}>
     <section>
+      <div class="px-6 md:px-4">
+        {meta && <ChapterHeader number={chapter} label={meta.label} sub={meta.sub} />}
+      </div>
       <GalleryPreview config={section.config} />
     </section>
   </ScrollReveal>
 )}
 {section.id === 'ultimos-posts' && (
-  <ScrollReveal delay={staggerDelay} class="mb-12">
-    <section>
+  <ScrollReveal delay={staggerDelay} class={sectionClass}>
+    <section class="px-6 md:px-4">
+      {meta && <ChapterHeader number={chapter} label={meta.label} sub={meta.sub} />}
       <UltimosPosts config={section.config} />
     </section>
   </ScrollReveal>
 )}
 {section.id === 'now-listening' && (
-  <ScrollReveal delay={staggerDelay} class="mb-12">
-    <section>
+  <ScrollReveal delay={staggerDelay} class={sectionClass}>
+    <section class="px-6 md:px-4">
+      {meta && <ChapterHeader number={chapter} label={meta.label} sub={meta.sub} />}
       <ActividadReciente />
     </section>
   </ScrollReveal>
 )}
 {section.id === 'actividad-reciente' && (
-  <ScrollReveal delay={staggerDelay} class="mb-12">
-    <section>
+  <ScrollReveal delay={staggerDelay} class={sectionClass}>
+    <section class="px-6 md:px-4">
+      {meta && <ChapterHeader number={chapter} label={meta.label} sub={meta.sub} />}
       <ActividadReciente />
     </section>
   </ScrollReveal>
 )}
 {section.id === 'now-footer' && (
-  <ScrollReveal delay={staggerDelay} class="mb-12">
+  <ScrollReveal delay={staggerDelay} class="mb-0">
     <section>
       <NowFooter config={section.config} />
     </section>

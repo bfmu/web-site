@@ -28,6 +28,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@fontsource-variable/jetbrains-mono": "^5.0.22",
+    "@fontsource-variable/space-grotesk": "^5.2.10",
     "@fontsource/roboto": "^5.0.14",
     "@swup/astro": "^1.4.1",
     "@types/react": "^19.1.0",

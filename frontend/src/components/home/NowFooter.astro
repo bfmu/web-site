@@ -73,28 +73,27 @@ const email = (config.email as string) ?? 'bfmumo@gmail.com'
 </section>
 
 <style>
+  /* Outro editorial: full-bleed con regla superior, sin card */
   .now-footer {
-    width: 100%;
-    padding: 2.5rem 1.5rem;
-    background: var(--card-bg);
-    border-radius: var(--radius-large);
-    box-shadow: 0 2px 16px -4px rgb(0 0 0 / 0.07);
-    border-top: 3px solid #06b6d4;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    padding: clamp(3rem, 6vh, 5rem) clamp(1.5rem, 5vw, 3rem) clamp(2.5rem, 5vh, 4rem);
+    border-top: 1px solid var(--line-divider);
   }
 
   .now-footer__inner {
-    max-width: 48rem;
+    max-width: var(--page-width, 75rem);
     margin: 0 auto;
     display: grid;
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 2.5rem;
   }
 
   @media (min-width: 560px) {
     .now-footer__inner {
       grid-template-columns: auto 1fr auto;
       align-items: start;
-      gap: 2.5rem;
+      gap: 3rem;
       justify-items: start;
     }
   }
@@ -125,13 +124,15 @@ const email = (config.email as string) ?? 'bfmumo@gmail.com'
     animation: dot-live 2.5s ease-in-out infinite;
   }
 
+  /* Reloj protagonista: cierre cinematográfico de la página */
   .now-footer__clock {
-    font-family: ui-monospace, 'JetBrains Mono', monospace;
-    font-size: clamp(2rem, 5vw, 3rem);
-    font-weight: 700;
-    color: #06b6d4;
-    letter-spacing: -0.02em;
+    font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+    font-size: clamp(3rem, 8vw, 5.5rem);
+    font-weight: 600;
+    color: color-mix(in oklab, var(--deep-text) 92%, transparent);
+    letter-spacing: -0.04em;
     line-height: 1;
+    font-variant-numeric: tabular-nums;
   }
 
   /* ── Esta semana ── */
