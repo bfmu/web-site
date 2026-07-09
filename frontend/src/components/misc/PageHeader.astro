@@ -1,0 +1,73 @@
+---
+/**
+ * Encabezado editorial de página interna: kicker mono + título display.
+ * Versión interior del ChapterHeader de la homepage — mismo lenguaje visual.
+ */
+interface Props {
+  kicker?: string
+  title: string
+  sub?: string
+  class?: string
+}
+
+const { kicker, title, sub } = Astro.props
+const className = Astro.props.class
+---
+
+<header class:list={['page-header', className]}>
+  {kicker && (
+    <p class="page-header__kicker">
+      <span class="page-header__dot" aria-hidden="true"></span>
+      {kicker}
+    </p>
+  )}
+  <h1 class="page-header__title">{title}</h1>
+  {sub && <p class="page-header__sub">{sub}</p>}
+</header>
+
+<style>
+  .page-header {
+    margin: 0 0 clamp(1.75rem, 3vw, 2.5rem);
+  }
+
+  .page-header__kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: 'JetBrains Mono Variable', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin: 0 0 0.9rem;
+  }
+
+  .page-header__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--primary);
+    flex-shrink: 0;
+  }
+
+  .page-header__title {
+    font-family: 'Space Grotesk Variable', sans-serif;
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin: 0;
+    color: color-mix(in oklab, var(--deep-text) 92%, transparent);
+    text-wrap: balance;
+  }
+
+  .page-header__sub {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--deep-text);
+    opacity: 0.6;
+    margin: 0.9rem 0 0;
+    max-width: 40rem;
+  }
+</style>
