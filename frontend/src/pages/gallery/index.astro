@@ -4,6 +4,7 @@ import { i18n } from '@i18n/translation'
 import MainGridLayout from '@layouts/MainGridLayout.astro'
 import AlbumCard from '../../components/AlbumCard.astro'
 import Breadcrumb from '../../components/Breadcrumb.astro'
+import PageHeader from '../../components/misc/PageHeader.astro'
 import { fetchPublicAlbums } from '../../utils/api-blog'
 import type { GalleryAlbum } from '../../utils/api-blog'
 
@@ -30,14 +31,7 @@ try {
             />
 
             <!-- Header -->
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                    {i18n(I18nKey.gallery)}
-                </h1>
-                <p class="text-gray-600 dark:text-gray-400">
-                    Explora mis colecciones de imágenes
-                </p>
-            </div>
+            <PageHeader kicker="Fotografía" title={i18n(I18nKey.gallery)} sub="Explora mis colecciones de imágenes" />
 
             <!-- Albums Grid -->
             {error ? (

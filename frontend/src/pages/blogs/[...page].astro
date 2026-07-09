@@ -1,6 +1,7 @@
 ---
 import PostPage from '../../components/PostPage.astro'
 import Pagination from '../../components/control/Pagination.astro'
+import PageHeader from '../../components/misc/PageHeader.astro'
 import { PAGE_SIZE } from '../../constants/constants'
 import MainGridLayout from '../../layouts/MainGridLayout.astro'
 import { fetchPosts } from '../../utils/api-blog'
@@ -37,6 +38,11 @@ const pageForPagination = {
 const len = pageData.data.length
 ---
 <MainGridLayout showProfile={false} showCategories={true} showTags={true} showArchiveLink={true}>
+    {currentPage === 1 && (
+        <div class="onload-animation px-2 mb-2">
+            <PageHeader kicker={`Escritura — ${pagination.total} artículo${pagination.total !== 1 ? 's' : ''}`} title="Artículos" />
+        </div>
+    )}
     <PostPage page={pageData}></PostPage>
     <Pagination class="mx-auto onload-animation" page={pageForPagination as any} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination>
 </MainGridLayout>
