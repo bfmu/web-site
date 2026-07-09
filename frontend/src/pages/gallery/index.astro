@@ -43,9 +43,9 @@ try {
                     No hay álbumes disponibles en este momento.
                 </div>
             ) : (
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                    {albums.map((album) => (
-                        <AlbumCard album={album} />
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-10">
+                    {albums.map((album, i) => (
+                        <AlbumCard album={album} index={i} />
                     ))}
                 </div>
             )}

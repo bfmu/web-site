@@ -30,32 +30,34 @@ function formatDate(dateStr: string | undefined): string {
       <PageHeader kicker="Lectura" title="Libros" sub="Lo que he leído y lo que pienso al respecto." />
 
       {books.length === 0 && (
-        <p class="text-black/40 dark:text-white/40 text-center py-16">Aún no hay libros cargados.</p>
+        <p class="font-mono text-xs tracking-widest uppercase text-black/40 dark:text-white/40 text-center py-16">
+          Aún no hay libros cargados.
+        </p>
       )}
 
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-        {books.map((book) => (
-          <div class="group flex flex-col gap-2">
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-10">
+        {books.map((book, i) => (
+          <div class="group flex flex-col gap-2.5">
             <!-- Cover -->
-            <div class="relative aspect-[2/3] overflow-hidden rounded-lg bg-black/5 dark:bg-white/5 shadow-md transition-shadow group-hover:shadow-xl">
+            <div class="relative aspect-[2/3] overflow-hidden bg-[var(--btn-regular-bg)]">
               {coverUrl(book.cover) ? (
                 <img
                   src={coverUrl(book.cover)}
                   alt={`Portada de ${book.title}`}
-                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  class="w-full h-full object-cover grayscale contrast-[1.04] scale-[1.02] transition-[filter,transform] duration-500 group-hover:grayscale-0 group-hover:contrast-100 group-hover:scale-[1.06]"
                   loading="lazy"
                 />
               ) : (
-                <div class="w-full h-full flex items-center justify-center text-4xl text-black/20 dark:text-white/20">
-                  📖
+                <div class="w-full h-full flex items-center justify-center font-display text-4xl font-semibold text-black/15 dark:text-white/15">
+                  {String(i + 1).padStart(2, '0')}
                 </div>
               )}
               {book.postSlug && (
                 <a
                   href={`/posts/${book.postSlug}`}
-                  class="absolute inset-0 flex items-end justify-center pb-3 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/70 to-transparent"
+                  class="absolute inset-0 flex items-end p-3 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-[rgba(3,6,10,0.8)] via-transparent to-transparent"
                 >
-                  <span class="text-white text-xs font-medium bg-black/40 px-3 py-1 rounded-full">
+                  <span class="font-mono text-[0.68rem] tracking-wider uppercase text-white">
                     Ver opinión →
                   </span>
                 </a>
@@ -63,18 +65,18 @@ function formatDate(dateStr: string | undefined): string {
             </div>
 
             <!-- Info -->
-            <div class="flex flex-col gap-0.5">
+            <div class="flex flex-col gap-1">
               {book.rating && (
                 <span class="text-yellow-500 dark:text-yellow-400 text-xs tracking-tight">
                   {stars(book.rating)}
                 </span>
               )}
-              <h2 class="text-sm font-semibold text-black/90 dark:text-white/90 leading-snug line-clamp-2">
+              <h2 class="font-display font-semibold tracking-tight text-base text-black/90 dark:text-white/90 leading-tight line-clamp-2">
                 {book.title}
               </h2>
-              <p class="text-xs text-black/50 dark:text-white/50">{book.author}</p>
+              <p class="font-mono text-[0.7rem] tracking-wide text-black/50 dark:text-white/50">{book.author}</p>
               {book.readAt && (
-                <p class="text-xs text-black/40 dark:text-white/40">{formatDate(book.readAt)}</p>
+                <p class="font-mono text-[0.65rem] tracking-wide uppercase text-black/35 dark:text-white/35">{formatDate(book.readAt)}</p>
               )}
             </div>
           </div>

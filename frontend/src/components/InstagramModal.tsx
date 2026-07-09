@@ -182,8 +182,8 @@ export default function InstagramModal({
 
           {/* Image Counter */}
           {images.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-              {currentIndex + 1} / {images.length}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full font-mono text-xs tracking-wider">
+              {String(currentIndex + 1).padStart(2, '0')} / {String(images.length).padStart(2, '0')}
             </div>
           )}
         </div>
@@ -192,11 +192,11 @@ export default function InstagramModal({
         <div className="w-full md:w-96 flex flex-col bg-white dark:bg-gray-900 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-800 h-full overflow-hidden">
           {/* Header */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-            <h2 className="font-semibold text-gray-900 dark:text-white text-lg">
+            <h2 className="font-display font-semibold tracking-tight text-gray-900 dark:text-white text-xl">
               {albumTitle}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {currentIndex + 1} de {images.length}
+            <p className="font-mono text-xs tracking-wider text-gray-500 dark:text-gray-400 mt-1">
+              {String(currentIndex + 1).padStart(2, '0')} / {String(images.length).padStart(2, '0')}
             </p>
           </div>
 
