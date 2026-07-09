@@ -37,6 +37,7 @@
     "astro-compress": "^2.3.8",
     "astro-icon": "^1.1.1",
     "colorjs.io": "^0.5.2",
+    "gsap": "^3.15.0",
     "hastscript": "^9.0.0",
     "markdown-it": "^14.1.0",
     "mdast-util-to-string": "^4.0.0",

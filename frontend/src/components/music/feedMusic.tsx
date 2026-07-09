@@ -120,13 +120,23 @@ export const FeedMusic = (): ReactElement | null => {
   return (
     <div className="relative max-w-[var(--page-width)] mx-auto pointer-events-auto">
       <div className="transition duration-700 w-full left-0 right-0 mx-auto gap-4 px-0 md:px-4 onload-animation">
+        <header className="mb-6 px-2 md:px-0">
+          <p className="inline-flex items-center gap-2 font-mono text-[0.7rem] font-medium uppercase tracking-[0.22em] text-[var(--primary)] mb-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" aria-hidden="true" />
+            Ahora escuchando
+          </p>
+          <h1 className="font-display font-semibold tracking-tight text-[clamp(2.2rem,5vw,3.6rem)] leading-none text-black/90 dark:text-white/90">
+            Música
+          </h1>
+        </header>
+
         <p className="mb-4 rounded-lg bg-[var(--btn-regular-bg)] px-4 py-3 text-sm text-[var(--deep-text)] dark:text-neutral-50">
           Toca una canción para escucharla en el reproductor de la parte inferior. Puedes seguir navegando y la música seguirá sonando.
         </p>
         {/* Última Canción Escuchada */}
         {lastPlayed && (
           <section className="mt-4 bg-[var(--card-bg)] p-6 rounded-[var(--radius-large)] shadow-md">
-            <h2 className="text-2xl font-semibold text-[var(--primary)] dark:text-neutral-50">
+            <h2 className="font-display font-semibold tracking-tight text-2xl text-[var(--primary)] dark:text-neutral-50">
               Última Canción Escuchada
             </h2>
             <div
@@ -162,8 +172,8 @@ export const FeedMusic = (): ReactElement | null => {
 
         {recentlyPlayed && (
           <section className="mt-4 bg-[var(--card-bg)] p-6 rounded-[var(--radius-large)] shadow-md">
-            <h2 className="text-2xl font-semibold text-[var(--primary)] dark:text-neutral-50">
-              Ultimas Canciones Escuchadas
+            <h2 className="font-display font-semibold tracking-tight text-2xl text-[var(--primary)] dark:text-neutral-50">
+              Últimas Canciones Escuchadas
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               {(recentlyPlayed as any[])
@@ -209,7 +219,7 @@ export const FeedMusic = (): ReactElement | null => {
         {/* ✅ Top Canciones */}
         {topTracks && (
           <section className="mt-4 bg-[var(--card-bg)] p-6 rounded-[var(--radius-large)] shadow-md">
-            <h2 className="text-2xl font-semibold text-[var(--primary)] dark:text-neutral-50">
+            <h2 className="font-display font-semibold tracking-tight text-2xl text-[var(--primary)] dark:text-neutral-50">
               Top Canciones
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
@@ -243,7 +253,7 @@ export const FeedMusic = (): ReactElement | null => {
         {/* Top Artistas */}
         {topArtists && (
           <section className="mt-4 bg-[var(--card-bg)] p-6 rounded-[var(--radius-large)] shadow-md mb-10">
-            <h2 className="text-2xl font-semibold text-[var(--primary)] dark:text-neutral-50">
+            <h2 className="font-display font-semibold tracking-tight text-2xl text-[var(--primary)] dark:text-neutral-50">
               Top Artistas
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
