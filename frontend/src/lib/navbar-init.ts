@@ -8,22 +8,10 @@ import { getOptimizedImageUrl } from './image-utils';
 let userMenuInitialized = false;
 let storageListenerAttached = false;
 
-function switchTheme(): void {
-  if (localStorage.theme === 'dark') {
-    document.documentElement.classList.remove('dark');
-    localStorage.theme = 'light';
-  } else {
-    document.documentElement.classList.add('dark');
-    localStorage.theme = 'dark';
-  }
-}
-
 function loadButtonScript(): void {
-  const switchBtn = document.getElementById('scheme-switch');
-  if (switchBtn && !switchBtn.dataset.navbarInited) {
-    switchBtn.dataset.navbarInited = '1';
-    switchBtn.addEventListener('click', () => switchTheme());
-  }
+  // El toggle de tema (#scheme-switch) lo maneja LightDarkSwitch.svelte —
+  // acá NO se le agrega un segundo listener, competía con el ciclo
+  // claro/oscuro/sistema y pisaba su resultado en cada click.
 
   const settingBtn = document.getElementById('display-settings-switch');
   if (settingBtn && !settingBtn.dataset.navbarInited) {
