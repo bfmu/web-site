@@ -1,5 +1,5 @@
 ---
-import ArchivePanel from "@components/ArchivePanel.astro";
+import PageHeader from "@components/misc/PageHeader.astro";
 import I18nKey from "@i18n/i18nKey";
 import { fetchPosts } from "@/utils/api-blog";
 import PostsArchive from "@/components/PostsArchive.jsx";
@@ -13,17 +13,18 @@ const res = await fetchPosts(params);
 const initialPosts = res.posts || res;
 const initialPagination = res.pagination;
 const fetchUrlBase = `${getBackendApiUrl()}/blog`;
+const tagLabel = decodeURIComponent(params.tag);
 ---
 
 <MainGridLayout
-  title={i18n(I18nKey.archive)}
+  title={`${i18n(I18nKey.archive)} — #${tagLabel}`}
   description={i18n(I18nKey.archive)}
   showProfile={false}
   showCategories={true}
   showTags={true}
   showArchiveLink={true}
 >
-  <!-- <ArchivePanel tags={[tag]} /> -->
+  <PageHeader kicker="Tag" title={`#${tagLabel}`} sub={`${initialPagination.total} artículo${initialPagination.total !== 1 ? 's' : ''}`} class="px-2" />
   <PostsArchive
     initialPosts={initialPosts}
     initialPagination={initialPagination}

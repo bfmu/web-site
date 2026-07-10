@@ -51,17 +51,17 @@ export default function PostsArchive({
   };
 
   return (
-    <div className="card-base px-8 py-6">
+    <div className="px-2 md:px-0">
       {groups.map((group) => (
         <div key={group.year}>
           <div className="flex flex-row w-full items-center h-[3.75rem]">
-            <div className="w-[15%] md:w-[10%] transition text-2xl font-bold text-right text-75">
+            <div className="w-[15%] md:w-[10%] transition font-display font-semibold tracking-tight text-2xl text-right text-75">
               {group.year}
             </div>
             <div className="w-[15%] md:w-[10%]">
               <div className="h-3 w-3 bg-none rounded-full outline outline-[var(--primary)] mx-auto -outline-offset-[2px] z-50 outline-3"></div>
             </div>
-            <div className="w-[70%] md:w-[80%] transition text-left text-50">
+            <div className="w-[70%] md:w-[80%] transition font-mono text-xs tracking-wide text-left text-50">
               {group.posts.length} {i18n(I18nKey.postsCount)}
             </div>
           </div>
@@ -74,7 +74,7 @@ export default function PostsArchive({
             >
               <div className="flex flex-row justify-start items-center h-full">
                 {/* date */}
-                <div className="w-[15%] md:w-[10%] transition text-sm text-right text-50">
+                <div className="w-[15%] md:w-[10%] transition font-mono text-xs tracking-wide text-right text-50">
                   {formatDate(post.published)}
                 </div>
                 {/* dot and line */}
@@ -88,14 +88,14 @@ export default function PostsArchive({
                   ></div>
                 </div>
                 {/* post title */}
-                <div className="w-[70%] md:max-w-[65%] md:w-[65%] text-left font-bold
+                <div className="w-[70%] md:max-w-[65%] md:w-[65%] text-left font-display font-semibold tracking-tight
                   group-hover:translate-x-1 transition-all group-hover:text-[var(--primary)]
                   text-75 pr-8 whitespace-nowrap overflow-ellipsis overflow-hidden"
                 >
                   {post.title}
                 </div>
                 {/* tag list */}
-                <div className="hidden md:block md:w-[15%] text-left text-sm transition
+                <div className="hidden md:block md:w-[15%] text-left font-mono text-xs tracking-wide transition
                   whitespace-nowrap overflow-ellipsis overflow-hidden
                   text-30"
                 >{formatTag(post.tags)}</div>
@@ -107,7 +107,7 @@ export default function PostsArchive({
       {pagination.page < pagination.pages && (
         <button
           type="button"
-          className="btn-regular px-6 h-11 rounded-lg mx-auto mt-4 active:scale-95"
+          className="btn-regular px-6 h-11 rounded-lg mx-auto mt-4 active:scale-95 font-mono text-xs tracking-wider uppercase"
           onClick={handleLoadMore}
           disabled={loading}
         >

@@ -27,11 +27,11 @@ const { badge, url, label } = Astro.props
         }
     >
         <div class="flex items-center justify-between relative mr-2">
-            <div class="overflow-hidden text-left whitespace-nowrap overflow-ellipsis  ">
+            <div class="overflow-hidden text-left whitespace-nowrap overflow-ellipsis font-mono text-sm tracking-wide">
                 <slot></slot>
             </div>
             { badge !== undefined && badge !== null && badge !== '' &&
-                <div class="transition h-7 ml-4 min-w-[2rem] rounded-lg text-sm font-bold
+                <div class="transition h-7 ml-4 min-w-[2rem] rounded-lg font-mono text-xs font-medium
                     text-[var(--btn-content)] dark:text-[var(--deep-text)]
                     bg-[oklch(0.95_0.025_var(--hue))] dark:bg-[var(--primary)]
                     flex items-center justify-center">

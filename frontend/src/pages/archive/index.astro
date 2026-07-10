@@ -1,10 +1,11 @@
 ---
-import MainGridLayout from '@layouts/MainGridLayout.astro'
+import PageHeader from '@components/misc/PageHeader.astro'
 import PostsArchive from '@/components/PostsArchive.jsx'
 import { fetchPosts } from '@/utils/api-blog'
 import { i18n } from '@i18n/translation'
 import I18nKey from '@i18n/i18nKey'
 import { getBackendApiUrl } from '@/lib/env'
+import MainGridLayout from '@layouts/MainGridLayout.astro'
 
 // Puedes poner aquí tus filtros si quieres
 const params = { page: 1, draft: false }
@@ -15,6 +16,7 @@ const fetchUrlBase = `${getBackendApiUrl()}/blog`;
 ---
 
 <MainGridLayout title={i18n(I18nKey.archive)} showProfile={false} showCategories={true} showTags={true} showArchiveLink={true}>
+  <PageHeader kicker="Índice" title={i18n(I18nKey.archive)} sub={`${initialPagination.total} artículo${initialPagination.total !== 1 ? 's' : ''}`} class="px-2" />
   <PostsArchive
     initialPosts={initialPosts}
     initialPagination={initialPagination}
