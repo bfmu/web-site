@@ -60,7 +60,7 @@ function TrackRow({
       <img
         src={cover || "https://via.placeholder.com/150"}
         alt=""
-        className="w-14 h-14 flex-shrink-0 object-cover grayscale contrast-[1.04] transition-[filter] duration-300 group-hover:grayscale-0"
+        className="w-14 h-14 flex-shrink-0 object-cover"
       />
       <div className="min-w-0 flex-1">
         <p className="font-display font-semibold tracking-tight text-base text-black/90 dark:text-white/90 truncate transition-colors group-hover:text-[var(--primary)]">
@@ -203,7 +203,7 @@ export const FeedMusic = (): ReactElement | null => {
               <img
                 src={(lastPlayed as any).album.images[0].url}
                 alt={(lastPlayed as any).album.name}
-                className="w-24 h-24 flex-shrink-0 object-cover grayscale contrast-[1.04] transition-[filter] duration-300 group-hover:grayscale-0"
+                className="w-24 h-24 flex-shrink-0 object-cover"
               />
               <div className="min-w-0">
                 <p className="font-display font-semibold tracking-tight text-2xl text-black/90 dark:text-white/90 truncate transition-colors group-hover:text-[var(--primary)]">
@@ -285,7 +285,7 @@ export const FeedMusic = (): ReactElement | null => {
                     <img
                       src={artist.images[0].url}
                       alt={artist.name}
-                      className="w-full h-full object-cover grayscale contrast-[1.04] scale-[1.02] transition-[filter,transform] duration-500 group-hover:grayscale-0 group-hover:contrast-100 group-hover:scale-[1.06]"
+                      className="w-full h-full object-cover scale-[1.02] transition-transform duration-500 group-hover:scale-[1.06]"
                     />
                   </div>
                   <p className="mt-2 font-mono text-xs tracking-wide text-black/70 dark:text-white/70 truncate transition-colors group-hover:text-[var(--primary)]">
