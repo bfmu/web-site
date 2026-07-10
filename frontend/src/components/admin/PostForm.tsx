@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactElement } from 'react';
+import { useState, useEffect, useRef, type ReactElement } from 'react';
 import { PostEditor } from './PostEditor';
 import { ImageUpload } from './ImageUpload';
 import { CategoryInput } from './CategoryInput';
@@ -38,6 +38,132 @@ export function PostForm({ post, onSuccess }: PostFormProps): ReactElement {
   const [loading, setLoading] = useState(false);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [lastTitleForSlug, setLastTitleForSlug] = useState(post?.title || '');
+  const [fieldErrors, setFieldErrors] = useState<{ title?: string; slug?: string; content?: string }>({});
+  const [isDirty, setIsDirty] = useState(false);
+  const [showRecoveryBanner, setShowRecoveryBanner] = useState(false);
+  const [recoveredAt, setRecoveredAt] = useState<string | null>(null);
+  const [lastAutosaved, setLastAutosaved] = useState<Date | null>(null);
+  const [editorKey, setEditorKey] = useState(0);
+
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const slugInputRef = useRef<HTMLInputElement>(null);
+  const contentSectionRef = useRef<HTMLDivElement>(null);
+  const pendingDraftRef = useRef<Record<string, any> | null>(null);
+  const draftStorageKey = `admin-post-draft-${post?.slug || 'new'}`;
+
+  const initialSnapshotRef = useRef(
+    JSON.stringify({
+      title: post?.title || '',
+      slug: post?.slug || '',
+      description: post?.description || '',
+      content: post?.content || '',
+      image: post?.image || '',
+      category: post?.category || '',
+      tags: post?.tags || [],
+      language: post?.language || 'es',
+      draft: post?.draft ?? true,
+    })
+  );
+
+  // Detectar cambios sin guardar
+  useEffect(() => {
+    const current = JSON.stringify({
+      title,
+      slug,
+      description,
+      content,
+      image,
+      category,
+      tags,
+      language,
+      draft,
+    });
+    setIsDirty(current !== initialSnapshotRef.current);
+  }, [title, slug, description, content, image, category, tags, language, draft]);
+
+  // Avisar antes de cerrar/navegar si hay cambios sin guardar
+  useEffect(() => {
+    if (!isDirty) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  // Ofrecer recuperar un borrador autoguardado de una sesión anterior
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftStorageKey);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        pendingDraftRef.current = saved;
+        setRecoveredAt(saved.savedAt || null);
+        setShowRecoveryBanner(true);
+      }
+    } catch {
+      // Ignorar borrador corrupto
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Autoguardar borrador mientras haya cambios sin guardar
+  useEffect(() => {
+    if (!isDirty) return;
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          draftStorageKey,
+          JSON.stringify({
+            title,
+            slug,
+            description,
+            content,
+            image,
+            category,
+            tags,
+            language,
+            draft,
+            published,
+            savedAt: new Date().toISOString(),
+          })
+        );
+        setLastAutosaved(new Date());
+      } catch {
+        // localStorage lleno o no disponible: no interrumpir al usuario
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [title, slug, description, content, image, category, tags, language, draft, published, isDirty, draftStorageKey]);
+
+  const handleRestoreDraft = () => {
+    const saved = pendingDraftRef.current;
+    if (!saved) return;
+    setTitle(saved.title || '');
+    setSlug(saved.slug || '');
+    setSlugManuallyEdited(true);
+    setDescription(saved.description || '');
+    setContent(saved.content || '');
+    setEditorKey((k) => k + 1);
+    setImage(saved.image || '');
+    setCategory(saved.category || '');
+    setTags(saved.tags || []);
+    setLanguage(saved.language || 'es');
+    setDraft(saved.draft ?? true);
+    if (saved.published) setPublished(saved.published);
+    setShowRecoveryBanner(false);
+  };
+
+  const handleDiscardDraft = () => {
+    try {
+      localStorage.removeItem(draftStorageKey);
+    } catch {
+      // no-op
+    }
+    pendingDraftRef.current = null;
+    setShowRecoveryBanner(false);
+  };
 
   // Generar slug automáticamente cuando cambia el título
   useEffect(() => {
@@ -86,8 +212,25 @@ export function PostForm({ post, onSuccess }: PostFormProps): ReactElement {
   };
 
   const handleSubmit = async () => {
-    if (!title || !slug || !content) {
-      showWarning('Por favor completa todos los campos requeridos');
+    const errors: { title?: string; slug?: string; content?: string } = {};
+    const isContentEmpty = !content.trim() || content.trim() === '<p></p>';
+    if (!title.trim()) errors.title = 'El título es obligatorio';
+    if (!slug.trim()) errors.slug = 'El slug es obligatorio';
+    if (isContentEmpty) errors.content = 'El contenido no puede estar vacío';
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      showWarning('Revisá los campos marcados en rojo');
+      if (errors.title) {
+        titleInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        titleInputRef.current?.focus();
+      } else if (errors.slug) {
+        slugInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        slugInputRef.current?.focus();
+      } else if (errors.content) {
+        contentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -119,6 +262,13 @@ export function PostForm({ post, onSuccess }: PostFormProps): ReactElement {
         await createPost(postData);
       }
 
+      setIsDirty(false);
+      try {
+        localStorage.removeItem(draftStorageKey);
+      } catch {
+        // no-op
+      }
+
       if (onSuccess) {
         onSuccess();
       } else {
@@ -136,6 +286,31 @@ export function PostForm({ post, onSuccess }: PostFormProps): ReactElement {
 
   return (
     <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+      {showRecoveryBanner && (
+        <div className="flex flex-col items-start justify-between gap-3 rounded-md border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200 sm:flex-row sm:items-center">
+          <span>
+            Encontramos un borrador sin guardar
+            {recoveredAt ? ` del ${new Date(recoveredAt).toLocaleString('es-AR')}` : ''}. ¿Querés recuperarlo?
+          </span>
+          <div className="flex shrink-0 gap-2">
+            <button
+              type="button"
+              onClick={handleRestoreDraft}
+              className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
+            >
+              Restaurar
+            </button>
+            <button
+              type="button"
+              onClick={handleDiscardDraft}
+              className="rounded-md border border-indigo-300 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100 dark:border-indigo-700 dark:bg-transparent dark:text-indigo-200 dark:hover:bg-indigo-900"
+            >
+              Descartar
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Título y Slug */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
@@ -143,14 +318,26 @@ export function PostForm({ post, onSuccess }: PostFormProps): ReactElement {
             Título *
           </label>
           <input
+            ref={titleInputRef}
             type="text"
             id="title"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              if (fieldErrors.title) setFieldErrors((prev) => ({ ...prev, title: undefined }));
+            }}
             required
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+            aria-invalid={Boolean(fieldErrors.title)}
+            className={`mt-1 block w-full rounded-md border bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 ${
+              fieldErrors.title
+                ? 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-500'
+                : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600'
+            }`}
             placeholder="Título del post"
           />
+          {fieldErrors.title && (
+            <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.title}</p>
+          )}
         </div>
 
         <div>
@@ -159,15 +346,22 @@ export function PostForm({ post, onSuccess }: PostFormProps): ReactElement {
           </label>
           <div className="mt-1 flex gap-2">
             <input
+              ref={slugInputRef}
               type="text"
               id="slug"
               value={slug}
               onChange={(e) => {
                 setSlug(e.target.value);
                 setSlugManuallyEdited(true);
+                if (fieldErrors.slug) setFieldErrors((prev) => ({ ...prev, slug: undefined }));
               }}
               required
-              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              aria-invalid={Boolean(fieldErrors.slug)}
+              className={`block w-full rounded-md border bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 ${
+                fieldErrors.slug
+                  ? 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-500'
+                  : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600'
+              }`}
               placeholder="url-del-post"
             />
             <button
@@ -182,16 +376,20 @@ export function PostForm({ post, onSuccess }: PostFormProps): ReactElement {
               🔄
             </button>
           </div>
-          {slugStatus && (
-            <p
-              className={`mt-1 text-xs ${
-                slugStatus.startsWith('✓')
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-yellow-600 dark:text-yellow-400'
-              }`}
-            >
-              {slugStatus}
-            </p>
+          {fieldErrors.slug ? (
+            <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.slug}</p>
+          ) : (
+            slugStatus && (
+              <p
+                className={`mt-1 text-xs ${
+                  slugStatus.startsWith('✓')
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-yellow-600 dark:text-yellow-400'
+                }`}
+              >
+                {slugStatus}
+              </p>
+            )
           )}
         </div>
       </div>
@@ -221,11 +419,25 @@ export function PostForm({ post, onSuccess }: PostFormProps): ReactElement {
       <ImageUpload currentImage={image} onUploadComplete={setImage} />
 
       {/* Editor de contenido */}
-      <div>
+      <div ref={contentSectionRef}>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Contenido *
         </label>
-        <PostEditor content={content} onChange={setContent} />
+        <div
+          className={fieldErrors.content ? 'rounded-md ring-1 ring-red-500' : undefined}
+        >
+          <PostEditor
+            key={editorKey}
+            content={content}
+            onChange={(value) => {
+              setContent(value);
+              if (fieldErrors.content) setFieldErrors((prev) => ({ ...prev, content: undefined }));
+            }}
+          />
+        </div>
+        {fieldErrors.content && (
+          <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.content}</p>
+        )}
       </div>
 
       {/* Estado del post, Idioma y Fecha */}
@@ -287,7 +499,17 @@ export function PostForm({ post, onSuccess }: PostFormProps): ReactElement {
       </div>
 
       {/* Botón de acción */}
-      <div className="flex items-center justify-end gap-4 border-t border-gray-200 pt-6 dark:border-gray-700">
+      <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-4 border-t border-gray-200 bg-white/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:border-gray-700 dark:bg-gray-900/95 dark:supports-[backdrop-filter]:bg-gray-900/80 lg:-mx-6 lg:px-6">
+        <span className="text-xs text-gray-500 dark:text-gray-400">
+          {isDirty
+            ? `Tenés cambios sin guardar${
+                lastAutosaved
+                  ? ` · autoguardado ${lastAutosaved.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`
+                  : ''
+              }`
+            : ' '}
+        </span>
+        <div className="flex items-center gap-4">
         {post && slug && (
           <a
             href={getPostUrlBySlug(slug)}
@@ -312,6 +534,7 @@ export function PostForm({ post, onSuccess }: PostFormProps): ReactElement {
         >
           {loading ? 'Guardando...' : post ? 'Actualizar' : draft ? 'Guardar Borrador' : 'Publicar'}
         </button>
+        </div>
       </div>
     </form>
   );
