@@ -62,7 +62,7 @@ export default function AlbumGrid({ images, albumTitle }: AlbumGridProps): React
                 alt={image.alt}
                 width={image.width}
                 height={image.height}
-                className="w-full h-full object-cover grayscale contrast-[1.04] scale-[1.02] transition-[filter,transform] duration-500 group-hover:grayscale-0 group-hover:contrast-100 group-hover:scale-[1.06]"
+                className="w-full h-full object-cover scale-[1.02] transition-transform duration-500 group-hover:scale-[1.06]"
                 loading="lazy"
                 onError={(e) => {
                   const img = e.target as HTMLImageElement;

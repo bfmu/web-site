@@ -164,13 +164,11 @@ const isExternal = ctaHref.startsWith('http')
     height: 100%;
     border-radius: 9999px;
     object-fit: cover;
-    filter: grayscale(100%);
-    transition: filter 0.45s ease, transform 0.35s ease;
+    transition: transform 0.35s ease;
     z-index: 1;
     cursor: default;
   }
   .about-card__avatar-wrap:hover .about-card__avatar {
-    filter: grayscale(0%);
     transform: scale(1.04);
   }
 
