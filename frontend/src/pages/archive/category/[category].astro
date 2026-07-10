@@ -1,11 +1,11 @@
 ---
-import MainGridLayout from "@layouts/MainGridLayout.astro";
-import ArchivePanel from "@components/ArchivePanel.astro";
+import PageHeader from "@components/misc/PageHeader.astro";
 import PostsArchive from "@/components/PostsArchive.jsx";
 import { fetchPosts } from "@/utils/api-blog";
 import { i18n } from "@i18n/translation";
 import I18nKey from "@i18n/i18nKey";
 import { getBackendApiUrl } from "@/lib/env";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
 
 // Puedes poner aquí tus filtros si quieres
 const params = { category: Astro.params.category as string, page: 1, draft: false };
@@ -13,17 +13,18 @@ const res = await fetchPosts(params);
 const initialPosts = res.posts || res;
 const initialPagination = res.pagination;
 const fetchUrlBase = `${getBackendApiUrl()}/blog`;
+const categoryLabel = decodeURIComponent(params.category) || i18n(I18nKey.uncategorized);
 ---
 
 <MainGridLayout
-  title={i18n(I18nKey.archive)}
+  title={`${i18n(I18nKey.archive)} — ${categoryLabel}`}
   description={i18n(I18nKey.archive)}
   showProfile={false}
   showCategories={true}
   showTags={true}
   showArchiveLink={true}
 >
-  <!-- <ArchivePanel categories={[category]} /> -->
+  <PageHeader kicker="Categoría" title={categoryLabel} sub={`${initialPagination.total} artículo${initialPagination.total !== 1 ? 's' : ''}`} class="px-2" />
   <PostsArchive
     initialPosts={initialPosts}
     initialPagination={initialPagination}
