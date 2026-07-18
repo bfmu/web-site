@@ -99,12 +99,12 @@ try {
 
   .activity-strip__grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.6rem;
   }
 
   @media (min-width: 560px) {
-    .activity-strip__grid { grid-template-columns: repeat(3, 1fr); }
+    .activity-strip__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
 
   /* ── Shared chip styles ── */
