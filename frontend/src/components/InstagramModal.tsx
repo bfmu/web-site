@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { getOriginalImageUrl } from '../lib/image-utils';
+import { getVisitorId } from '../lib/visitor-id';
+import { toggleImageLike, getImageLikeStatus } from '../utils/api-blog';
+import { showError, showSuccess } from '../lib/notifications';
 
 interface Image {
   id: string;
@@ -10,6 +13,7 @@ interface Image {
   width?: number;
   height?: number;
   orientation?: number;
+  likesCount?: number;
 }
 
 interface InstagramModalProps {
@@ -30,6 +34,8 @@ export default function InstagramModal({
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -77,9 +83,61 @@ export default function InstagramModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, goToPrevious, goToNext, onClose]);
 
+  useEffect(() => {
+    const img = images[currentIndex];
+    if (!isOpen || !img) return;
+
+    setLikesCount(img.likesCount ?? 0);
+    let cancelled = false;
+    getImageLikeStatus(img.id, getVisitorId())
+      .then((res) => {
+        if (!cancelled) setLiked(res.liked);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, currentIndex, images]);
+
   if (!isOpen || images.length === 0 || !mounted) return null;
 
   const currentImage = images[currentIndex];
+
+  const handleToggleLike = async () => {
+    const wasLiked = liked;
+    const prevCount = likesCount;
+    setLiked(!wasLiked);
+    setLikesCount(wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1);
+
+    try {
+      const res = await toggleImageLike(currentImage.id, getVisitorId());
+      setLiked(res.liked);
+      setLikesCount(res.likesCount);
+    } catch {
+      setLiked(wasLiked);
+      setLikesCount(prevCount);
+      showError('No se pudo actualizar el like');
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: albumTitle, url: shareUrl });
+      } catch {
+        // El usuario canceló el share, no es un error
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showSuccess('Link copiado al portapapeles');
+    } catch {
+      showError('No se pudo copiar el link');
+    }
+  };
 
   const modalContent = (
     <div
@@ -221,13 +279,19 @@ export default function InstagramModal({
             {/* Action Buttons */}
             <div className="flex items-center gap-4">
               <button
-                className="text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                aria-label="Me gusta"
-                title="Me gusta (próximamente)"
+                onClick={handleToggleLike}
+                className={`transition-colors ${
+                  liked
+                    ? 'text-red-500 dark:text-red-400'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400'
+                }`}
+                aria-label={liked ? 'Quitar me gusta' : 'Me gusta'}
+                aria-pressed={liked}
+                title={liked ? 'Quitar me gusta' : 'Me gusta'}
               >
                 <svg
                   className="w-6 h-6"
-                  fill="none"
+                  fill={liked ? 'currentColor' : 'none'}
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
@@ -240,28 +304,10 @@ export default function InstagramModal({
                 </svg>
               </button>
               <button
-                className="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
-                aria-label="Comentar"
-                title="Comentar (próximamente)"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
-              </button>
-              <button
+                onClick={handleShare}
                 className="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors ml-auto"
                 aria-label="Compartir"
-                title="Compartir (próximamente)"
+                title="Compartir"
               >
                 <svg
                   className="w-6 h-6"
@@ -279,14 +325,9 @@ export default function InstagramModal({
               </button>
             </div>
 
-            {/* Likes Count (Placeholder) */}
+            {/* Likes Count */}
             <div className="text-sm text-gray-700 dark:text-gray-300">
-              <span className="font-semibold">0</span> me gusta
-            </div>
-
-            {/* Comments Section (Placeholder) */}
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Los comentarios estarán disponibles próximamente
+              <span className="font-semibold">{likesCount}</span> me gusta
             </div>
           </div>
         </div>

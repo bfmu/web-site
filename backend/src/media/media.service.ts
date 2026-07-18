@@ -8,6 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Media, MediaDocument } from './schemas/media.schema';
 import { Album, AlbumDocument } from './schemas/album.schema';
+import { MediaLike, MediaLikeDocument } from './schemas/media-like.schema';
 import { Post, PostDocument } from '../blog/schemas/post.schema';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { UpdateMediaDto } from './dto/update-media.dto';
@@ -21,6 +22,7 @@ export class MediaService {
   constructor(
     @InjectModel(Media.name) private mediaModel: Model<MediaDocument>,
     @InjectModel(Album.name) private albumModel: Model<AlbumDocument>,
+    @InjectModel(MediaLike.name) private mediaLikeModel: Model<MediaLikeDocument>,
     @InjectModel(Post.name) private postModel: Model<PostDocument>,
   ) {}
 
@@ -308,5 +310,45 @@ export class MediaService {
     }
 
     return updatedMedia;
+  }
+
+  async toggleLike(
+    mediaId: string,
+    visitorId: string,
+  ): Promise<{ liked: boolean; likesCount: number }> {
+    await this.findOne(mediaId);
+
+    const existing = await this.mediaLikeModel
+      .findOne({ mediaId, visitorId })
+      .exec();
+
+    if (existing) {
+      await existing.deleteOne();
+      const media = await this.mediaModel
+        .findByIdAndUpdate(
+          mediaId,
+          { $inc: { likesCount: -1 } },
+          { new: true },
+        )
+        .exec();
+      return { liked: false, likesCount: Math.max(0, media?.likesCount ?? 0) };
+    }
+
+    try {
+      await this.mediaLikeModel.create({ mediaId, visitorId });
+    } catch (err) {
+      // Race condition: el índice único ya rechazó un duplicado, seguimos igual
+    }
+    const media = await this.mediaModel
+      .findByIdAndUpdate(mediaId, { $inc: { likesCount: 1 } }, { new: true })
+      .exec();
+    return { liked: true, likesCount: media?.likesCount ?? 0 };
+  }
+
+  async getLikeStatus(mediaId: string, visitorId: string): Promise<boolean> {
+    const existing = await this.mediaLikeModel
+      .findOne({ mediaId, visitorId })
+      .exec();
+    return !!existing;
   }
 }

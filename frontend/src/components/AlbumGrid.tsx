@@ -10,6 +10,7 @@ interface Image {
   width?: number;
   height?: number;
   orientation?: number;
+  likesCount?: number;
 }
 
 interface AlbumGridProps {

@@ -1,7 +1,25 @@
-import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Query,
+  Body,
+  NotFoundException,
+  UseGuards,
+} from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBody,
+} from '@nestjs/swagger';
 import { AlbumService } from './album.service';
 import { MediaService } from './media.service';
+import { ToggleLikeDto } from './dto/toggle-like.dto';
 
 @ApiTags('gallery')
 @Controller('gallery')
@@ -67,5 +85,30 @@ export class GalleryController {
     }
 
     return media;
+  }
+
+  @Post('images/:id/like')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @ApiOperation({ summary: 'Dar o sacar like a una imagen (público)' })
+  @ApiParam({ name: 'id', description: 'ID del media' })
+  @ApiBody({ type: ToggleLikeDto })
+  @ApiResponse({ status: 201, description: 'Like actualizado' })
+  async toggleLike(@Param('id') id: string, @Body() dto: ToggleLikeDto) {
+    return this.mediaService.toggleLike(id, dto.visitorId);
+  }
+
+  @Get('images/:id/like-status')
+  @ApiOperation({ summary: 'Verificar si un visitante ya dio like (público)' })
+  @ApiParam({ name: 'id', description: 'ID del media' })
+  @ApiQuery({ name: 'visitorId', required: true })
+  @ApiResponse({ status: 200, description: 'Estado del like' })
+  async getLikeStatus(
+    @Param('id') id: string,
+    @Query('visitorId') visitorId: string,
+  ) {
+    if (!visitorId) return { liked: false };
+    const liked = await this.mediaService.getLikeStatus(id, visitorId);
+    return { liked };
   }
 }

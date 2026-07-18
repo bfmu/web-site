@@ -95,6 +95,7 @@ export interface GalleryImage {
   alt?: string;
   description?: string;
   order: number;
+  likesCount?: number;
 }
 
 export interface AlbumsResponse {
@@ -134,6 +135,36 @@ export async function fetchPublicImage(id: string): Promise<GalleryImage> {
   const url = buildUrl(getGalleryApiUrl(), 'images', id);
   const res = await fetch(url);
   if (!res.ok) throw new Error('Imagen no encontrada');
+  return res.json();
+}
+
+/**
+ * Dar o sacar like a una imagen (público, identificado por visitorId)
+ */
+export async function toggleImageLike(
+  imageId: string,
+  visitorId: string
+): Promise<{ liked: boolean; likesCount: number }> {
+  const url = buildUrl(getGalleryApiUrl(), 'images', imageId, 'like');
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ visitorId }),
+  });
+  if (!res.ok) throw new Error('Error al actualizar el like');
+  return res.json();
+}
+
+/**
+ * Verificar si un visitante ya dio like a una imagen
+ */
+export async function getImageLikeStatus(
+  imageId: string,
+  visitorId: string
+): Promise<{ liked: boolean }> {
+  const url = `${buildUrl(getGalleryApiUrl(), 'images', imageId, 'like-status')}?visitorId=${encodeURIComponent(visitorId)}`;
+  const res = await fetch(url);
+  if (!res.ok) return { liked: false };
   return res.json();
 }
 
