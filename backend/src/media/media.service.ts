@@ -22,7 +22,8 @@ export class MediaService {
   constructor(
     @InjectModel(Media.name) private mediaModel: Model<MediaDocument>,
     @InjectModel(Album.name) private albumModel: Model<AlbumDocument>,
-    @InjectModel(MediaLike.name) private mediaLikeModel: Model<MediaLikeDocument>,
+    @InjectModel(MediaLike.name)
+    private mediaLikeModel: Model<MediaLikeDocument>,
     @InjectModel(Post.name) private postModel: Model<PostDocument>,
   ) {}
 
@@ -325,18 +326,14 @@ export class MediaService {
     if (existing) {
       await existing.deleteOne();
       const media = await this.mediaModel
-        .findByIdAndUpdate(
-          mediaId,
-          { $inc: { likesCount: -1 } },
-          { new: true },
-        )
+        .findByIdAndUpdate(mediaId, { $inc: { likesCount: -1 } }, { new: true })
         .exec();
       return { liked: false, likesCount: Math.max(0, media?.likesCount ?? 0) };
     }
 
     try {
       await this.mediaLikeModel.create({ mediaId, visitorId });
-    } catch (err) {
+    } catch (_err) {
       // Race condition: el índice único ya rechazó un duplicado, seguimos igual
     }
     const media = await this.mediaModel
