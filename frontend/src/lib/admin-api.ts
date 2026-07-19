@@ -80,19 +80,25 @@ export interface Stats {
   tagsCount: number;
 }
 
+export interface AnalyticsRecentVisit {
+  ip: string;
+  country?: string;
+  city?: string;
+  path: string;
+  createdAt: string;
+  referrer: string;
+  device: string;
+}
+
 export interface AnalyticsStats {
   totalPageViews: number;
   uniqueVisitors: number;
   viewsToday: number;
+  rangeDays: number;
+  dailyViews: { date: string; count: number }[];
   topPages: { path: string; count: number }[];
   topLocations: { country: string; city?: string; count: number }[];
-  recentVisits: {
-    ip: string;
-    country?: string;
-    city?: string;
-    path: string;
-    createdAt: string;
-  }[];
+  recentVisits: AnalyticsRecentVisit[];
 }
 
 /**
@@ -287,8 +293,20 @@ export async function getStats(): Promise<Stats> {
 /**
  * Obtener estadísticas de analytics (visitas, IP, ubicación, páginas)
  */
-export async function getAnalyticsStats(): Promise<AnalyticsStats> {
-  return apiGet<AnalyticsStats>('analytics/stats');
+export async function getAnalyticsStats(days: number = 30): Promise<AnalyticsStats> {
+  return apiGet<AnalyticsStats>(`analytics/stats?days=${days}`);
+}
+
+/**
+ * Obtener una página de visitas recientes (para "cargar más")
+ */
+export async function getAnalyticsRecentVisits(
+  skip: number,
+  limit: number = 20
+): Promise<AnalyticsRecentVisit[]> {
+  return apiGet<AnalyticsRecentVisit[]>(
+    `analytics/recent-visits?skip=${skip}&limit=${limit}`
+  );
 }
 
 /**
