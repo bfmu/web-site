@@ -97,7 +97,10 @@ export class AlbumService {
   async findOne(slug: string): Promise<Album> {
     const album = await this.albumModel
       .findOne({ slug })
-      .populate('images', 'filename url alt description width height order')
+      .populate(
+        'images',
+        'filename url alt description width height order orientation likesCount',
+      )
       .exec();
 
     if (!album) {

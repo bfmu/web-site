@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import InstagramModal from './InstagramModal';
 import { getOptimizedImageUrl } from '../lib/image-utils';
 
@@ -20,6 +20,15 @@ interface AlbumGridProps {
 
 export default function AlbumGrid({ images, albumTitle }: AlbumGridProps): React.ReactElement {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+
+  // Deep link: si la URL trae ?foto=<id>, abrir el modal directo en esa imagen
+  useEffect(() => {
+    const fotoId = new URLSearchParams(window.location.search).get('foto');
+    if (!fotoId) return;
+    const index = images.findIndex((img) => img.id === fotoId);
+    if (index !== -1) setSelectedImageIndex(index);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (images.length === 0) {
     return (

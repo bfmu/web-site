@@ -100,6 +100,30 @@ export default function InstagramModal({
     };
   }, [isOpen, currentIndex, images]);
 
+  // Mantener la URL sincronizada con la foto actual, para que "Compartir"
+  // (que usa window.location.href) apunte siempre a la imagen exacta.
+  useEffect(() => {
+    if (!isOpen) return;
+    const img = images[currentIndex];
+    if (!img) return;
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('foto') === img.id) return;
+    url.searchParams.set('foto', img.id);
+    window.history.replaceState(null, '', url);
+  }, [isOpen, currentIndex, images]);
+
+  // Al cerrar/desmontar el modal, limpiar el ?foto= de la URL
+  useEffect(() => {
+    return () => {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('foto')) {
+        url.searchParams.delete('foto');
+        window.history.replaceState(null, '', url);
+      }
+    };
+  }, []);
+
   if (!isOpen || images.length === 0 || !mounted) return null;
 
   const currentImage = images[currentIndex];
