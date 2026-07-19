@@ -52,6 +52,9 @@ export class Media {
 
   @Prop()
   orientation?: number; // Rotación adicional en grados: 0, 90, 180, 270
+
+  @Prop({ default: 0 })
+  likesCount: number;
 }
 
 export const MediaSchema = SchemaFactory.createForClass(Media);

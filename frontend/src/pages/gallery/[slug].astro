@@ -43,6 +43,7 @@ const processedImages = images
       width: image.width,
       height: image.height,
       orientation: image.orientation ?? 0,
+      likesCount: image.likesCount ?? 0,
     }
   })
   .filter((img): img is NonNullable<typeof img> => img !== null)

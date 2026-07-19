@@ -7,6 +7,7 @@ import { AlbumController } from './album.controller';
 import { GalleryController } from './gallery.controller';
 import { Media, MediaSchema } from './schemas/media.schema';
 import { Album, AlbumSchema } from './schemas/album.schema';
+import { MediaLike, MediaLikeSchema } from './schemas/media-like.schema';
 import { Post, PostSchema } from '../blog/schemas/post.schema';
 
 @Module({
@@ -14,6 +15,7 @@ import { Post, PostSchema } from '../blog/schemas/post.schema';
     MongooseModule.forFeature([
       { name: Media.name, schema: MediaSchema },
       { name: Album.name, schema: AlbumSchema },
+      { name: MediaLike.name, schema: MediaLikeSchema },
       { name: Post.name, schema: PostSchema },
     ]),
   ],
