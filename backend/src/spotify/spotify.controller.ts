@@ -3,11 +3,17 @@ import {
   Get,
   HttpException,
   HttpStatus,
+  Param,
   Query,
   Res,
+  UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { SpotifyService } from './spotify.service';
 import { Response } from 'express';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('spotify') // Todas las rutas de este controlador estarán prefijadas con "api/spotify"
 export class SpotifyController {
@@ -272,6 +278,41 @@ export class SpotifyController {
     try {
       const recentlyPlayed = await this.spotifyService.getRecentlyPlayed();
       return recentlyPlayed || 'No recently played tracks found';
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  /**
+   * Busca canciones por nombre/artista (para adjuntar una pista a una foto).
+   * Endpoint: GET /api/spotify/search?q=... (requiere autenticación)
+   */
+  @Get('search')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'editor')
+  @ApiBearerAuth()
+  async search(@Query('q') q: string) {
+    const query = q?.trim();
+    if (!query) return { tracks: [] };
+    try {
+      const tracks = await this.spotifyService.searchTracks(query);
+      return { tracks };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  /**
+   * Detalle de una pista puntual, para mostrar la canción ya anclada a una foto.
+   * Endpoint: GET /api/spotify/track/:id (requiere autenticación)
+   */
+  @Get('track/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'editor')
+  @ApiBearerAuth()
+  async getTrack(@Param('id') id: string) {
+    try {
+      return await this.spotifyService.getTrack(id);
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }

@@ -100,4 +100,20 @@ export class CreateMediaDto {
   @IsOptional()
   @IsNumber()
   orientation?: number;
+
+  @ApiPropertyOptional({
+    example: '4iV5W9uYEdYUVa79Axb7Rh',
+    description: 'ID de la pista de Spotify anclada a esta foto',
+  })
+  @IsOptional()
+  @IsString()
+  spotifyTrackId?: string;
+
+  @ApiPropertyOptional({
+    example: '/uploads/images/123-thumb.jpg',
+    description: 'Ruta del thumbnail generado para un video',
+  })
+  @IsOptional()
+  @IsString()
+  thumbnailPath?: string;
 }

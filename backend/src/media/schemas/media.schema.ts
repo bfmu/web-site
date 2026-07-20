@@ -55,6 +55,12 @@ export class Media {
 
   @Prop({ default: 0 })
   likesCount: number;
+
+  @Prop()
+  spotifyTrackId?: string; // ID de la pista de Spotify anclada a esta foto
+
+  @Prop()
+  thumbnailPath?: string; // Ruta del frame extraído para videos (poster en el grid)
 }
 
 export const MediaSchema = SchemaFactory.createForClass(Media);

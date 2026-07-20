@@ -4,6 +4,7 @@ import { getOriginalImageUrl } from '../lib/image-utils';
 import { getVisitorId } from '../lib/visitor-id';
 import { toggleImageLike, getImageLikeStatus } from '../utils/api-blog';
 import { showError, showSuccess } from '../lib/notifications';
+import { usePlayerStore } from './music/playerStore';
 
 interface Image {
   id: string;
@@ -14,6 +15,9 @@ interface Image {
   height?: number;
   orientation?: number;
   likesCount?: number;
+  spotifyTrackId?: string;
+  type?: string;
+  thumbnailUrl?: string;
 }
 
 interface InstagramModalProps {
@@ -124,6 +128,28 @@ export default function InstagramModal({
     };
   }, []);
 
+  // La canción anclada a la foto es exclusiva del modal (embed aislado, no toca
+  // el estado del reproductor persistente). Si la página tenía música sonando,
+  // se pausa para darle prioridad a la de la foto y se retoma al cerrar/cambiar
+  // de foto — pero solo si nosotros fuimos quienes la pausaron.
+  useEffect(() => {
+    const trackId = isOpen ? images[currentIndex]?.spotifyTrackId : undefined;
+    if (!trackId) return;
+
+    const { isPlaying, controller } = usePlayerStore.getState();
+    let pausedPageMusic = false;
+    if (isPlaying && controller) {
+      controller.pause();
+      pausedPageMusic = true;
+    }
+
+    return () => {
+      if (pausedPageMusic) {
+        usePlayerStore.getState().controller?.play();
+      }
+    };
+  }, [isOpen, currentIndex, images]);
+
   if (!isOpen || images.length === 0 || !mounted) return null;
 
   const currentImage = images[currentIndex];
@@ -201,22 +227,40 @@ export default function InstagramModal({
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
             </div>
           )}
-          <img
-            src={getOriginalImageUrl(currentImage.url, currentImage.orientation ?? 0)}
-            alt={currentImage.alt}
-            width={currentImage.width}
-            height={currentImage.height}
-            className={`max-w-full max-h-full object-contain transition-opacity duration-300 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
-            onLoad={() => setImageLoaded(true)}
-            onError={(e) => {
-              const img = e.target as HTMLImageElement;
-              img.onerror = null;
-              img.src = '/default-avatar.svg';
-              setImageLoaded(true);
-            }}
-          />
+          {currentImage.type === 'video' ? (
+            // biome-ignore lint/a11y/useMediaCaption: video subido por el usuario, no hay pista de subtítulos disponible
+            <video
+              key={currentImage.id}
+              src={currentImage.url}
+              poster={currentImage.thumbnailUrl}
+              controls
+              playsInline
+              width={currentImage.width}
+              height={currentImage.height}
+              className={`max-w-full max-h-full object-contain transition-opacity duration-300 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoadedData={() => setImageLoaded(true)}
+              onError={() => setImageLoaded(true)}
+            />
+          ) : (
+            <img
+              src={getOriginalImageUrl(currentImage.url, currentImage.orientation ?? 0)}
+              alt={currentImage.alt}
+              width={currentImage.width}
+              height={currentImage.height}
+              className={`max-w-full max-h-full object-contain transition-opacity duration-300 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => setImageLoaded(true)}
+              onError={(e) => {
+                const img = e.target as HTMLImageElement;
+                img.onerror = null;
+                img.src = '/default-avatar.svg';
+                setImageLoaded(true);
+              }}
+            />
+          )}
 
           {/* Navigation Arrows */}
           {images.length > 1 && (
@@ -284,6 +328,20 @@ export default function InstagramModal({
 
           {/* Image Info - Scrollable */}
           <div className="flex-1 overflow-y-auto p-4 min-h-0">
+            {currentImage.spotifyTrackId && (
+              <div className="mb-4">
+                <iframe
+                  key={currentIndex}
+                  title="Reproductor de Spotify"
+                  src={`https://open.spotify.com/embed/track/${currentImage.spotifyTrackId}?utm_source=generator&autoplay=1`}
+                  width="100%"
+                  height="152"
+                  style={{ borderRadius: '12px', border: 0 }}
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"
+                />
+              </div>
+            )}
             {currentImage.description && (
               <div className="mb-4">
                 <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">

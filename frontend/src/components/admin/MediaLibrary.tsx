@@ -6,10 +6,14 @@ import {
   checkMediaUsage,
   updateMedia,
   uploadMedia,
+  searchSpotifyTracks,
+  getSpotifyTrack,
   type MediaFile,
   type MediaQuery,
+  type SpotifyTrackResult,
 } from '../../lib/admin-api';
 import { getOptimizedImageUrl, getOriginalImageUrl } from '../../lib/image-utils';
+import { getBackendResourceUrl } from '../../lib/env';
 import { showSuccess, showError, showInfo } from '@/lib/notifications';
 
 export default function MediaLibrary(): React.ReactElement {
@@ -34,10 +38,42 @@ export default function MediaLibrary(): React.ReactElement {
   const [editData, setEditData] = useState<Partial<MediaFile>>({});
   const [usageInfo, setUsageInfo] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
+  const [selectedSpotifyTrack, setSelectedSpotifyTrack] = useState<SpotifyTrackResult | null>(null);
+  const [spotifyQuery, setSpotifyQuery] = useState('');
+  const [spotifyResults, setSpotifyResults] = useState<SpotifyTrackResult[]>([]);
+  const [spotifySearching, setSpotifySearching] = useState(false);
 
   useEffect(() => {
     loadMedia();
   }, [filters]);
+
+  // Buscar canciones en Spotify a medida que el admin tipea (debounced)
+  useEffect(() => {
+    if (!spotifyQuery.trim()) {
+      setSpotifyResults([]);
+      return;
+    }
+    setSpotifySearching(true);
+    const timeout = setTimeout(() => {
+      searchSpotifyTracks(spotifyQuery)
+        .then(setSpotifyResults)
+        .catch(() => setSpotifyResults([]))
+        .finally(() => setSpotifySearching(false));
+    }, 350);
+    return () => clearTimeout(timeout);
+  }, [spotifyQuery]);
+
+  const handleSelectSpotifyTrack = (track: SpotifyTrackResult) => {
+    setEditData({ ...editData, spotifyTrackId: track.id });
+    setSelectedSpotifyTrack(track);
+    setSpotifyQuery('');
+    setSpotifyResults([]);
+  };
+
+  const handleClearSpotifyTrack = () => {
+    setEditData({ ...editData, spotifyTrackId: undefined });
+    setSelectedSpotifyTrack(null);
+  };
 
   const loadMedia = async () => {
     try {
@@ -105,6 +141,9 @@ export default function MediaLibrary(): React.ReactElement {
       setShowEditModal(false);
       setSelectedMedia(null);
       setEditData({});
+      setSpotifyQuery('');
+      setSpotifyResults([]);
+      setSelectedSpotifyTrack(null);
       loadMedia();
     } catch (error: any) {
       console.error('Error updating media:', error);
@@ -121,11 +160,11 @@ export default function MediaLibrary(): React.ReactElement {
       await uploadMedia(file, {
         isPublic: filters.isPublic === true,
       });
-      showSuccess('Imagen subida correctamente');
+      showSuccess('Archivo subido correctamente');
       loadMedia();
     } catch (error: any) {
       console.error('Error uploading media:', error);
-      showError(error.message || 'Error al subir imagen');
+      showError(error.message || 'Error al subir el archivo');
     } finally {
       setUploading(false);
       if (e.target) e.target.value = '';
@@ -139,8 +178,13 @@ export default function MediaLibrary(): React.ReactElement {
   };
 
   const getImageUrl = (media: MediaFile): string => {
+    if (media.type === 'video') {
+      return media.thumbnailPath ? getOptimizedImageUrl(media.thumbnailPath, 200, 80) : '';
+    }
     return getOptimizedImageUrl(media.url, 200, 80, media.orientation ?? 0);
   };
+
+  const getVideoUrl = (media: MediaFile): string => getBackendResourceUrl(media.url);
 
   const handleRotate = async (degrees: number) => {
     if (!selectedMedia) {
@@ -211,10 +255,10 @@ export default function MediaLibrary(): React.ReactElement {
           />
         </div>
         <label className="cursor-pointer rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50">
-          {uploading ? 'Subiendo...' : 'Subir Imagen'}
+          {uploading ? 'Subiendo...' : 'Subir Archivo'}
           <input
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             onChange={handleFileUpload}
             disabled={uploading}
             className="hidden"
@@ -246,6 +290,15 @@ export default function MediaLibrary(): React.ReactElement {
                     img.src = '/default-avatar.svg';
                   }}
                 />
+                {item.type === 'video' && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50">
+                      <svg className="h-4 w-4 text-white translate-x-0.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                   <div className="text-white text-sm font-medium">{item.originalName}</div>
                 </div>
@@ -308,12 +361,23 @@ export default function MediaLibrary(): React.ReactElement {
                 </button>
               </div>
 
-              <img
-                key={`${selectedMedia._id}-${selectedMedia.orientation ?? 0}`}
-                src={getOriginalImageUrl(selectedMedia.url, selectedMedia.orientation ?? 0)}
-                alt={selectedMedia.alt || selectedMedia.originalName}
-                className="w-full rounded-lg mb-4"
-              />
+              {selectedMedia.type === 'video' ? (
+                // biome-ignore lint/a11y/useMediaCaption: video subido por el usuario, no hay pista de subtítulos disponible
+                <video
+                  key={selectedMedia._id}
+                  src={getVideoUrl(selectedMedia)}
+                  poster={selectedMedia.thumbnailPath ? getOptimizedImageUrl(selectedMedia.thumbnailPath, 800) : undefined}
+                  controls
+                  className="w-full rounded-lg mb-4"
+                />
+              ) : (
+                <img
+                  key={`${selectedMedia._id}-${selectedMedia.orientation ?? 0}`}
+                  src={getOriginalImageUrl(selectedMedia.url, selectedMedia.orientation ?? 0)}
+                  alt={selectedMedia.alt || selectedMedia.originalName}
+                  className="w-full rounded-lg mb-4"
+                />
+              )}
 
               <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
                 <div>
@@ -336,36 +400,45 @@ export default function MediaLibrary(): React.ReactElement {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <div className="flex gap-1" title="Girar imagen">
-                  <button
-                    onClick={() => handleRotate(-90)}
-                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                    title="Girar 90° izquierda"
-                  >
-                    ↶ 90°
-                  </button>
-                  <button
-                    onClick={() => handleRotate(90)}
-                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                    title="Girar 90° derecha"
-                  >
-                    ↷ 90°
-                  </button>
-                  <button
-                    onClick={() => handleRotate(180)}
-                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                    title="Voltear 180°"
-                  >
-                    ⟲ 180°
-                  </button>
-                </div>
+                {selectedMedia.type !== 'video' && (
+                  <div className="flex gap-1" title="Girar imagen">
+                    <button
+                      onClick={() => handleRotate(-90)}
+                      className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                      title="Girar 90° izquierda"
+                    >
+                      ↶ 90°
+                    </button>
+                    <button
+                      onClick={() => handleRotate(90)}
+                      className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                      title="Girar 90° derecha"
+                    >
+                      ↷ 90°
+                    </button>
+                    <button
+                      onClick={() => handleRotate(180)}
+                      className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                      title="Voltear 180°"
+                    >
+                      ⟲ 180°
+                    </button>
+                  </div>
+                )}
                 <button
                   onClick={() => {
                     setEditData({
                       alt: selectedMedia.alt || '',
                       description: selectedMedia.description || '',
                       isPublic: selectedMedia.isPublic,
+                      spotifyTrackId: selectedMedia.spotifyTrackId || '',
                     });
+                    setSpotifyQuery('');
+                    setSpotifyResults([]);
+                    setSelectedSpotifyTrack(null);
+                    if (selectedMedia.spotifyTrackId) {
+                      getSpotifyTrack(selectedMedia.spotifyTrackId).then(setSelectedSpotifyTrack);
+                    }
                     setShowEditModal(true);
                   }}
                   className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
@@ -506,6 +579,91 @@ export default function MediaLibrary(): React.ReactElement {
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                 />
               </div>
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Canción de Spotify (opcional)
+                </label>
+
+                {editData.spotifyTrackId && selectedSpotifyTrack ? (
+                  <div className="flex items-center gap-3 rounded-md border border-gray-300 bg-white px-3 py-2 dark:border-gray-600 dark:bg-gray-700">
+                    {selectedSpotifyTrack.coverUrl ? (
+                      <img
+                        src={selectedSpotifyTrack.coverUrl}
+                        alt=""
+                        className="h-10 w-10 shrink-0 rounded object-cover"
+                      />
+                    ) : (
+                      <span className="text-xl">🎵</span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                        {selectedSpotifyTrack.name}
+                      </p>
+                      <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                        {selectedSpotifyTrack.artist}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClearSpotifyTrack}
+                      className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:bg-gray-100 hover:text-red-600 dark:text-gray-400 dark:hover:bg-gray-600"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                ) : editData.spotifyTrackId ? (
+                  <div className="flex items-center gap-3 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                    Cargando canción…
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      value={spotifyQuery}
+                      onChange={(e) => setSpotifyQuery(e.target.value)}
+                      placeholder="Buscá por título o artista…"
+                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                    />
+                    {spotifySearching && (
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Buscando…</p>
+                    )}
+                    {spotifyResults.length > 0 && (
+                      <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-md border border-gray-300 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700">
+                        {spotifyResults.map((track) => (
+                          <li key={track.id}>
+                            <button
+                              type="button"
+                              onClick={() => handleSelectSpotifyTrack(track)}
+                              className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600"
+                            >
+                              {track.coverUrl ? (
+                                <img
+                                  src={track.coverUrl}
+                                  alt=""
+                                  className="h-9 w-9 shrink-0 rounded object-cover"
+                                />
+                              ) : (
+                                <span className="text-lg">🎵</span>
+                              )}
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                                  {track.name}
+                                </p>
+                                <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                                  {track.artist}
+                                </p>
+                              </div>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                )}
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Se reproduce al abrir la foto en la galería pública.
+                </p>
+              </div>
               <div>
                 <label className="flex items-center gap-2">
                   <input
@@ -525,6 +683,9 @@ export default function MediaLibrary(): React.ReactElement {
                 onClick={() => {
                   setShowEditModal(false);
                   setEditData({});
+                  setSpotifyQuery('');
+                  setSpotifyResults([]);
+                  setSelectedSpotifyTrack(null);
                 }}
                 className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               >

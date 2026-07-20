@@ -44,6 +44,9 @@ const processedImages = images
       height: image.height,
       orientation: image.orientation ?? 0,
       likesCount: image.likesCount ?? 0,
+      spotifyTrackId: image.spotifyTrackId,
+      type: image.type,
+      thumbnailUrl: image.thumbnailPath ? getBackendResourceUrl(image.thumbnailPath) : undefined,
     }
   })
   .filter((img): img is NonNullable<typeof img> => img !== null)

@@ -342,4 +342,35 @@ export class SpotifyService implements OnModuleInit {
     });
     return data.items;
   }
+
+  private mapTrack(t: any) {
+    return {
+      id: t.id,
+      name: t.name,
+      artist: t.artists?.map((a: any) => a.name).join(', ') ?? '',
+      album: t.album?.name ?? '',
+      coverUrl: t.album?.images?.[1]?.url ?? t.album?.images?.[0]?.url ?? null,
+      spotifyUrl: t.external_urls?.spotify ?? null,
+    };
+  }
+
+  // Búsqueda de canciones (para adjuntar una pista a una foto desde el admin)
+  async searchTracks(query: string, limit = 8) {
+    this.ensureConfigured();
+    const data = await this.makeRequest({
+      method: 'get',
+      url: `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`,
+    });
+    return (data.tracks?.items ?? []).map((t: any) => this.mapTrack(t));
+  }
+
+  // Detalle de una pista puntual (para mostrar la canción ya anclada a una foto)
+  async getTrack(id: string) {
+    this.ensureConfigured();
+    const data = await this.makeRequest({
+      method: 'get',
+      url: `https://api.spotify.com/v1/tracks/${encodeURIComponent(id)}`,
+    });
+    return this.mapTrack(data);
+  }
 }

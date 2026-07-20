@@ -11,6 +11,9 @@ interface Image {
   height?: number;
   orientation?: number;
   likesCount?: number;
+  spotifyTrackId?: string;
+  type?: string;
+  thumbnailUrl?: string;
 }
 
 interface AlbumGridProps {
@@ -61,6 +64,8 @@ export default function AlbumGrid({ images, albumTitle }: AlbumGridProps): React
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 auto-rows-[150px] md:auto-rows-[200px] grid-flow-row-dense">
         {images.map((image, index) => {
           const sizeClass = getImageSize(index, image);
+          const isVideo = image.type === 'video';
+          const thumbSrc = isVideo && image.thumbnailUrl ? image.thumbnailUrl : image.url;
           return (
             <div
               key={image.id}
@@ -68,7 +73,7 @@ export default function AlbumGrid({ images, albumTitle }: AlbumGridProps): React
               className={`group relative overflow-hidden bg-[var(--btn-regular-bg)] ${sizeClass} cursor-pointer`}
             >
               <img
-                src={getOptimizedImageUrl(image.url, 600, 90, image.orientation ?? 0)}
+                src={getOptimizedImageUrl(thumbSrc, 600, 90, image.orientation ?? 0)}
                 alt={image.alt}
                 width={image.width}
                 height={image.height}
@@ -80,6 +85,15 @@ export default function AlbumGrid({ images, albumTitle }: AlbumGridProps): React
                   img.src = '/default-avatar.svg';
                 }}
               />
+              {isVideo && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50">
+                    <svg className="h-5 w-5 text-white translate-x-0.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                </div>
+              )}
               {/* Overlay con descripción si existe */}
               {image.description && (
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
