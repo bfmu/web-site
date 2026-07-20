@@ -7,6 +7,7 @@ import {
   type Album,
 } from '../../lib/admin-api';
 import { getOptimizedImageUrl } from '../../lib/image-utils';
+import { getBackendResourceUrl } from '../../lib/env';
 import { showSuccess, showError } from '@/lib/notifications';
 
 interface AddPhotosModalProps {
@@ -58,7 +59,6 @@ export function AddPhotosModal({
     try {
       setLoading(true);
       const response = await getMediaList({
-        type: 'image',
         page: pageNum,
         limit: 50,
         search: search || undefined,
@@ -143,17 +143,22 @@ export function AddPhotosModal({
       const result = await uploadMedia(uploadFile, uploadMetadata);
       const updatedAlbum = await addImagesToAlbumBatch(album.slug, [result._id]);
       onSuccess(updatedAlbum);
-      showSuccess('Imagen subida y agregada al álbum');
+      showSuccess('Archivo subido y agregado al álbum');
       handleClearFile();
       loadMedia(1, true);
     } catch (error: any) {
-      showError(error.message || 'Error al subir imagen');
+      showError(error.message || 'Error al subir el archivo');
     } finally {
       setUploading(false);
     }
   };
 
-  const getImageUrl = (m: MediaFile): string => getOptimizedImageUrl(m.url, 200);
+  const getImageUrl = (m: MediaFile): string => {
+    if (m.type === 'video') {
+      return m.thumbnailPath ? getOptimizedImageUrl(m.thumbnailPath, 200) : '';
+    }
+    return getOptimizedImageUrl(m.url, 200);
+  };
 
   if (!isOpen) return null;
 
@@ -207,7 +212,7 @@ export function AddPhotosModal({
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Buscar imágenes..."
+                  placeholder="Buscar fotos y videos..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -222,7 +227,7 @@ export function AddPhotosModal({
               </div>
 
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Solo se muestran imágenes que no han sido agregadas a ningún álbum.
+                Solo se muestran fotos y videos que no han sido agregados a ningún álbum.
               </p>
 
               {loading && media.length === 0 ? (
@@ -230,10 +235,10 @@ export function AddPhotosModal({
               ) : media.length === 0 ? (
                 <div className="text-center py-12 rounded-lg bg-gray-50 dark:bg-gray-900/50">
                   <p className="text-gray-600 dark:text-gray-400 mb-2">
-                    No hay imágenes disponibles para agregar
+                    No hay fotos ni videos disponibles para agregar
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-500">
-                    Sube nuevas imágenes desde la pestaña "Subir nueva" o en la sección Media.
+                    Sube contenido nuevo desde la pestaña "Subir nueva" o en la sección Media.
                   </p>
                 </div>
               ) : (
@@ -275,6 +280,15 @@ export function AddPhotosModal({
                             img.src = '/default-avatar.svg';
                           }}
                         />
+                        {item.type === 'video' && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black/50">
+                              <svg className="h-3.5 w-3.5 text-white translate-x-0.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                <path d="M8 5v14l11-7z" />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
                         {selectedIds.has(item._id) && (
                           <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center">
                             <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -304,7 +318,7 @@ export function AddPhotosModal({
               <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/*"
                   onChange={handleFileSelect}
                   className="hidden"
                   id="add-photos-upload-input"
@@ -312,11 +326,19 @@ export function AddPhotosModal({
                 <label htmlFor="add-photos-upload-input" className="cursor-pointer block">
                   {uploadPreview ? (
                     <div className="relative inline-block">
-                      <img
-                        src={uploadPreview}
-                        alt="Vista previa"
-                        className="max-h-64 mx-auto rounded-lg"
-                      />
+                      {uploadFile?.type.startsWith('video/') ? (
+                        <video
+                          src={uploadPreview}
+                          controls
+                          className="max-h-64 mx-auto rounded-lg"
+                        />
+                      ) : (
+                        <img
+                          src={uploadPreview}
+                          alt="Vista previa"
+                          className="max-h-64 mx-auto rounded-lg"
+                        />
+                      )}
                       <button
                         type="button"
                         onClick={(e) => {

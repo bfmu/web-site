@@ -96,6 +96,8 @@ export interface GalleryImage {
   description?: string;
   order: number;
   likesCount?: number;
+  spotifyTrackId?: string;
+  thumbnailPath?: string;
 }
 
 export interface AlbumsResponse {

@@ -445,6 +445,8 @@ export interface MediaFile {
   description?: string;
   order: number;
   orientation?: number; // Rotación en grados: 0, 90, 180, 270
+  spotifyTrackId?: string;
+  thumbnailPath?: string; // Poster generado para videos
   createdAt?: string;
   updatedAt?: string;
 }
@@ -911,4 +913,37 @@ export async function adminUpdateBook(id: string, data: UpdateBookRequest): Prom
 
 export async function adminDeleteBook(id: string): Promise<void> {
   return apiDelete<void>(`books/${id}`);
+}
+
+// ==================== SPOTIFY (búsqueda de canciones) ====================
+
+export interface SpotifyTrackResult {
+  id: string;
+  name: string;
+  artist: string;
+  album?: string;
+  coverUrl: string | null;
+  spotifyUrl: string | null;
+}
+
+/**
+ * Busca canciones por nombre/artista para adjuntar a una foto
+ */
+export async function searchSpotifyTracks(query: string): Promise<SpotifyTrackResult[]> {
+  if (!query.trim()) return [];
+  const res = await apiGet<{ tracks: SpotifyTrackResult[] }>(
+    `spotify/search?q=${encodeURIComponent(query.trim())}`,
+  );
+  return res.tracks;
+}
+
+/**
+ * Obtiene el detalle de una pista puntual (para mostrar la canción ya anclada a una foto)
+ */
+export async function getSpotifyTrack(id: string): Promise<SpotifyTrackResult | null> {
+  try {
+    return await apiGet<SpotifyTrackResult>(`spotify/track/${id}`);
+  } catch {
+    return null;
+  }
 }
