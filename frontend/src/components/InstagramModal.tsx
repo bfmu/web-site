@@ -228,6 +228,7 @@ export default function InstagramModal({
             </div>
           )}
           {currentImage.type === 'video' ? (
+            // biome-ignore lint/a11y/useMediaCaption: video subido por el usuario, no hay pista de subtítulos disponible
             <video
               key={currentImage.id}
               src={currentImage.url}

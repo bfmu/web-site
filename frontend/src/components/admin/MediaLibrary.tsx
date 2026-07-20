@@ -362,6 +362,7 @@ export default function MediaLibrary(): React.ReactElement {
               </div>
 
               {selectedMedia.type === 'video' ? (
+                // biome-ignore lint/a11y/useMediaCaption: video subido por el usuario, no hay pista de subtítulos disponible
                 <video
                   key={selectedMedia._id}
                   src={getVideoUrl(selectedMedia)}

@@ -327,6 +327,7 @@ export function AddPhotosModal({
                   {uploadPreview ? (
                     <div className="relative inline-block">
                       {uploadFile?.type.startsWith('video/') ? (
+                        // biome-ignore lint/a11y/useMediaCaption: preview local antes de subir, no hay pista de subtítulos disponible
                         <video
                           src={uploadPreview}
                           controls
