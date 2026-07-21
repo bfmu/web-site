@@ -75,7 +75,7 @@ export class AlbumService {
     const [albums, total] = await Promise.all([
       this.albumModel
         .find(filter)
-        .populate('images', 'filename url alt description type thumbnailPath spotifyTrackId')
+        .populate('images', 'filename url alt description width height order orientation likesCount type thumbnailPath spotifyTrackId')
         .sort({ order: 1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -129,7 +129,7 @@ export class AlbumService {
 
     const updatedAlbum = await this.albumModel
       .findOneAndUpdate({ slug }, updateData, { new: true })
-      .populate('images', 'filename url alt description type thumbnailPath spotifyTrackId')
+      .populate('images', 'filename url alt description width height order orientation likesCount type thumbnailPath spotifyTrackId')
       .exec();
 
     if (!updatedAlbum) {
@@ -287,7 +287,7 @@ export class AlbumService {
       return this.albumModel
         .find()
         .sort({ order: 1, createdAt: -1 })
-        .populate('images', 'filename url alt description type thumbnailPath spotifyTrackId')
+        .populate('images', 'filename url alt description width height order orientation likesCount type thumbnailPath spotifyTrackId')
         .exec();
     }
 
@@ -325,7 +325,7 @@ export class AlbumService {
     // Actualizar portada
     return this.albumModel
       .findOneAndUpdate({ slug }, { coverImage: media.url }, { new: true })
-      .populate('images', 'filename url alt description type thumbnailPath spotifyTrackId')
+      .populate('images', 'filename url alt description width height order orientation likesCount type thumbnailPath spotifyTrackId')
       .exec();
   }
 }
