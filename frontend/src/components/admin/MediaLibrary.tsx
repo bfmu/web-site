@@ -47,6 +47,31 @@ export default function MediaLibrary(): React.ReactElement {
     loadMedia();
   }, [filters]);
 
+  // Esc cierra el modal más "superior" primero (editar > renombrar > eliminar > detalle),
+  // en vez de no hacer nada como pasaba antes.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showEditModal) {
+        setShowEditModal(false);
+        setEditData({});
+        setSpotifyQuery('');
+        setSpotifyResults([]);
+        setSelectedSpotifyTrack(null);
+      } else if (showRenameModal) {
+        setShowRenameModal(false);
+        setNewFilename('');
+      } else if (showDeleteModal) {
+        setShowDeleteModal(false);
+        setUsageInfo(null);
+      } else if (selectedMedia) {
+        setSelectedMedia(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showEditModal, showRenameModal, showDeleteModal, selectedMedia]);
+
   // Buscar canciones en Spotify a medida que el admin tipea (debounced)
   useEffect(() => {
     if (!spotifyQuery.trim()) {

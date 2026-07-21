@@ -50,6 +50,15 @@ export function AddPhotosModal({
   }, [isOpen, activeTab, album._id]);
 
   useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
     if (isOpen && activeTab === 'library' && page > 1) {
       loadMedia(page, false);
     }
