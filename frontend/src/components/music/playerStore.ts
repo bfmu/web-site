@@ -14,6 +14,8 @@ export interface SpotifyController {
   loadUri: (uri: string, startAtSeconds?: number) => void;
   play: () => void;
   pause: () => void;
+  /** A diferencia de play(), continúa desde donde se pausó en vez de reiniciar la pista. */
+  resume: () => void;
   togglePlay: () => void;
   seek: (seconds: number) => void;
 }

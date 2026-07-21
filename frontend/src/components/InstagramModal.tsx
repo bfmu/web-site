@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getOriginalImageUrl } from '../lib/image-utils';
 import { getVisitorId } from '../lib/visitor-id';
 import { toggleImageLike, getImageLikeStatus } from '../utils/api-blog';
 import { showError, showSuccess } from '../lib/notifications';
 import { usePlayerStore } from './music/playerStore';
+import { loadSpotifyScript, type SpotifyEmbedController } from './music/spotifyIframeApi';
 
 interface Image {
   id: string;
@@ -128,24 +129,56 @@ export default function InstagramModal({
     };
   }, []);
 
-  // La canción anclada a la foto es exclusiva del modal (embed aislado, no toca
-  // el estado del reproductor persistente). Si la página tenía música sonando,
-  // se pausa para darle prioridad a la de la foto y se retoma al cerrar/cambiar
-  // de foto — pero solo si nosotros fuimos quienes la pausaron.
+  const photoEmbedContainerRef = useRef<HTMLDivElement>(null);
+  const photoControllerRef = useRef<SpotifyEmbedController | null>(null);
+
+  // La canción anclada a la foto es exclusiva del modal: se controla con un
+  // controller de la Spotify IFrame API propio (no el iframe estático con
+  // ?autoplay=1, que los navegadores bloquean casi siempre por política de
+  // autoplay) y nunca toca el estado del reproductor persistente. Si la
+  // página tenía música sonando, se pausa para darle prioridad a la de la
+  // foto y se retoma (resume, no play — evita reiniciar desde el principio)
+  // al cerrar/cambiar de foto, pero solo si nosotros fuimos quienes la pausaron.
   useEffect(() => {
     const trackId = isOpen ? images[currentIndex]?.spotifyTrackId : undefined;
-    if (!trackId) return;
 
-    const { isPlaying, controller } = usePlayerStore.getState();
+    const { isPlaying, controller: pageController } = usePlayerStore.getState();
     let pausedPageMusic = false;
-    if (isPlaying && controller) {
-      controller.pause();
+    if (trackId && isPlaying && pageController) {
+      pageController.pause();
       pausedPageMusic = true;
     }
 
+    let cancelled = false;
+    if (trackId) {
+      loadSpotifyScript().then((IFrameAPI: any) => {
+        if (cancelled || !photoEmbedContainerRef.current) return;
+        photoEmbedContainerRef.current.innerHTML = '';
+        const width = photoEmbedContainerRef.current.clientWidth || 300;
+        IFrameAPI.createController(
+          photoEmbedContainerRef.current,
+          { uri: `spotify:track:${trackId}`, width, height: 152 },
+          (EmbedController: SpotifyEmbedController) => {
+            if (cancelled) {
+              EmbedController.destroy?.();
+              return;
+            }
+            photoControllerRef.current = EmbedController;
+            EmbedController.play();
+          },
+        );
+      });
+    }
+
     return () => {
+      cancelled = true;
+      photoControllerRef.current?.destroy?.();
+      photoControllerRef.current = null;
+      if (photoEmbedContainerRef.current) {
+        photoEmbedContainerRef.current.innerHTML = '';
+      }
       if (pausedPageMusic) {
-        usePlayerStore.getState().controller?.play();
+        usePlayerStore.getState().controller?.resume();
       }
     };
   }, [isOpen, currentIndex, images]);
@@ -329,17 +362,8 @@ export default function InstagramModal({
           {/* Image Info - Scrollable */}
           <div className="flex-1 overflow-y-auto p-4 min-h-0">
             {currentImage.spotifyTrackId && (
-              <div className="mb-4">
-                <iframe
-                  key={currentIndex}
-                  title="Reproductor de Spotify"
-                  src={`https://open.spotify.com/embed/track/${currentImage.spotifyTrackId}?utm_source=generator&autoplay=1`}
-                  width="100%"
-                  height="152"
-                  style={{ borderRadius: '12px', border: 0 }}
-                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                  loading="lazy"
-                />
+              <div className="mb-4" style={{ borderRadius: '12px', overflow: 'hidden' }}>
+                <div ref={photoEmbedContainerRef} />
               </div>
             )}
             {currentImage.description && (
