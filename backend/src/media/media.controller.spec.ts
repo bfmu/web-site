@@ -6,17 +6,36 @@ jest.mock('fs', () => ({
   existsSync: jest.fn().mockReturnValue(true),
   writeFileSync: jest.fn(),
   readFileSync: jest.fn(),
-  statSync: jest.fn().mockReturnValue({ size: 2048 }),
+  statSync: jest.fn().mockReturnValue({ size: 2048, isFile: () => true }),
   renameSync: jest.fn(),
   rmSync: jest.fn(),
   readdirSync: jest.fn().mockReturnValue([]),
 }));
 
 jest.mock('sharp', () => {
-  return jest.fn().mockReturnValue({
-    rotate: jest.fn().mockReturnThis(),
-    metadata: jest.fn().mockResolvedValue({ width: 100, height: 200 }),
-  });
+  // Registra cada invocación de sharp(input) y los argumentos de .rotate()
+  // que recibió, para poder verificar CÓMO se compuso el pipeline (no solo
+  // el resultado) — clave para el bug de rotate().rotate(angulo) encadenados.
+  const calls: any[] = [];
+  function makePipeline(input: any) {
+    const rotateArgs: any[] = [];
+    const pipeline: any = {
+      rotate: (...args: any[]) => {
+        rotateArgs.push(args.length ? args[0] : undefined);
+        return pipeline;
+      },
+      resize: () => pipeline,
+      metadata: () => Promise.resolve({ width: 100, height: 200 }),
+      toBuffer: () => Promise.resolve(Buffer.from('fake-image-bytes')),
+      webp: () => pipeline,
+      jpeg: () => pipeline,
+    };
+    calls.push({ input, rotateArgs });
+    return pipeline;
+  }
+  const fn: any = jest.fn((input: any) => makePipeline(input));
+  fn.__calls = calls;
+  return fn;
 });
 
 jest.mock('heic-convert', () => jest.fn());
@@ -65,9 +84,12 @@ jest.mock('fluent-ffmpeg', () => {
 
 const heicConvert = jest.requireMock('heic-convert') as jest.Mock;
 const ffmpegMock = jest.requireMock('fluent-ffmpeg') as any;
+const sharpMock = jest.requireMock('sharp') as any;
+const fsMock = jest.requireMock('fs') as any;
 
 const mockMediaService = {
   create: jest.fn(),
+  findByPath: jest.fn(),
 };
 
 function buildFile(overrides: Partial<any> = {}) {
@@ -88,6 +110,7 @@ describe('MediaController.upload', () => {
     jest.clearAllMocks();
     ffmpegMock.__state.transcodeShouldFail = false;
     ffmpegMock.__state.thumbnailShouldFail = false;
+    sharpMock.__calls.length = 0;
     mockMediaService.create.mockImplementation((dto) => ({
       ...dto,
       toObject: () => dto,
@@ -195,5 +218,43 @@ describe('MediaController.upload', () => {
 
     expect(result.type).toBe('video');
     expect(result.thumbnailPath).toBeUndefined();
+  });
+});
+
+describe('MediaController.serve rotation', () => {
+  let controller: MediaController;
+  let res: any;
+
+  beforeEach(() => {
+    controller = new MediaController(mockMediaService as any);
+    jest.clearAllMocks();
+    sharpMock.__calls.length = 0;
+    // El archivo original "existe" pero el cache de variantes procesadas no,
+    // así que serve() entra al pipeline de sharp en vez de servir el cache.
+    fsMock.existsSync.mockImplementation((p: string) => !p.includes('.cache'));
+    res = { setHeader: jest.fn(), status: jest.fn() };
+  });
+
+  // Regresión: sharp NO compone bien dos .rotate() encadenados en el mismo
+  // pipeline — .rotate() (auto EXIF) seguido de .rotate(angulo) anula la
+  // rotación en vez de sumarla. El fix arma dos pipelines separados cuando
+  // hay una rotación de usuario guardada.
+  it('arma dos pipelines separados cuando hay orientation guardada (no encadena rotate().rotate(angulo))', async () => {
+    mockMediaService.findByPath.mockResolvedValue({ orientation: 90 });
+
+    await controller.serve('/uploads/images/foo.jpg', res);
+
+    expect(sharpMock.__calls).toHaveLength(2);
+    expect(sharpMock.__calls[0].rotateArgs).toEqual([undefined]); // auto-orient
+    expect(sharpMock.__calls[1].rotateArgs).toEqual([90]); // rotación del usuario, en un pipeline nuevo
+  });
+
+  it('usa un solo pipeline cuando no hay orientation guardada', async () => {
+    mockMediaService.findByPath.mockResolvedValue({ orientation: 0 });
+
+    await controller.serve('/uploads/images/foo.jpg', res);
+
+    expect(sharpMock.__calls).toHaveLength(1);
+    expect(sharpMock.__calls[0].rotateArgs).toEqual([undefined]);
   });
 });

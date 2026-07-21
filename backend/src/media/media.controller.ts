@@ -482,9 +482,16 @@ export class MediaController {
     }
 
     try {
-      let pipeline = sharp(fullPath).rotate(); // Sin argumentos aplica EXIF orientation (equivale a autoOrient)
+      // sharp no compone bien dos .rotate() encadenados en el mismo pipeline:
+      // .rotate() (auto EXIF) seguido de .rotate(angulo) anula la rotación
+      // explícita en vez de sumarla. Hay que materializar el auto-orient en
+      // un buffer y recién ahí aplicar la rotación del usuario en un pipeline nuevo.
+      let pipeline: sharp.Sharp;
       if (userOrientation) {
-        pipeline = pipeline.rotate(userOrientation);
+        const autoOriented = await sharp(fullPath).rotate().toBuffer();
+        pipeline = sharp(autoOriented).rotate(userOrientation);
+      } else {
+        pipeline = sharp(fullPath).rotate(); // Sin argumentos aplica EXIF orientation (equivale a autoOrient)
       }
 
       const metadata = await pipeline.metadata();
