@@ -5,7 +5,7 @@ jest.mock('fs', () => ({
   mkdirSync: jest.fn(),
   existsSync: jest.fn().mockReturnValue(true),
   writeFileSync: jest.fn(),
-  readFileSync: jest.fn(),
+  readFileSync: jest.fn().mockReturnValue(Buffer.from('fake-original-bytes')),
   statSync: jest.fn().mockReturnValue({ size: 2048, isFile: () => true }),
   renameSync: jest.fn(),
   rmSync: jest.fn(),
@@ -94,7 +94,7 @@ const mockMediaService = {
 
 function buildFile(overrides: Partial<any> = {}) {
   return {
-    buffer: Buffer.from('fake-bytes'),
+    path: '/tmp/uploads/.tmp/incoming-test-123',
     mimetype: 'image/jpeg',
     originalname: 'photo.jpg',
     size: 1024,
@@ -125,9 +125,26 @@ describe('MediaController.upload', () => {
     expect(result.originalName).toBe('photo.jpg');
   });
 
+  it('mueve el archivo ya escrito en disco a destino final sin bufferearlo en memoria', async () => {
+    const file = buildFile();
+    await controller.upload(file);
+
+    // multer (diskStorage) ya dejó el archivo en file.path — se MUEVE (rename),
+    // nunca se lee entero a un buffer para reescribirlo.
+    expect(fsMock.renameSync).toHaveBeenCalledWith(
+      file.path,
+      expect.stringContaining('photo.jpg'),
+    );
+    expect(fsMock.readFileSync).not.toHaveBeenCalled();
+    // Cleanup del temporal de multer corre siempre en el finally.
+    expect(fsMock.rmSync).toHaveBeenCalledWith(file.path, { force: true });
+  });
+
   it('rechaza un mimetype no soportado', async () => {
     const file = buildFile({ mimetype: 'application/pdf', originalname: 'doc.pdf' });
     await expect(controller.upload(file)).rejects.toThrow(BadRequestException);
+    // El temporal de multer se limpia incluso cuando el upload se rechaza.
+    expect(fsMock.rmSync).toHaveBeenCalledWith(file.path, { force: true });
   });
 
   it('convierte un archivo image/heic a JPEG antes de guardarlo', async () => {
@@ -139,8 +156,14 @@ describe('MediaController.upload', () => {
 
     const result = await controller.upload(file);
 
+    expect(fsMock.readFileSync).toHaveBeenCalledWith(file.path);
     expect(heicConvert).toHaveBeenCalledWith(
       expect.objectContaining({ format: 'JPEG' }),
+    );
+    // El convertido (no el HEIC original) es lo que se mueve a destino final.
+    expect(fsMock.renameSync).toHaveBeenCalledWith(
+      `${file.path}-converted.jpg`,
+      expect.stringContaining('IMG_1234.jpg'),
     );
     expect(result.mimeType).toBe('image/jpeg');
     expect(result.originalName).toBe('IMG_1234.jpg');
@@ -185,6 +208,11 @@ describe('MediaController.upload', () => {
     });
 
     const result = await controller.upload(file);
+
+    // ffmpeg lee directo de file.path (ya en disco vía multer diskStorage) —
+    // no hay paso intermedio de bufferear y reescribir a un temp propio.
+    expect(ffmpegMock).toHaveBeenCalledWith(file.path);
+    expect(fsMock.rmSync).toHaveBeenCalledWith(file.path, { force: true });
 
     expect(result.type).toBe('video');
     expect(result.mimeType).toBe('video/mp4');
