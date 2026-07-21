@@ -1,62 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { usePlayerStore } from "./playerStore";
+import { loadSpotifyScript, type SpotifyEmbedController } from "./spotifyIframeApi";
 
-declare global {
-  interface Window {
-    onSpotifyIframeApiReady?: (IFrameAPI: {
-      createController: (
-        element: HTMLElement,
-        options: { uri: string; width?: number; height?: number },
-        callback: (EmbedController: EmbedController) => void
-      ) => void;
-    }) => void;
-  }
-}
+type EmbedController = SpotifyEmbedController;
 
-interface EmbedController {
-  loadUri: (uri: string, preferVideo?: boolean, startAt?: number) => void;
-  play: () => void;
-  pause: () => void;
-  resume: () => void;
-  togglePlay: () => void;
-  seek: (seconds: number) => void;
-  addListener: (event: string, cb: (e: { data?: { isPaused?: boolean; position?: number; duration?: number } }) => void) => void;
-  destroy?: () => void;
-}
-
-const SPOTIFY_SCRIPT_ID = "spotify-iframe-api";
 const DEFAULT_URI = "spotify:track:4iV5W9uYEdYUVa79Axb7Rh"; // placeholder para pre-cargar
-
-function loadSpotifyScript(): Promise<typeof window extends { onSpotifyIframeApiReady?: (api: infer A) => void } ? A : never> {
-  return new Promise((resolve) => {
-    if (document.getElementById(SPOTIFY_SCRIPT_ID)) {
-      if (window.onSpotifyIframeApiReady) {
-        const api = (window as any).__spotifyIframeApi;
-        if (api) resolve(api);
-        else {
-          const orig = window.onSpotifyIframeApiReady;
-          window.onSpotifyIframeApiReady = (IFrameAPI: any) => {
-            (window as any).__spotifyIframeApi = IFrameAPI;
-            orig?.(IFrameAPI);
-            resolve(IFrameAPI);
-          };
-        }
-      }
-      return;
-    }
-    const prev = window.onSpotifyIframeApiReady;
-    window.onSpotifyIframeApiReady = (IFrameAPI: any) => {
-      (window as any).__spotifyIframeApi = IFrameAPI;
-      prev?.(IFrameAPI);
-      resolve(IFrameAPI);
-    };
-    const script = document.createElement("script");
-    script.id = SPOTIFY_SCRIPT_ID;
-    script.src = "https://open.spotify.com/embed/iframe-api/v1";
-    script.async = true;
-    document.body.appendChild(script);
-  });
-}
 
 function formatTime(ms: number): string {
   if (!Number.isFinite(ms) || ms < 0) return "0:00";
@@ -142,6 +90,7 @@ export function PersistentPlayer(): ReactElement | null {
             },
             play: () => EmbedController.play(),
             pause: () => EmbedController.pause(),
+            resume: () => EmbedController.resume(),
             togglePlay: () => EmbedController.togglePlay(),
             seek: (s: number) => EmbedController.seek(s),
           };
