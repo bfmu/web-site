@@ -38,6 +38,7 @@ export default function MediaLibrary(): React.ReactElement {
   const [editData, setEditData] = useState<Partial<MediaFile>>({});
   const [usageInfo, setUsageInfo] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedSpotifyTrack, setSelectedSpotifyTrack] = useState<SpotifyTrackResult | null>(null);
   const [spotifyQuery, setSpotifyQuery] = useState('');
   const [spotifyResults, setSpotifyResults] = useState<SpotifyTrackResult[]>([]);
@@ -182,9 +183,12 @@ export default function MediaLibrary(): React.ReactElement {
 
     try {
       setUploading(true);
-      await uploadMedia(file, {
-        isPublic: filters.isPublic === true,
-      });
+      setUploadProgress(0);
+      await uploadMedia(
+        file,
+        { isPublic: filters.isPublic === true },
+        setUploadProgress,
+      );
       showSuccess('Archivo subido correctamente');
       loadMedia();
     } catch (error: any) {
@@ -192,6 +196,7 @@ export default function MediaLibrary(): React.ReactElement {
       showError(error.message || 'Error al subir el archivo');
     } finally {
       setUploading(false);
+      setUploadProgress(0);
       if (e.target) e.target.value = '';
     }
   };
@@ -279,8 +284,17 @@ export default function MediaLibrary(): React.ReactElement {
             className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
           />
         </div>
-        <label className="cursor-pointer rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50">
-          {uploading ? 'Subiendo...' : 'Subir Archivo'}
+        <label className="relative cursor-pointer overflow-hidden rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50">
+          {uploading && (
+            <div
+              className="absolute inset-y-0 left-0 bg-indigo-800/60 transition-[width] duration-150"
+              style={{ width: `${uploadProgress}%` }}
+              aria-hidden="true"
+            />
+          )}
+          <span className="relative">
+            {uploading ? `Subiendo... ${uploadProgress}%` : 'Subir Archivo'}
+          </span>
           <input
             type="file"
             accept="image/*,video/*"

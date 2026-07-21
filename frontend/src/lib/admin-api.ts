@@ -482,7 +482,8 @@ export interface MediaUsage {
  */
 export async function uploadMedia(
   file: File,
-  metadata?: { isPublic?: boolean; alt?: string; description?: string; albumId?: string }
+  metadata?: { isPublic?: boolean; alt?: string; description?: string; albumId?: string },
+  onProgress?: (percent: number) => void,
 ): Promise<MediaFile> {
   const formData = new FormData();
   formData.append('file', file);
@@ -500,7 +501,7 @@ export async function uploadMedia(
       formData.append('albumId', metadata.albumId);
     }
   }
-  
+
   // Usar la misma lógica que apiUpload pero con campos adicionales
   const endpoint = 'media/upload';
   const url = endpoint.startsWith('http')
@@ -508,36 +509,44 @@ export async function uploadMedia(
     : `${getBackendApiUrl()}/${endpoint.replace(/^\//, '')}`;
 
   const token = getAccessToken();
-  const headers: Record<string, string> = {};
-  
-  // NO establecer Content-Type para FormData, el navegador lo hace automáticamente
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: formData,
+  // XMLHttpRequest en vez de fetch: fetch no expone progreso de subida (solo
+  // de descarga), y para un video de varios cientos de MB "Subiendo..." sin
+  // más info es mala UX. xhr.upload.onprogress sí lo da.
+  const result = await new Promise<any>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+    xhr.onload = () => {
+      let data: any;
+      try {
+        data = JSON.parse(xhr.responseText);
+      } catch {
+        data = { message: 'Error al subir archivo' };
+      }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(data);
+      } else {
+        reject(new ApiException(data.message || `Error ${xhr.status}`, xhr.status, data));
+      }
+    };
+    xhr.onerror = () => reject(new ApiException('Error de red al subir el archivo', 0));
+    xhr.send(formData);
   });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Error al subir archivo' }));
-    throw new ApiException(
-      error.message || `Error ${response.status}`,
-      response.status,
-      error
-    );
-  }
-
-  const result = await response.json();
-  
   // Construir URL completa
   const cleanBaseUrl = getBackendUrl().replace(/\/$/, '');
-  const imageUrl = result.url.startsWith('http') 
-    ? result.url 
+  const imageUrl = result.url.startsWith('http')
+    ? result.url
     : `${cleanBaseUrl}${result.url}`;
-  
+
   return {
     ...result,
     url: imageUrl,
