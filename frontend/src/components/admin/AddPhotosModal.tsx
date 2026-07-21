@@ -27,6 +27,7 @@ export function AddPhotosModal({
   const [media, setMedia] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [adding, setAdding] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
@@ -149,7 +150,8 @@ export function AddPhotosModal({
 
     try {
       setUploading(true);
-      const result = await uploadMedia(uploadFile, uploadMetadata);
+      setUploadProgress(0);
+      const result = await uploadMedia(uploadFile, uploadMetadata, setUploadProgress);
       const updatedAlbum = await addImagesToAlbumBatch(album.slug, [result._id]);
       onSuccess(updatedAlbum);
       showSuccess('Archivo subido y agregado al álbum');
@@ -159,6 +161,7 @@ export function AddPhotosModal({
       showError(error.message || 'Error al subir el archivo');
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -436,9 +439,18 @@ export function AddPhotosModal({
             <button
               onClick={handleUpload}
               disabled={!uploadFile || uploading}
-              className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative overflow-hidden rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {uploading ? 'Subiendo...' : 'Subir y agregar al álbum'}
+              {uploading && (
+                <div
+                  className="absolute inset-y-0 left-0 bg-indigo-800/60 transition-[width] duration-150"
+                  style={{ width: `${uploadProgress}%` }}
+                  aria-hidden="true"
+                />
+              )}
+              <span className="relative">
+                {uploading ? `Subiendo... ${uploadProgress}%` : 'Subir y agregar al álbum'}
+              </span>
             </button>
           )}
         </div>
