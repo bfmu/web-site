@@ -31,5 +31,6 @@ jobs:
             cd /home/bryan/docker/github/web-site
             git pull --ff-only origin develop
             docker compose -f docker-compose.prod.yml up -d --build backend frontend
+            docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
             docker image prune -f
             echo "Deploy OK — $(date)"

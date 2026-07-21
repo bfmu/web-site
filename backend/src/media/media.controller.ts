@@ -21,6 +21,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 import {
   ApiTags,
   ApiOperation,
@@ -51,6 +52,7 @@ ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 ffmpeg.setFfprobePath(ffprobeInstaller.path);
 
 const CACHE_DIR = path.resolve(process.cwd(), 'uploads/.cache');
+const UPLOAD_TEMP_DIR = path.resolve(process.cwd(), 'uploads/.tmp');
 const VIDEO_MIME_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
 
 @ApiTags('media')
@@ -128,7 +130,24 @@ export class MediaController {
   @UseGuards(ThrottlerGuard, JwtAuthGuard, RolesGuard)
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @Roles('admin', 'editor')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      // Multer escribe el archivo a disco en streaming en vez de bufferearlo
+      // entero en memoria — crítico para videos de varios cientos de MB
+      // (con memoryStorage, un video de 300MB se leía completo a RAM antes
+      // de siquiera empezar a procesarlo, arriesgando un OOM del proceso).
+      storage: diskStorage({
+        destination: (_req, _file, cb) => {
+          fs.mkdirSync(UPLOAD_TEMP_DIR, { recursive: true });
+          cb(null, UPLOAD_TEMP_DIR);
+        },
+        filename: (_req, _file, cb) => {
+          cb(null, `incoming-${Date.now()}-${Math.round(Math.random() * 1e9)}`);
+        },
+      }),
+      limits: { fileSize: 500 * 1024 * 1024 }, // tope duro; el límite fino (100MB imagen / 500MB video) se valida en el handler
+    }),
+  )
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
@@ -145,100 +164,102 @@ export class MediaController {
       throw new BadRequestException('No se proporcionó ningún archivo');
     }
 
-    // Validar tipo de archivo
-    const allowedMimeTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/svg+xml',
-      'image/heic',
-      'image/heif',
-      ...VIDEO_MIME_TYPES,
-    ];
-    const isHeic = this.isHeicFile(file.mimetype, file.originalname);
-    const isVideo = VIDEO_MIME_TYPES.includes(file.mimetype);
-    if (!allowedMimeTypes.includes(file.mimetype) && !isHeic) {
-      this.logger.warn(
-        `Upload rejected: invalid mimetype ${file.mimetype} for ${file.originalname}`,
-      );
-      throw new BadRequestException(
-        'El archivo debe ser una imagen (JPEG, PNG, GIF, WEBP, SVG, HEIC/HEIF) o un video (MP4, MOV, WEBM)',
-      );
-    }
-
-    // Validar tamaño (100MB para imágenes, 500MB para video)
-    const maxSize = isVideo ? 500 * 1024 * 1024 : 100 * 1024 * 1024;
-    if (file.size > maxSize) {
-      this.logger.warn(
-        `Upload rejected: file too large ${file.size} bytes for ${file.originalname}`,
-      );
-      throw new BadRequestException(
-        `El archivo no puede ser mayor a ${maxSize / (1024 * 1024)}MB`,
-      );
-    }
-
-    // sharp no puede decodificar HEIC/HEIF (los binarios prebuilt de libvips no
-    // incluyen soporte HEVC) ni servirlo después vía /media/serve, así que lo
-    // convertimos a JPEG acá, antes de que el archivo entre al resto del pipeline.
-    let buffer = file.buffer;
-    let mimeType = file.mimetype;
-    let originalName = file.originalname;
-    if (isHeic) {
-      try {
-        const converted = await heicConvert({
-          buffer: file.buffer,
-          format: 'JPEG',
-          quality: 0.92,
-        });
-        buffer = Buffer.from(converted);
-        mimeType = 'image/jpeg';
-        originalName = originalName.replace(/\.(heic|heif)$/i, '.jpg');
-      } catch (err) {
+    // multer (diskStorage) ya escribió el archivo en uploads/.tmp — file.path.
+    // Este finally limpia ese temporal pase lo que pase (rechazo, error, éxito).
+    // En el camino feliz de imágenes normales el archivo se RENOMBRA a destino
+    // final, así que para cuando llega acá ya no existe en file.path (rmSync
+    // con force no falla si no lo encuentra).
+    try {
+      // Validar tipo de archivo
+      const allowedMimeTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/svg+xml',
+        'image/heic',
+        'image/heif',
+        ...VIDEO_MIME_TYPES,
+      ];
+      const isHeic = this.isHeicFile(file.mimetype, file.originalname);
+      const isVideo = VIDEO_MIME_TYPES.includes(file.mimetype);
+      if (!allowedMimeTypes.includes(file.mimetype) && !isHeic) {
         this.logger.warn(
-          `Failed to convert HEIC/HEIF file ${file.originalname}: ${err}`,
+          `Upload rejected: invalid mimetype ${file.mimetype} for ${file.originalname}`,
         );
         throw new BadRequestException(
-          'No se pudo procesar la imagen HEIC/HEIF. Probá exportarla como JPEG.',
+          'El archivo debe ser una imagen (JPEG, PNG, GIF, WEBP, SVG, HEIC/HEIF) o un video (MP4, MOV, WEBM)',
         );
       }
-    }
-    if (isVideo) {
-      originalName = originalName.replace(/\.[^./\\]+$/, '.mp4');
-      mimeType = 'video/mp4';
-    }
 
-    // Crear directorio de uploads si no existe
-    const uploadsDir = path.join(
-      process.cwd(),
-      'uploads',
-      isVideo ? 'videos' : 'images',
-    );
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
+      // Validar tamaño (100MB para imágenes, 500MB para video)
+      const maxSize = isVideo ? 500 * 1024 * 1024 : 100 * 1024 * 1024;
+      if (file.size > maxSize) {
+        this.logger.warn(
+          `Upload rejected: file too large ${file.size} bytes for ${file.originalname}`,
+        );
+        throw new BadRequestException(
+          `El archivo no puede ser mayor a ${maxSize / (1024 * 1024)}MB`,
+        );
+      }
 
-    // Generar nombre único para el archivo
-    const timestamp = Date.now();
-    const sanitizedName = originalName.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const fileName = `${timestamp}-${sanitizedName}`;
-    const filePath = path.join(uploadsDir, fileName);
-
-    let width: number | undefined;
-    let height: number | undefined;
-    let thumbnailPath: string | undefined;
-    let finalSize = buffer.length;
-
-    if (isVideo) {
-      // ffmpeg necesita un path de entrada, no un buffer en memoria
-      const tempDir = path.join(process.cwd(), 'uploads', '.tmp');
-      fs.mkdirSync(tempDir, { recursive: true });
-      const tempInputPath = path.join(tempDir, `${timestamp}-original`);
-      fs.writeFileSync(tempInputPath, buffer);
-
-      try {
+      // sharp no puede decodificar HEIC/HEIF (los binarios prebuilt de libvips no
+      // incluyen soporte HEVC) ni servirlo después vía /media/serve, así que lo
+      // convertimos a JPEG acá, antes de que el archivo entre al resto del pipeline.
+      // sourcePath es lo que se transcodifica/mueve a destino final; para HEIC
+      // es un archivo nuevo (el original en file.path queda para el cleanup final).
+      let sourcePath = file.path;
+      let mimeType = file.mimetype;
+      let originalName = file.originalname;
+      if (isHeic) {
         try {
-          await this.transcodeVideo(tempInputPath, filePath);
+          const converted = await heicConvert({
+            buffer: fs.readFileSync(file.path),
+            format: 'JPEG',
+            quality: 0.92,
+          });
+          sourcePath = `${file.path}-converted.jpg`;
+          fs.writeFileSync(sourcePath, Buffer.from(converted));
+          mimeType = 'image/jpeg';
+          originalName = originalName.replace(/\.(heic|heif)$/i, '.jpg');
+        } catch (err) {
+          this.logger.warn(
+            `Failed to convert HEIC/HEIF file ${file.originalname}: ${err}`,
+          );
+          throw new BadRequestException(
+            'No se pudo procesar la imagen HEIC/HEIF. Probá exportarla como JPEG.',
+          );
+        }
+      }
+      if (isVideo) {
+        originalName = originalName.replace(/\.[^./\\]+$/, '.mp4');
+        mimeType = 'video/mp4';
+      }
+
+      // Crear directorio de uploads si no existe
+      const uploadsDir = path.join(
+        process.cwd(),
+        'uploads',
+        isVideo ? 'videos' : 'images',
+      );
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      // Generar nombre único para el archivo
+      const timestamp = Date.now();
+      const sanitizedName = originalName.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `${timestamp}-${sanitizedName}`;
+      const filePath = path.join(uploadsDir, fileName);
+
+      let width: number | undefined;
+      let height: number | undefined;
+      let thumbnailPath: string | undefined;
+      let finalSize = file.size;
+
+      if (isVideo) {
+        try {
+          await this.transcodeVideo(sourcePath, filePath);
         } catch (err) {
           this.logger.warn(
             `Failed to transcode video ${file.originalname}: ${err}`,
@@ -260,7 +281,7 @@ export class MediaController {
         try {
           const thumbFileName = `${timestamp}-thumb.jpg`;
           await this.generateVideoThumbnail(
-            tempInputPath,
+            sourcePath,
             imagesDir,
             thumbFileName,
           );
@@ -272,70 +293,75 @@ export class MediaController {
         }
 
         finalSize = fs.statSync(filePath).size;
-      } finally {
-        fs.rmSync(tempInputPath, { force: true });
-      }
-    } else {
-      // Guardar archivo
-      fs.writeFileSync(filePath, buffer);
+      } else {
+        // Mover el archivo ya escrito en disco a destino final (rename, sin
+        // copiar bytes en memoria). Para HEIC, sourcePath es el convertido;
+        // el original crudo en file.path lo limpia el finally de más abajo.
+        fs.renameSync(sourcePath, filePath);
+        if (isHeic) {
+          finalSize = fs.statSync(filePath).size;
+        }
 
-      // Extraer dimensiones reales (post EXIF rotation) para evitar layout shift en frontend.
-      // SVG no tiene dimensiones rasterizadas — se omite.
-      if (mimeType !== 'image/svg+xml') {
-        try {
-          const meta = await sharp(buffer).rotate().metadata();
-          width = meta.width;
-          height = meta.height;
-        } catch (err) {
-          this.logger.warn(
-            `Could not extract dimensions from ${file.originalname}: ${err}`,
-          );
+        // Extraer dimensiones reales (post EXIF rotation) para evitar layout shift en frontend.
+        // SVG no tiene dimensiones rasterizadas — se omite.
+        if (mimeType !== 'image/svg+xml') {
+          try {
+            const meta = await sharp(filePath).rotate().metadata();
+            width = meta.width;
+            height = meta.height;
+          } catch (err) {
+            this.logger.warn(
+              `Could not extract dimensions from ${file.originalname}: ${err}`,
+            );
+          }
         }
       }
+
+      // Construir URLs
+      const relativePath = `/uploads/${isVideo ? 'videos' : 'images'}/${fileName}`;
+      const apiUrl = process.env.API_URL || 'http://localhost:3000';
+      const fullUrl = `${apiUrl}${relativePath}`;
+
+      // Extraer metadata del body (puede venir como objeto o como string desde FormData)
+      const isPublic =
+        body?.isPublic === 'true' || body?.isPublic === true || false;
+      const alt = body?.alt || undefined;
+      const description = body?.description || undefined;
+      const albumId = body?.albumId || undefined;
+
+      // Crear DTO
+      const createMediaDto: CreateMediaDto = {
+        filename: fileName,
+        originalName,
+        path: relativePath,
+        url: fullUrl,
+        mimeType,
+        size: finalSize,
+        width,
+        height,
+        type: isVideo ? 'video' : 'image',
+        isPublic,
+        alt: alt && alt.trim() ? alt.trim() : undefined,
+        description:
+          description && description.trim() ? description.trim() : undefined,
+        albumId: albumId && albumId.trim() ? albumId.trim() : undefined,
+        thumbnailPath,
+      };
+
+      // Crear registro en DB
+      const media = await this.mediaService.create(createMediaDto);
+      this.logger.log(`Media uploaded: ${fileName} (${finalSize} bytes)`);
+
+      // Convertir documento de Mongoose a objeto plano
+      const mediaObj = (media as MediaDocument).toObject();
+
+      return {
+        ...mediaObj,
+        url: relativePath, // Retornar URL relativa (el frontend construirá la URL completa)
+      };
+    } finally {
+      fs.rmSync(file.path, { force: true });
     }
-
-    // Construir URLs
-    const relativePath = `/uploads/${isVideo ? 'videos' : 'images'}/${fileName}`;
-    const apiUrl = process.env.API_URL || 'http://localhost:3000';
-    const fullUrl = `${apiUrl}${relativePath}`;
-
-    // Extraer metadata del body (puede venir como objeto o como string desde FormData)
-    const isPublic =
-      body?.isPublic === 'true' || body?.isPublic === true || false;
-    const alt = body?.alt || undefined;
-    const description = body?.description || undefined;
-    const albumId = body?.albumId || undefined;
-
-    // Crear DTO
-    const createMediaDto: CreateMediaDto = {
-      filename: fileName,
-      originalName,
-      path: relativePath,
-      url: fullUrl,
-      mimeType,
-      size: finalSize,
-      width,
-      height,
-      type: isVideo ? 'video' : 'image',
-      isPublic,
-      alt: alt && alt.trim() ? alt.trim() : undefined,
-      description:
-        description && description.trim() ? description.trim() : undefined,
-      albumId: albumId && albumId.trim() ? albumId.trim() : undefined,
-      thumbnailPath,
-    };
-
-    // Crear registro en DB
-    const media = await this.mediaService.create(createMediaDto);
-    this.logger.log(`Media uploaded: ${fileName} (${finalSize} bytes)`);
-
-    // Convertir documento de Mongoose a objeto plano
-    const mediaObj = (media as MediaDocument).toObject();
-
-    return {
-      ...mediaObj,
-      url: relativePath, // Retornar URL relativa (el frontend construirá la URL completa)
-    };
   }
 
   @Get()
