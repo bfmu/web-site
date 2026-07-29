@@ -140,6 +140,16 @@ export default function InstagramModal({
   // foto y se retoma (resume, no play — evita reiniciar desde el principio)
   // al cerrar/cambiar de foto, pero solo si nosotros fuimos quienes la pausaron.
   useEffect(() => {
+    // El componente devuelve null en su primer render (mounted arranca en
+    // false, ver más abajo), así que no hay nada montado todavía: el ref del
+    // contenedor recién existe en el render siguiente, cuando mounted pasa a
+    // true. Sin este guard, loadSpotifyScript().then() puede resolver antes
+    // de ese segundo render (la promesa suele estar cacheada por
+    // PersistentPlayer) y encontrar el ref en null para siempre — por eso
+    // fallaba solo en el primer montaje del modal, nunca al navegar entre
+    // fotos (ahí mounted ya es true desde el principio).
+    if (!mounted) return;
+
     const trackId = isOpen ? images[currentIndex]?.spotifyTrackId : undefined;
 
     const { isPlaying, controller: pageController } = usePlayerStore.getState();
@@ -152,36 +162,21 @@ export default function InstagramModal({
     let cancelled = false;
     if (trackId) {
       loadSpotifyScript().then((IFrameAPI: any) => {
-        if (cancelled) return;
-
-        const createEmbed = () => {
-          if (cancelled || !photoEmbedContainerRef.current) return;
-          photoEmbedContainerRef.current.innerHTML = '';
-          const width = photoEmbedContainerRef.current.clientWidth || 300;
-          IFrameAPI.createController(
-            photoEmbedContainerRef.current,
-            { uri: `spotify:track:${trackId}`, width, height: 152 },
-            (EmbedController: SpotifyEmbedController) => {
-              if (cancelled) {
-                EmbedController.destroy?.();
-                return;
-              }
-              photoControllerRef.current = EmbedController;
-              EmbedController.play();
-            },
-          );
-        };
-
-        // Cuando loadSpotifyScript() ya tiene la promesa cacheada (API cargada
-        // de antes por PersistentPlayer), resuelve en un microtask casi
-        // instantáneo — en el primer montaje del modal eso puede ganarle al
-        // commit de React, y photoEmbedContainerRef.current todavía es null.
-        // Un reintento en el siguiente frame garantiza que el ref ya esté.
-        if (photoEmbedContainerRef.current) {
-          createEmbed();
-        } else {
-          requestAnimationFrame(createEmbed);
-        }
+        if (cancelled || !photoEmbedContainerRef.current) return;
+        photoEmbedContainerRef.current.innerHTML = '';
+        const width = photoEmbedContainerRef.current.clientWidth || 300;
+        IFrameAPI.createController(
+          photoEmbedContainerRef.current,
+          { uri: `spotify:track:${trackId}`, width, height: 152 },
+          (EmbedController: SpotifyEmbedController) => {
+            if (cancelled) {
+              EmbedController.destroy?.();
+              return;
+            }
+            photoControllerRef.current = EmbedController;
+            EmbedController.play();
+          },
+        );
       });
     }
 
@@ -196,7 +191,7 @@ export default function InstagramModal({
         usePlayerStore.getState().controller?.resume();
       }
     };
-  }, [isOpen, currentIndex, images]);
+  }, [isOpen, currentIndex, images, mounted]);
 
   if (!isOpen || images.length === 0 || !mounted) return null;
 
