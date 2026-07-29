@@ -152,21 +152,36 @@ export default function InstagramModal({
     let cancelled = false;
     if (trackId) {
       loadSpotifyScript().then((IFrameAPI: any) => {
-        if (cancelled || !photoEmbedContainerRef.current) return;
-        photoEmbedContainerRef.current.innerHTML = '';
-        const width = photoEmbedContainerRef.current.clientWidth || 300;
-        IFrameAPI.createController(
-          photoEmbedContainerRef.current,
-          { uri: `spotify:track:${trackId}`, width, height: 152 },
-          (EmbedController: SpotifyEmbedController) => {
-            if (cancelled) {
-              EmbedController.destroy?.();
-              return;
-            }
-            photoControllerRef.current = EmbedController;
-            EmbedController.play();
-          },
-        );
+        if (cancelled) return;
+
+        const createEmbed = () => {
+          if (cancelled || !photoEmbedContainerRef.current) return;
+          photoEmbedContainerRef.current.innerHTML = '';
+          const width = photoEmbedContainerRef.current.clientWidth || 300;
+          IFrameAPI.createController(
+            photoEmbedContainerRef.current,
+            { uri: `spotify:track:${trackId}`, width, height: 152 },
+            (EmbedController: SpotifyEmbedController) => {
+              if (cancelled) {
+                EmbedController.destroy?.();
+                return;
+              }
+              photoControllerRef.current = EmbedController;
+              EmbedController.play();
+            },
+          );
+        };
+
+        // Cuando loadSpotifyScript() ya tiene la promesa cacheada (API cargada
+        // de antes por PersistentPlayer), resuelve en un microtask casi
+        // instantáneo — en el primer montaje del modal eso puede ganarle al
+        // commit de React, y photoEmbedContainerRef.current todavía es null.
+        // Un reintento en el siguiente frame garantiza que el ref ya esté.
+        if (photoEmbedContainerRef.current) {
+          createEmbed();
+        } else {
+          requestAnimationFrame(createEmbed);
+        }
       });
     }
 
