@@ -145,7 +145,7 @@ export class MediaController {
           cb(null, `incoming-${Date.now()}-${Math.round(Math.random() * 1e9)}`);
         },
       }),
-      limits: { fileSize: 500 * 1024 * 1024 }, // tope duro; el límite fino (100MB imagen / 500MB video) se valida en el handler
+      limits: { fileSize: 2000 * 1024 * 1024 }, // tope duro; el límite fino (100MB imagen / 2GB video) se valida en el handler
     }),
   )
   @ApiBearerAuth()
@@ -192,8 +192,8 @@ export class MediaController {
         );
       }
 
-      // Validar tamaño (100MB para imágenes, 500MB para video)
-      const maxSize = isVideo ? 500 * 1024 * 1024 : 100 * 1024 * 1024;
+      // Validar tamaño (100MB para imágenes, 2GB para video)
+      const maxSize = isVideo ? 2000 * 1024 * 1024 : 100 * 1024 * 1024;
       if (file.size > maxSize) {
         this.logger.warn(
           `Upload rejected: file too large ${file.size} bytes for ${file.originalname}`,
