@@ -161,14 +161,6 @@ const bannerOffset =
 
 		<slot name="head"></slot>
 
-		<!-- Preload Spotify embed API para reproducción instantánea al hacer clic en una canción -->
-		<script is:inline>
-			window.onSpotifyIframeApiReady = window.onSpotifyIframeApiReady || function(api) {
-				window.__spotifyIframeApi = api;
-			};
-		</script>
-		<script src="https://open.spotify.com/embed/iframe-api/v1" async id="spotify-iframe-api"></script>
-
 		<link rel="stylesheet" href="https://cdn.staticfile.net/KaTeX/0.16.9/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
 
 		<link rel="alternate" type="application/rss+xml" title={profileConfig.name} href={`${Astro.site}rss.xml`}/>
