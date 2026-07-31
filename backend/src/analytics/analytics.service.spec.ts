@@ -73,6 +73,22 @@ describe('AnalyticsService', () => {
         expect.objectContaining({ sessionId: undefined }),
       );
     });
+
+    it('debe persistir lat/lng cuando geoip resuelve la IP', async () => {
+      pageViewModel.create.mockResolvedValue({});
+      await service.track('/test', '8.8.8.8', 'UA');
+      expect(pageViewModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({ lat: expect.any(Number), lng: expect.any(Number) }),
+      );
+    });
+
+    it('debe persistir lat/lng undefined cuando geoip no resuelve la IP', async () => {
+      pageViewModel.create.mockResolvedValue({});
+      await service.track('/test', '127.0.0.1', 'UA');
+      expect(pageViewModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({ lat: undefined, lng: undefined }),
+      );
+    });
   });
 
   describe('trackEvent', () => {
@@ -112,7 +128,10 @@ describe('AnalyticsService', () => {
   });
 
   describe('getStats', () => {
-    function mockStatsAggregates(countryCounts: { country: string; count: number }[]) {
+    function mockStatsAggregates(
+      countryCounts: { country: string; count: number }[],
+      cityCounts: { city: string; country: string; lat: number; lng: number; count: number }[] = [],
+    ) {
       pageViewModel.countDocuments.mockReturnValue(Promise.resolve(0));
       pageViewModel.distinct.mockResolvedValue([]);
       pageViewModel.find.mockReturnValue({
@@ -128,6 +147,7 @@ describe('AnalyticsService', () => {
         .mockReturnValueOnce({ exec: () => Promise.resolve([]) }) // topPages
         .mockReturnValueOnce({ exec: () => Promise.resolve([]) }) // topLocations
         .mockReturnValueOnce({ exec: () => Promise.resolve(countryCounts) }) // countryCounts
+        .mockReturnValueOnce({ exec: () => Promise.resolve(cityCounts) }) // cityCounts
         .mockReturnValueOnce({ exec: () => Promise.resolve([]) }); // dailyViews
     }
 
@@ -155,6 +175,31 @@ describe('AnalyticsService', () => {
       const result = await service.getStats(30);
 
       expect(result.countryCounts).toEqual([]);
+    });
+
+    it('debe incluir cityCounts con lat/lng agregado por ciudad', async () => {
+      const cityData = [
+        { city: 'Buenos Aires', country: 'AR', lat: -34.6, lng: -58.4, count: 5 },
+        { city: 'Santiago', country: 'CL', lat: -33.4, lng: -70.6, count: 3 },
+      ];
+      mockStatsAggregates([], cityData);
+
+      const result = await service.getStats(30);
+
+      expect(result.cityCounts).toEqual(cityData);
+
+      const cityPipeline = pageViewModel.aggregate.mock.calls[3][0];
+      const matchStage = cityPipeline.find((s: any) => '$match' in s);
+      expect(matchStage.$match.lat).toEqual({ $exists: true, $ne: null });
+      expect(matchStage.$match.lng).toEqual({ $exists: true, $ne: null });
+    });
+
+    it('debe devolver cityCounts vacío cuando no hay datos de ciudad con coordenadas', async () => {
+      mockStatsAggregates([], []);
+
+      const result = await service.getStats(30);
+
+      expect(result.cityCounts).toEqual([]);
     });
   });
 

@@ -27,6 +27,12 @@ export class PageView {
   city?: string;
 
   @Prop()
+  lat?: number;
+
+  @Prop()
+  lng?: number;
+
+  @Prop()
   postSlug?: string;
 
   @Prop()
