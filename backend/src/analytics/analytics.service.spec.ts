@@ -111,6 +111,53 @@ describe('AnalyticsService', () => {
     });
   });
 
+  describe('getStats', () => {
+    function mockStatsAggregates(countryCounts: { country: string; count: number }[]) {
+      pageViewModel.countDocuments.mockReturnValue(Promise.resolve(0));
+      pageViewModel.distinct.mockResolvedValue([]);
+      pageViewModel.find.mockReturnValue({
+        sort: () => ({
+          limit: () => ({
+            lean: () => ({
+              select: () => ({ exec: () => Promise.resolve([]) }),
+            }),
+          }),
+        }),
+      });
+      pageViewModel.aggregate
+        .mockReturnValueOnce({ exec: () => Promise.resolve([]) }) // topPages
+        .mockReturnValueOnce({ exec: () => Promise.resolve([]) }) // topLocations
+        .mockReturnValueOnce({ exec: () => Promise.resolve(countryCounts) }) // countryCounts
+        .mockReturnValueOnce({ exec: () => Promise.resolve([]) }); // dailyViews
+    }
+
+    it('debe incluir countryCounts agregado por país, sin límite de top 10', async () => {
+      const countryData = Array.from({ length: 15 }, (_, i) => ({
+        country: `C${i}`,
+        count: i + 1,
+      }));
+      mockStatsAggregates(countryData);
+
+      const result = await service.getStats(30);
+
+      expect(result.countryCounts).toEqual(countryData);
+
+      const countryPipeline = pageViewModel.aggregate.mock.calls[2][0];
+      const groupStage = countryPipeline.find((s: any) => '$group' in s);
+      const limitStage = countryPipeline.find((s: any) => '$limit' in s);
+      expect(groupStage.$group._id).toBe('$country');
+      expect(limitStage?.$limit ?? Infinity).toBeGreaterThanOrEqual(15);
+    });
+
+    it('debe devolver countryCounts vacío cuando no hay datos de país', async () => {
+      mockStatsAggregates([]);
+
+      const result = await service.getStats(30);
+
+      expect(result.countryCounts).toEqual([]);
+    });
+  });
+
   describe('getSessions', () => {
     it('debe devolver array vacío cuando no hay sesiones en el rango', async () => {
       pageViewModel.aggregate.mockReturnValue({

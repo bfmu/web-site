@@ -5,6 +5,10 @@
  * (mismo patrón que backup-init.ts, posts-init.ts, etc).
  */
 import * as echarts from 'echarts';
+import { feature } from 'topojson-client';
+import worldTopology from 'world-atlas/countries-110m.json';
+import * as isoCountries from 'i18n-iso-countries';
+import isoCountriesEn from 'i18n-iso-countries/langs/en.json';
 import {
   getAnalyticsStats,
   getAnalyticsRecentVisits,
@@ -12,6 +16,57 @@ import {
   getEngagementStats,
   type AnalyticsRecentVisit,
 } from './admin-api';
+
+isoCountries.registerLocale(isoCountriesEn);
+
+// El nombre en inglés que da i18n-iso-countries no siempre coincide textualmente
+// con el properties.name del topojson de world-atlas (ej. "Russian Federation" vs
+// "Russia") — sin esta corrección esos países no pintan en el mapa aunque tengan datos.
+const COUNTRY_NAME_OVERRIDES: Record<string, string> = {
+  BA: 'Bosnia and Herz.',
+  BN: 'Brunei',
+  CF: 'Central African Rep.',
+  CN: 'China',
+  CG: 'Congo',
+  CD: 'Dem. Rep. Congo',
+  CI: "Côte d'Ivoire",
+  CZ: 'Czechia',
+  DO: 'Dominican Rep.',
+  GQ: 'Eq. Guinea',
+  FK: 'Falkland Is.',
+  TF: 'Fr. S. Antarctic Lands',
+  GM: 'Gambia',
+  IR: 'Iran',
+  LA: 'Laos',
+  MD: 'Moldova',
+  MK: 'Macedonia',
+  PS: 'Palestine',
+  RU: 'Russia',
+  SB: 'Solomon Is.',
+  SZ: 'eSwatini',
+  SY: 'Syria',
+  TW: 'Taiwan',
+  TZ: 'Tanzania',
+  TR: 'Turkey',
+  EH: 'W. Sahara',
+  SS: 'S. Sudan',
+};
+
+function countryCodeToMapName(isoAlpha2: string): string | undefined {
+  return COUNTRY_NAME_OVERRIDES[isoAlpha2] ?? isoCountries.getName(isoAlpha2, 'en');
+}
+
+const WORLD_MAP_NAME = 'world';
+let worldMapRegistered = false;
+function ensureWorldMapRegistered(): void {
+  if (worldMapRegistered) return;
+  const geoJson = feature(
+    worldTopology as any,
+    (worldTopology as any).objects.countries,
+  ) as any;
+  echarts.registerMap(WORLD_MAP_NAME, geoJson);
+  worldMapRegistered = true;
+}
 
 let analyticsListenersAttached = false;
 let charts: Record<string, echarts.ECharts> = {};
@@ -180,6 +235,47 @@ export function initAnalyticsPage(): void {
     });
   }
 
+  function renderWorldMapChart(countryCounts: { country: string; count: number }[]): void {
+    ensureWorldMapRegistered();
+    const chart = getChart('analytics-chart-worldmap');
+
+    const data = countryCounts
+      .map((c) => ({ name: countryCodeToMapName(c.country), value: c.count }))
+      .filter((d): d is { name: string; value: number } => !!d.name);
+
+    const max = Math.max(1, ...data.map((d) => d.value));
+
+    chart.setOption({
+      tooltip: {
+        trigger: 'item',
+        formatter: (p: any) => `${p.name}: ${p.value ?? 0}`,
+      },
+      visualMap: {
+        min: 0,
+        max,
+        left: 'left',
+        bottom: 10,
+        text: ['Más', 'Menos'],
+        calculable: true,
+        inRange: { color: ['#312e81', '#6366f1', '#c7d2fe'] },
+        textStyle: { color: axisTextColor() },
+      },
+      series: [
+        {
+          type: 'map',
+          map: WORLD_MAP_NAME,
+          roam: true,
+          emphasis: { label: { show: false }, itemStyle: { areaColor: '#818cf8' } },
+          itemStyle: {
+            areaColor: isDark() ? '#1f2937' : '#e5e7eb',
+            borderColor: isDark() ? '#374151' : '#d1d5db',
+          },
+          data,
+        },
+      ],
+    });
+  }
+
   function renderHeatmapChart(visits: AnalyticsRecentVisit[]): void {
     const chart = getChart('analytics-chart-heatmap');
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -316,6 +412,7 @@ export function initAnalyticsPage(): void {
 
       renderViewsChart(stats.dailyViews);
       renderSankeyChart(sessions);
+      renderWorldMapChart(stats.countryCounts);
       renderHorizontalBar(
         'analytics-chart-time',
         engagement.avgTimeOnPageByPath.map((p) => ({ label: p.path, value: p.avgSeconds })),

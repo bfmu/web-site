@@ -54,8 +54,11 @@ export interface AnalyticsStats {
   dailyViews: { date: string; count: number }[];
   topPages: { path: string; count: number }[];
   topLocations: { country: string; city?: string; count: number }[];
+  countryCounts: { country: string; count: number }[];
   recentVisits: RecentVisit[];
 }
+
+const MAX_COUNTRIES = 250; // ~195 países existentes, holgura para códigos raros/desconocidos
 
 interface RawVisit {
   ip: string;
@@ -129,6 +132,7 @@ export class AnalyticsService {
       viewsToday,
       topPages,
       topLocations,
+      countryCounts,
       recentVisitsRaw,
       dailyViewsRaw,
     ] = await Promise.all([
@@ -176,6 +180,20 @@ export class AnalyticsService {
         ])
         .exec(),
       this.pageViewModel
+        .aggregate<{ country: string; count: number }>([
+          {
+            $match: {
+              createdAt: { $gte: startOfRange },
+              country: { $exists: true, $ne: null },
+            },
+          },
+          { $group: { _id: '$country', count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+          { $limit: MAX_COUNTRIES },
+          { $project: { country: '$_id', count: 1, _id: 0 } },
+        ])
+        .exec(),
+      this.pageViewModel
         .find()
         .sort({ createdAt: -1 })
         .limit(20)
@@ -209,6 +227,7 @@ export class AnalyticsService {
         city: l.city ?? undefined,
         count: l.count,
       })),
+      countryCounts,
       recentVisits: recentVisitsRaw.map((v) => this.toRecentVisit(v)),
     };
   }
