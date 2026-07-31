@@ -29,6 +29,9 @@ export class PageView {
   @Prop()
   postSlug?: string;
 
+  @Prop()
+  sessionId?: string;
+
   @Prop({ default: Date.now })
   createdAt: Date;
 }
@@ -39,3 +42,4 @@ PageViewSchema.index({ path: 1 });
 PageViewSchema.index({ ip: 1 });
 PageViewSchema.index({ createdAt: -1 });
 PageViewSchema.index({ country: 1, city: 1 });
+PageViewSchema.index({ sessionId: 1, createdAt: 1 });

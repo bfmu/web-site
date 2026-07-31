@@ -19,6 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
 import { TrackPageViewDto } from './dto/track-page-view.dto';
+import { TrackEngagementEventDto } from './dto/track-engagement-event.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../settings/guards/admin.guard';
 import { isBot, isAdminSession } from './analytics.utils';
@@ -49,7 +50,35 @@ export class AnalyticsController {
     const ip = this.getClientIp(req);
     const referrer = dto.referrer ?? req.get('Referer') ?? undefined;
 
-    await this.analyticsService.track(dto.path, ip, userAgent, referrer);
+    await this.analyticsService.track(
+      dto.path,
+      ip,
+      userAgent,
+      referrer,
+      dto.sessionId,
+    );
+
+    return { ok: true };
+  }
+
+  @Post('event')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @ApiOperation({ summary: 'Registrar un evento de engagement (público)' })
+  @ApiBody({ type: TrackEngagementEventDto })
+  @ApiResponse({ status: 201, description: 'Evento registrado' })
+  @ApiResponse({ status: 429, description: 'Demasiadas requests' })
+  async trackEvent(
+    @Body() dto: TrackEngagementEventDto,
+    @Req() req: Request,
+  ) {
+    const userAgent = req.get('User-Agent');
+
+    if (isBot(userAgent) || isAdminSession(req)) {
+      return { ok: true };
+    }
+
+    await this.analyticsService.trackEvent(dto);
 
     return { ok: true };
   }
@@ -83,6 +112,30 @@ export class AnalyticsController {
       Math.max(1, parseInt(limit ?? '20', 10) || 20),
     );
     return this.analyticsService.getRecentVisits(parsedSkip, parsedLimit);
+  }
+
+  @Get('sessions')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Reconstruir sesiones/journeys de visitantes (requiere admin)',
+  })
+  @ApiQuery({ name: 'days', required: false })
+  @ApiResponse({ status: 200, description: 'Sesiones de visitantes' })
+  async getSessions(@Query('days') days?: string) {
+    return this.analyticsService.getSessions(this.parseDays(days));
+  }
+
+  @Get('engagement')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Métricas de engagement: tiempo, scroll, clicks (requiere admin)',
+  })
+  @ApiQuery({ name: 'days', required: false })
+  @ApiResponse({ status: 200, description: 'Métricas de engagement' })
+  async getEngagement(@Query('days') days?: string) {
+    return this.analyticsService.getEngagement(this.parseDays(days));
   }
 
   private parseDays(days?: string): number {
