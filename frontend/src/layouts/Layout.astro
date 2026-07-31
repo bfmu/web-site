@@ -356,6 +356,12 @@ function initPageSpecific() {
 	if (path.endsWith('/admin/backup')) {
 		import('../lib/backup-init').then(({ initBackupPage }) => requestAnimationFrame(() => initBackupPage()));
 	}
+	if (path.endsWith('/admin/analytics')) {
+		import('../lib/analytics-page-init').then(({ initAnalyticsPage }) => requestAnimationFrame(() => initAnalyticsPage()));
+	}
+	if (path.endsWith('/admin')) {
+		import('../lib/dashboard-init').then(({ initDashboardPage }) => requestAnimationFrame(() => initDashboardPage()));
+	}
 	if (path.endsWith('/admin/register')) {
 		import('../lib/register-init').then(({ initRegisterPage }) => requestAnimationFrame(() => initRegisterPage()));
 	}
