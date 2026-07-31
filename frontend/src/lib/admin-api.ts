@@ -98,6 +98,7 @@ export interface AnalyticsStats {
   dailyViews: { date: string; count: number }[];
   topPages: { path: string; count: number }[];
   topLocations: { country: string; city?: string; count: number }[];
+  countryCounts: { country: string; count: number }[];
   recentVisits: AnalyticsRecentVisit[];
 }
 

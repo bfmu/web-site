@@ -31,6 +31,15 @@ import AdminLayout from '@components/admin/AdminLayout.astro';
       <div id="analytics-chart-views" style="height: 280px;"></div>
     </div>
 
+    <!-- Mapa de visitantes -->
+    <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <h3 class="mb-1 text-lg font-semibold text-gray-900 dark:text-white">Desde dónde te visitan</h3>
+      <p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
+        Vistas por país en el rango seleccionado (mapa de baja resolución — territorios muy pequeños pueden no aparecer)
+      </p>
+      <div id="analytics-chart-worldmap" style="height: 420px;"></div>
+    </div>
+
     <!-- Flujo de navegación + Actividad -->
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
