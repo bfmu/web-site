@@ -86,6 +86,19 @@ Luego abre http://localhost:3333 en tu navegador.
 - ✅ Estadísticas y analytics
 - ✅ Responsive design
 
+## ⚠️ Gotchas de Desarrollo
+
+### Swup y scripts de página
+
+El frontend usa [Swup](https://swup.js.org/) (`@swup/astro`) para transiciones SPA-like entre páginas. Esto significa que la navegación normal (click en un link) **no recarga la página** — Swup reemplaza el contenido del DOM vía el evento `content:replace`.
+
+**Un `<script>` inline dentro de un `.astro` NO se vuelve a ejecutar en esa transición.** Solo corre en la carga completa inicial (hard refresh / primera visita). Si una página tiene lógica que depende del DOM (fetch de datos, chart rendering, event listeners), y esa lógica vive en un `<script>` inline, va a "funcionar" con recarga dura pero se va a romper silenciosamente al navegar hacia esa página desde otra (por eso este tipo de bug es fácil de no detectar en desarrollo).
+
+**Patrón correcto** (ya usado en `login-init.ts`, `backup-init.ts`, `posts-init.ts`, `tags-init.ts`, `analytics-page-init.ts`, `dashboard-init.ts`):
+1. Mover toda la lógica de la página a `frontend/src/lib/<page>-init.ts`, exportando una función `initXPage()`.
+2. Registrarla en `initPageSpecific()` dentro de `frontend/src/layouts/Layout.astro`, con un chequeo de `path.endsWith('/ruta/de/la/pagina')`.
+3. Esa función se llama tanto en la carga inicial como en cada `content:replace` de Swup, así que reconsultá los elementos del DOM cada vez que corre (los nodos viejos ya no existen tras el swap) y limpiá/disponé estado que quede atado al DOM anterior (ej. instancias de gráficos con `.dispose()`).
+
 ## 🔗 URLs de Desarrollo
 
 - Frontend: http://localhost:4321
