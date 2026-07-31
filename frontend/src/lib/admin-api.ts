@@ -101,6 +101,22 @@ export interface AnalyticsStats {
   recentVisits: AnalyticsRecentVisit[];
 }
 
+export interface VisitorSession {
+  sessionId: string;
+  entryPath: string;
+  exitPath: string;
+  pageCount: number;
+  durationSeconds: number;
+  startedAt: string;
+  paths: string[];
+}
+
+export interface EngagementStats {
+  avgTimeOnPageByPath: { path: string; avgSeconds: number }[];
+  avgScrollDepthByPath: { path: string; avgPercent: number }[];
+  topClickedElements: { label: string; count: number }[];
+}
+
 /**
  * Obtener todos los posts con filtros
  */
@@ -307,6 +323,20 @@ export async function getAnalyticsRecentVisits(
   return apiGet<AnalyticsRecentVisit[]>(
     `analytics/recent-visits?skip=${skip}&limit=${limit}`
   );
+}
+
+/**
+ * Obtener sesiones/journeys de visitantes reconstruidas a partir de sus page views
+ */
+export async function getVisitorSessions(days: number = 30): Promise<VisitorSession[]> {
+  return apiGet<VisitorSession[]>(`analytics/sessions?days=${days}`);
+}
+
+/**
+ * Obtener métricas de engagement: tiempo en página, scroll depth, clicks
+ */
+export async function getEngagementStats(days: number = 30): Promise<EngagementStats> {
+  return apiGet<EngagementStats>(`analytics/engagement?days=${days}`);
 }
 
 /**

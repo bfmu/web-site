@@ -64,6 +64,32 @@ if (typeof window !== 'undefined') {
           </a>
 
           <a
+            href="/admin/analytics"
+            data-admin-only="true"
+            class:list={[
+              "hidden admin-link admin-nav-link flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700",
+              {
+                'bg-gray-100 dark:bg-gray-700': Astro.url.pathname.startsWith('/admin/analytics'),
+              },
+            ]}
+          >
+            <svg
+              class="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+              />
+            </svg>
+            <span>Analytics</span>
+          </a>
+
+          <a
             href="/admin/posts"
             data-admin-only="true"
             class:list={[
