@@ -99,6 +99,7 @@ export interface AnalyticsStats {
   topPages: { path: string; count: number }[];
   topLocations: { country: string; city?: string; count: number }[];
   countryCounts: { country: string; count: number }[];
+  cityCounts: { city: string; country: string; lat: number; lng: number; count: number }[];
   recentVisits: AnalyticsRecentVisit[];
 }
 
