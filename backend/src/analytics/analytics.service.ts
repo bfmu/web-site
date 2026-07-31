@@ -55,10 +55,12 @@ export interface AnalyticsStats {
   topPages: { path: string; count: number }[];
   topLocations: { country: string; city?: string; count: number }[];
   countryCounts: { country: string; count: number }[];
+  cityCounts: { city: string; country: string; lat: number; lng: number; count: number }[];
   recentVisits: RecentVisit[];
 }
 
 const MAX_COUNTRIES = 250; // ~195 países existentes, holgura para códigos raros/desconocidos
+const MAX_CITIES = 500;
 
 interface RawVisit {
   ip: string;
@@ -96,6 +98,8 @@ export class AnalyticsService {
       referrer,
       country: geo?.country ?? undefined,
       city: geo?.city ?? undefined,
+      lat: geo?.ll?.[0] ?? undefined,
+      lng: geo?.ll?.[1] ?? undefined,
       postSlug,
       sessionId,
     });
@@ -133,6 +137,7 @@ export class AnalyticsService {
       topPages,
       topLocations,
       countryCounts,
+      cityCounts,
       recentVisitsRaw,
       dailyViewsRaw,
     ] = await Promise.all([
@@ -194,6 +199,44 @@ export class AnalyticsService {
         ])
         .exec(),
       this.pageViewModel
+        .aggregate<{
+          city: string;
+          country: string;
+          lat: number;
+          lng: number;
+          count: number;
+        }>([
+          {
+            $match: {
+              createdAt: { $gte: startOfRange },
+              city: { $exists: true, $ne: null },
+              lat: { $exists: true, $ne: null },
+              lng: { $exists: true, $ne: null },
+            },
+          },
+          {
+            $group: {
+              _id: { city: '$city', country: '$country' },
+              lat: { $first: '$lat' },
+              lng: { $first: '$lng' },
+              count: { $sum: 1 },
+            },
+          },
+          { $sort: { count: -1 } },
+          { $limit: MAX_CITIES },
+          {
+            $project: {
+              city: '$_id.city',
+              country: '$_id.country',
+              lat: 1,
+              lng: 1,
+              count: 1,
+              _id: 0,
+            },
+          },
+        ])
+        .exec(),
+      this.pageViewModel
         .find()
         .sort({ createdAt: -1 })
         .limit(20)
@@ -228,6 +271,7 @@ export class AnalyticsService {
         count: l.count,
       })),
       countryCounts,
+      cityCounts,
       recentVisits: recentVisitsRaw.map((v) => this.toRecentVisit(v)),
     };
   }

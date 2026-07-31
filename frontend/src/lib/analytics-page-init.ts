@@ -235,42 +235,68 @@ export function initAnalyticsPage(): void {
     });
   }
 
-  function renderWorldMapChart(countryCounts: { country: string; count: number }[]): void {
+  function renderWorldMapChart(
+    countryCounts: { country: string; count: number }[],
+    cityCounts: { city: string; country: string; lat: number; lng: number; count: number }[],
+  ): void {
     ensureWorldMapRegistered();
     const chart = getChart('analytics-chart-worldmap');
 
-    const data = countryCounts
+    const countryData = countryCounts
       .map((c) => ({ name: countryCodeToMapName(c.country), value: c.count }))
       .filter((d): d is { name: string; value: number } => !!d.name);
 
-    const max = Math.max(1, ...data.map((d) => d.value));
+    const maxCountry = Math.max(1, ...countryData.map((d) => d.value));
+    const maxCity = Math.max(1, ...cityCounts.map((c) => c.count));
+
+    // El "value" del scatter va como [lng, lat, count] — es el formato que espera
+    // ECharts para un coordinateSystem geo, no [lat, lng] como devuelve geoip.
+    const cityData = cityCounts.map((c) => ({
+      name: c.city,
+      value: [c.lng, c.lat, c.count],
+    }));
 
     chart.setOption({
-      tooltip: {
-        trigger: 'item',
-        formatter: (p: any) => `${p.name}: ${p.value ?? 0}`,
-      },
+      tooltip: { trigger: 'item' },
       visualMap: {
+        seriesIndex: 0,
         min: 0,
-        max,
+        max: maxCountry,
         left: 'left',
         bottom: 10,
         text: ['Más', 'Menos'],
         calculable: true,
-        inRange: { color: ['#312e81', '#6366f1', '#c7d2fe'] },
+        inRange: { color: ['#c7d2fe', '#6366f1', '#312e81'] },
         textStyle: { color: axisTextColor() },
+      },
+      geo: {
+        map: WORLD_MAP_NAME,
+        roam: true,
+        emphasis: { label: { show: false }, itemStyle: { areaColor: '#818cf8' } },
+        itemStyle: {
+          areaColor: isDark() ? '#1f2937' : '#e5e7eb',
+          borderColor: isDark() ? '#374151' : '#d1d5db',
+        },
       },
       series: [
         {
+          name: 'Vistas por país',
           type: 'map',
+          geoIndex: 0,
           map: WORLD_MAP_NAME,
-          roam: true,
-          emphasis: { label: { show: false }, itemStyle: { areaColor: '#818cf8' } },
-          itemStyle: {
-            areaColor: isDark() ? '#1f2937' : '#e5e7eb',
-            borderColor: isDark() ? '#374151' : '#d1d5db',
-          },
-          data,
+          data: countryData,
+          tooltip: { formatter: (p: any) => `${p.name}: ${p.value ?? 0} vistas` },
+        },
+        {
+          name: 'Ciudades',
+          type: 'scatter',
+          coordinateSystem: 'geo',
+          symbolSize: (val: number[]) => 4 + (val[2] / maxCity) * 16,
+          itemStyle: { color: '#f59e0b', opacity: 0.8 },
+          emphasis: { itemStyle: { color: '#fbbf24' } },
+          data: cityData,
+          tooltip: { formatter: (p: any) => `${p.name}: ${p.value[2]} vistas` },
+          z: 10,
         },
       ],
     });
@@ -410,23 +436,39 @@ export function initAnalyticsPage(): void {
         </div>
       `;
 
-      renderViewsChart(stats.dailyViews);
-      renderSankeyChart(sessions);
-      renderWorldMapChart(stats.countryCounts);
-      renderHorizontalBar(
-        'analytics-chart-time',
-        engagement.avgTimeOnPageByPath.map((p) => ({ label: p.path, value: p.avgSeconds })),
-        's',
+      // Cada gráfico se renderiza de forma aislada: si uno tira (ej. sankey con
+      // un dataset degenerado), no debe tumbar el resto de la página.
+      const safeRender = (label: string, fn: () => void) => {
+        try {
+          fn();
+        } catch (err) {
+          console.error(`Error rendering chart "${label}":`, err);
+        }
+      };
+
+      safeRender('views', () => renderViewsChart(stats.dailyViews));
+      safeRender('sankey', () => renderSankeyChart(sessions));
+      safeRender('worldmap', () => renderWorldMapChart(stats.countryCounts, stats.cityCounts));
+      safeRender('time', () =>
+        renderHorizontalBar(
+          'analytics-chart-time',
+          engagement.avgTimeOnPageByPath.map((p) => ({ label: p.path, value: p.avgSeconds })),
+          's',
+        ),
       );
-      renderHorizontalBar(
-        'analytics-chart-scroll',
-        engagement.avgScrollDepthByPath.map((p) => ({ label: p.path, value: p.avgPercent })),
-        '%',
+      safeRender('scroll', () =>
+        renderHorizontalBar(
+          'analytics-chart-scroll',
+          engagement.avgScrollDepthByPath.map((p) => ({ label: p.path, value: p.avgPercent })),
+          '%',
+        ),
       );
-      renderHorizontalBar(
-        'analytics-chart-clicks',
-        engagement.topClickedElements.map((c) => ({ label: c.label, value: c.count })),
-        '',
+      safeRender('clicks', () =>
+        renderHorizontalBar(
+          'analytics-chart-clicks',
+          engagement.topClickedElements.map((c) => ({ label: c.label, value: c.count })),
+          '',
+        ),
       );
 
       topPagesEl.innerHTML = stats.topPages.length > 0
