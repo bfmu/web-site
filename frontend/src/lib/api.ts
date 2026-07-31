@@ -55,9 +55,13 @@ export async function apiFetch(
 
   console.log(`[apiFetch] URL: ${url}, requireAuth: ${requireAuth}`);
 
+  // FormData necesita que el browser calcule su propio Content-Type con el
+  // boundary del multipart — forzar 'application/json' rompería el upload.
+  const isFormData = typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData;
+
   // Headers por defecto
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(fetchOptions.headers as Record<string, string> || {}),
   };
 
@@ -104,7 +108,7 @@ export async function apiFetch(
 
           // Reintentar petición original con nuevo token
           const retryHeaders: Record<string, string> = {
-            'Content-Type': 'application/json',
+            ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
             ...(fetchOptions.headers as Record<string, string> || {}),
             'Authorization': `Bearer ${tokens.accessToken}`,
           };

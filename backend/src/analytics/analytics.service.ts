@@ -2,8 +2,39 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { PageView, PageViewDocument } from './schemas/page-view.schema';
+import {
+  EngagementEvent,
+  EngagementEventDocument,
+} from './schemas/engagement-event.schema';
 import * as geoip from 'geoip-lite';
 import { maskIp, parseReferrer, parseUserAgent } from './analytics.utils';
+import { TrackEngagementEventDto } from './dto/track-engagement-event.dto';
+
+export interface SessionSummary {
+  sessionId: string;
+  entryPath: string;
+  exitPath: string;
+  pageCount: number;
+  durationSeconds: number;
+  startedAt: string;
+  paths: string[];
+}
+
+export interface EngagementStats {
+  avgTimeOnPageByPath: { path: string; avgSeconds: number }[];
+  avgScrollDepthByPath: { path: string; avgPercent: number }[];
+  topClickedElements: { label: string; count: number }[];
+}
+
+interface RawSessionGroup {
+  _id: string;
+  paths: string[];
+  firstSeen: Date;
+  lastSeen: Date;
+  pageCount: number;
+}
+
+const MAX_SESSIONS = 200;
 
 export interface RecentVisit {
   ip: string;
@@ -41,6 +72,8 @@ export class AnalyticsService {
   constructor(
     @InjectModel(PageView.name)
     private pageViewModel: Model<PageViewDocument>,
+    @InjectModel(EngagementEvent.name)
+    private engagementEventModel: Model<EngagementEventDocument>,
   ) {}
 
   async track(
@@ -48,6 +81,7 @@ export class AnalyticsService {
     ip: string,
     userAgent?: string,
     referrer?: string,
+    sessionId?: string,
   ): Promise<void> {
     const geo = geoip.lookup(ip);
     const postSlug = this.extractPostSlug(path);
@@ -60,6 +94,17 @@ export class AnalyticsService {
       country: geo?.country ?? undefined,
       city: geo?.city ?? undefined,
       postSlug,
+      sessionId,
+    });
+  }
+
+  async trackEvent(dto: TrackEngagementEventDto): Promise<void> {
+    await this.engagementEventModel.create({
+      eventType: dto.eventType,
+      path: dto.path,
+      sessionId: dto.sessionId,
+      value: dto.value,
+      label: dto.label,
     });
   }
 
@@ -190,6 +235,110 @@ export class AnalyticsService {
       createdAt: v.createdAt.toISOString(),
       referrer: parseReferrer(v.referrer),
       device: parseUserAgent(v.userAgent),
+    };
+  }
+
+  async getSessions(days: number): Promise<SessionSummary[]> {
+    const startOfRange = this.startOfRangeFor(days);
+
+    const raw = await this.pageViewModel
+      .aggregate<RawSessionGroup>([
+        {
+          $match: {
+            createdAt: { $gte: startOfRange },
+            sessionId: { $exists: true, $ne: null },
+          },
+        },
+        { $sort: { sessionId: 1, createdAt: 1 } },
+        {
+          $group: {
+            _id: '$sessionId',
+            paths: { $push: '$path' },
+            firstSeen: { $first: '$createdAt' },
+            lastSeen: { $last: '$createdAt' },
+            pageCount: { $sum: 1 },
+          },
+        },
+        { $sort: { firstSeen: -1 } },
+        { $limit: MAX_SESSIONS },
+      ])
+      .exec();
+
+    return raw.map((r) => this.toSessionSummary(r));
+  }
+
+  async getEngagement(days: number): Promise<EngagementStats> {
+    const startOfRange = this.startOfRangeFor(days);
+
+    const [avgTimeOnPageByPath, avgScrollDepthByPath, topClickedElements] =
+      await Promise.all([
+        this.engagementEventModel
+          .aggregate<{ path: string; avgSeconds: number }>([
+            {
+              $match: {
+                createdAt: { $gte: startOfRange },
+                eventType: 'time_on_page',
+              },
+            },
+            { $group: { _id: '$path', avgSeconds: { $avg: '$value' } } },
+            { $sort: { avgSeconds: -1 } },
+            { $limit: 10 },
+            { $project: { path: '$_id', avgSeconds: 1, _id: 0 } },
+          ])
+          .exec(),
+        this.engagementEventModel
+          .aggregate<{ path: string; avgPercent: number }>([
+            {
+              $match: {
+                createdAt: { $gte: startOfRange },
+                eventType: 'scroll_depth',
+              },
+            },
+            { $group: { _id: '$path', avgPercent: { $avg: '$value' } } },
+            { $sort: { avgPercent: -1 } },
+            { $limit: 10 },
+            { $project: { path: '$_id', avgPercent: 1, _id: 0 } },
+          ])
+          .exec(),
+        this.engagementEventModel
+          .aggregate<{ label: string; count: number }>([
+            { $match: { createdAt: { $gte: startOfRange }, eventType: 'click' } },
+            { $group: { _id: '$label', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 10 },
+            { $project: { label: '$_id', count: 1, _id: 0 } },
+          ])
+          .exec(),
+      ]);
+
+    return { avgTimeOnPageByPath, avgScrollDepthByPath, topClickedElements };
+  }
+
+  private startOfRangeFor(days: number): Date {
+    const now = new Date();
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+    const startOfRange = new Date(startOfToday);
+    startOfRange.setDate(startOfRange.getDate() - (days - 1));
+    return startOfRange;
+  }
+
+  private toSessionSummary(raw: RawSessionGroup): SessionSummary {
+    const durationSeconds = Math.round(
+      (raw.lastSeen.getTime() - raw.firstSeen.getTime()) / 1000,
+    );
+
+    return {
+      sessionId: raw._id,
+      entryPath: raw.paths[0],
+      exitPath: raw.paths[raw.paths.length - 1],
+      pageCount: raw.pageCount,
+      durationSeconds,
+      startedAt: raw.firstSeen.toISOString(),
+      paths: raw.paths,
     };
   }
 

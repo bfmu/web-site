@@ -3,7 +3,7 @@
  * Funciones para CRUD de posts, estadísticas, etc.
  */
 
-import { apiGet, apiPost, apiPatch, apiPut, apiDelete, apiUpload, ApiException } from './api';
+import { apiGet, apiPost, apiPatch, apiPut, apiDelete, apiUpload, apiFetch, ApiException } from './api';
 import { getAccessToken } from './auth';
 import { getBackendUrl, getBackendApiUrl } from './env';
 
@@ -99,6 +99,22 @@ export interface AnalyticsStats {
   topPages: { path: string; count: number }[];
   topLocations: { country: string; city?: string; count: number }[];
   recentVisits: AnalyticsRecentVisit[];
+}
+
+export interface VisitorSession {
+  sessionId: string;
+  entryPath: string;
+  exitPath: string;
+  pageCount: number;
+  durationSeconds: number;
+  startedAt: string;
+  paths: string[];
+}
+
+export interface EngagementStats {
+  avgTimeOnPageByPath: { path: string; avgSeconds: number }[];
+  avgScrollDepthByPath: { path: string; avgPercent: number }[];
+  topClickedElements: { label: string; count: number }[];
 }
 
 /**
@@ -307,6 +323,20 @@ export async function getAnalyticsRecentVisits(
   return apiGet<AnalyticsRecentVisit[]>(
     `analytics/recent-visits?skip=${skip}&limit=${limit}`
   );
+}
+
+/**
+ * Obtener sesiones/journeys de visitantes reconstruidas a partir de sus page views
+ */
+export async function getVisitorSessions(days: number = 30): Promise<VisitorSession[]> {
+  return apiGet<VisitorSession[]>(`analytics/sessions?days=${days}`);
+}
+
+/**
+ * Obtener métricas de engagement: tiempo en página, scroll depth, clicks
+ */
+export async function getEngagementStats(days: number = 30): Promise<EngagementStats> {
+  return apiGet<EngagementStats>(`analytics/engagement?days=${days}`);
 }
 
 /**
@@ -794,12 +824,7 @@ export interface RestoreResult {
  * Retorna el Blob del archivo .tar.gz para descargar.
  */
 export async function createBackup(): Promise<Blob> {
-  const url = `${getBackendApiUrl()}/backup/create`;
-  const token = getAccessToken();
-  const headers: Record<string, string> = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  const response = await fetch(url, { method: 'POST', headers });
+  const response = await apiFetch('backup/create', { method: 'POST' });
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({ message: 'Error al crear backup' }));
@@ -815,16 +840,8 @@ export async function createBackup(): Promise<Blob> {
 export async function validateBackup(file: File): Promise<ValidationResult> {
   const formData = new FormData();
   formData.append('file', file);
-  const url = `${getBackendApiUrl()}/backup/validate`;
-  const token = getAccessToken();
-  const headers: Record<string, string> = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: formData,
-  });
+  const response = await apiFetch('backup/validate', { method: 'POST', body: formData });
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({ message: 'Error al validar backup' }));
@@ -843,22 +860,13 @@ const RESTORE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutos
 export async function restoreBackup(file: File): Promise<RestoreResult> {
   const formData = new FormData();
   formData.append('file', file);
-  const url = `${getBackendApiUrl()}/backup/restore`;
-  const token = getAccessToken();
-  const headers: Record<string, string> = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  if (typeof window !== 'undefined' && import.meta.env.DEV) {
-    console.log('[Backup] restoreBackup: POST', url, 'token=', !!token, 'fileSize=', file.size);
-  }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), RESTORE_TIMEOUT_MS);
 
   try {
-    const response = await fetch(url, {
+    const response = await apiFetch('backup/restore', {
       method: 'POST',
-      headers,
       body: formData,
       signal: controller.signal,
     });

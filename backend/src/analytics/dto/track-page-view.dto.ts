@@ -9,4 +9,9 @@ export class TrackPageViewDto {
   @IsString()
   @MaxLength(512)
   referrer?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  sessionId?: string;
 }

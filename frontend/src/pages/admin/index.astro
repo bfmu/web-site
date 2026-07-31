@@ -168,23 +168,20 @@ try {
       </div>
     </div>
 
-    <!-- Analytics de Visitantes -->
-    <div id="analytics-section" class="space-y-6">
+    <!-- Analytics de Visitantes (resumen) -->
+    <div class="space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
           Analytics de Visitantes
         </h2>
-        <select
-          id="analytics-range"
-          class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+        <a
+          href="/admin/analytics"
+          class="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
         >
-          <option value="7">Últimos 7 días</option>
-          <option value="30" selected>Últimos 30 días</option>
-          <option value="90">Últimos 90 días</option>
-        </select>
+          Ver analytics completo →
+        </a>
       </div>
-
-      <div id="analytics-stats-cards" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div id="analytics-summary-cards" class="grid grid-cols-1 gap-6 sm:grid-cols-3">
         <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 animate-pulse">
           <div class="h-4 w-24 rounded bg-gray-200 dark:bg-gray-700"></div>
           <div class="mt-2 h-8 w-16 rounded bg-gray-200 dark:bg-gray-700"></div>
@@ -196,50 +193,6 @@ try {
         <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 animate-pulse">
           <div class="h-4 w-24 rounded bg-gray-200 dark:bg-gray-700"></div>
           <div class="mt-2 h-8 w-16 rounded bg-gray-200 dark:bg-gray-700"></div>
-        </div>
-      </div>
-
-      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Vistas por día</h3>
-        <div id="analytics-chart">
-          <div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando…</div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div id="analytics-top-pages" class="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Páginas más visitadas</h3>
-          </div>
-          <div id="analytics-top-pages-body" class="divide-y divide-gray-200 dark:divide-gray-700">
-            <div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando…</div>
-          </div>
-        </div>
-        <div id="analytics-top-locations" class="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Visitantes por ubicación</h3>
-          </div>
-          <div id="analytics-top-locations-body" class="divide-y divide-gray-200 dark:divide-gray-700">
-            <div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando…</div>
-          </div>
-        </div>
-        <div id="analytics-recent-visits" class="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Últimas visitas</h3>
-          </div>
-          <div id="analytics-recent-visits-body" class="divide-y divide-gray-200 dark:divide-gray-700 max-h-80 overflow-y-auto">
-            <div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">Cargando…</div>
-          </div>
-          <div class="border-t border-gray-200 px-6 py-3 dark:border-gray-700">
-            <button
-              id="analytics-load-more"
-              type="button"
-              class="w-full rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
-              style="display: none;"
-            >
-              Cargar más
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -294,90 +247,15 @@ try {
   </div>
 
   <script>
-    import { getAnalyticsStats, getAnalyticsRecentVisits } from '../../lib/admin-api';
-    import type { AnalyticsRecentVisit } from '../../lib/admin-api';
+    import { getAnalyticsStats } from '../../lib/admin-api';
 
-    const cardsEl = document.getElementById('analytics-stats-cards');
-    const chartEl = document.getElementById('analytics-chart');
-    const topPagesEl = document.getElementById('analytics-top-pages-body');
-    const topLocationsEl = document.getElementById('analytics-top-locations-body');
-    const recentVisitsEl = document.getElementById('analytics-recent-visits-body');
-    const rangeSelect = document.getElementById('analytics-range') as HTMLSelectElement | null;
-    const loadMoreBtn = document.getElementById('analytics-load-more') as HTMLButtonElement | null;
+    const cardsEl = document.getElementById('analytics-summary-cards');
 
-    const PAGE_SIZE = 20;
-    let visitsLoaded = 0;
-
-    function escapeHtml(value: string | undefined | null): string {
-      const div = document.createElement('div');
-      div.textContent = value ?? '';
-      return div.innerHTML;
-    }
-
-    function renderVisitRow(v: AnalyticsRecentVisit): string {
-      const loc = [v.city, v.country].filter(Boolean).join(', ') || '—';
-      const dateStr = new Date(v.createdAt).toLocaleString('es-ES', {
-        dateStyle: 'short',
-        timeStyle: 'short',
-      });
-      return `
-        <div class="px-6 py-3 text-sm">
-          <div class="flex justify-between gap-2">
-            <span class="font-mono text-gray-700 dark:text-gray-300">${escapeHtml(v.ip)}</span>
-            <span class="shrink-0 text-gray-500 dark:text-gray-400">${dateStr}</span>
-          </div>
-          <div class="mt-1 truncate text-gray-600 dark:text-gray-400">${escapeHtml(v.path)}</div>
-          <div class="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-gray-500 dark:text-gray-500">
-            <span>${escapeHtml(loc)}</span>
-            <span>·</span>
-            <span>${escapeHtml(v.device)}</span>
-            <span>·</span>
-            <span class="truncate">${escapeHtml(v.referrer)}</span>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderChart(dailyViews: { date: string; count: number }[]): void {
-      if (!chartEl) return;
-      if (dailyViews.length === 0) {
-        chartEl.innerHTML =
-          '<div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No hay datos</div>';
-        return;
-      }
-
-      const max = Math.max(1, ...dailyViews.map((d) => d.count));
-      const showLabelEvery = Math.max(1, Math.ceil(dailyViews.length / 8));
-
-      const bars = dailyViews
-        .map((d, i) => {
-          const heightPct = Math.round((d.count / max) * 100);
-          const showLabel = i % showLabelEvery === 0 || i === dailyViews.length - 1;
-          const label = d.date.slice(5).replace('-', '/');
-          return `
-            <div class="group flex h-full flex-1 flex-col justify-end" style="min-width: 2px;">
-              <div
-                class="relative mx-auto w-full max-w-[18px] rounded-t bg-indigo-500 transition-colors group-hover:bg-indigo-400 dark:bg-indigo-500"
-                style="height: ${heightPct}%; min-height: 2px;"
-              >
-                <div
-                  class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white group-hover:block dark:bg-gray-700"
-                >${d.date}: ${d.count.toLocaleString()}</div>
-              </div>
-              ${showLabel ? `<span class="mt-1 block text-center text-[10px] text-gray-400 dark:text-gray-500">${label}</span>` : ''}
-            </div>
-          `;
-        })
-        .join('');
-
-      chartEl.innerHTML = `<div class="flex h-32 items-stretch gap-[2px]">${bars}</div>`;
-    }
-
-    async function loadAnalytics(days: number): Promise<void> {
-      if (!cardsEl || !chartEl || !topPagesEl || !topLocationsEl || !recentVisitsEl) return;
+    async function loadAnalyticsSummary(): Promise<void> {
+      if (!cardsEl) return;
 
       try {
-        const data = await getAnalyticsStats(days);
+        const data = await getAnalyticsStats(7);
 
         cardsEl.innerHTML = `
           <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -392,7 +270,7 @@ try {
           <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Visitantes únicos (${data.rangeDays}d)</p>
+                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Visitantes únicos (7d)</p>
                 <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">${data.uniqueVisitors.toLocaleString()}</p>
               </div>
               <div class="rounded-full bg-indigo-100 p-3 dark:bg-indigo-900/20"><span class="text-2xl">👤</span></div>
@@ -408,76 +286,13 @@ try {
             </div>
           </div>
         `;
-
-        renderChart(data.dailyViews);
-
-        topPagesEl.innerHTML = data.topPages.length > 0
-          ? data.topPages.map((p) => `
-            <div class="flex justify-between px-6 py-3">
-              <span class="truncate text-sm text-gray-900 dark:text-white" title="${escapeHtml(p.path)}">${escapeHtml(p.path) || '/'}</span>
-              <span class="ml-2 shrink-0 text-sm font-medium text-gray-600 dark:text-gray-400">${p.count.toLocaleString()}</span>
-            </div>
-          `).join('')
-          : '<div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No hay datos</div>';
-
-        topLocationsEl.innerHTML = data.topLocations.length > 0
-          ? data.topLocations.map((l) => `
-            <div class="flex justify-between px-6 py-3">
-              <span class="text-sm text-gray-900 dark:text-white">${l.city ? `${escapeHtml(l.city)}, ` : ''}${escapeHtml(l.country)}</span>
-              <span class="ml-2 shrink-0 text-sm font-medium text-gray-600 dark:text-gray-400">${l.count.toLocaleString()}</span>
-            </div>
-          `).join('')
-          : '<div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No hay datos</div>';
-
-        recentVisitsEl.innerHTML = data.recentVisits.length > 0
-          ? data.recentVisits.map(renderVisitRow).join('')
-          : '<div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No hay visitas recientes</div>';
-
-        visitsLoaded = data.recentVisits.length;
-        if (loadMoreBtn) {
-          loadMoreBtn.style.display = data.recentVisits.length < PAGE_SIZE ? 'none' : '';
-          loadMoreBtn.disabled = false;
-          loadMoreBtn.textContent = 'Cargar más';
-        }
       } catch (err) {
-        console.error('Error loading analytics:', err);
+        console.error('Error loading analytics summary:', err);
         cardsEl.innerHTML = '<div class="col-span-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">Error al cargar analytics. Verifica que estés autenticado como admin.</div>';
-        chartEl.innerHTML = '<div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">—</div>';
-        topPagesEl.innerHTML = '<div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">—</div>';
-        topLocationsEl.innerHTML = '<div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">—</div>';
-        recentVisitsEl.innerHTML = '<div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">—</div>';
-        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
       }
     }
 
-    rangeSelect?.addEventListener('change', () => {
-      loadAnalytics(parseInt(rangeSelect.value, 10) || 30);
-    });
-
-    loadMoreBtn?.addEventListener('click', async () => {
-      if (!recentVisitsEl) return;
-      loadMoreBtn.disabled = true;
-      loadMoreBtn.textContent = 'Cargando…';
-      try {
-        const more = await getAnalyticsRecentVisits(visitsLoaded, PAGE_SIZE);
-        if (more.length > 0) {
-          recentVisitsEl.insertAdjacentHTML('beforeend', more.map(renderVisitRow).join(''));
-          visitsLoaded += more.length;
-        }
-        if (more.length < PAGE_SIZE) {
-          loadMoreBtn.style.display = 'none';
-        } else {
-          loadMoreBtn.disabled = false;
-          loadMoreBtn.textContent = 'Cargar más';
-        }
-      } catch (err) {
-        console.error('Error loading more visits:', err);
-        loadMoreBtn.disabled = false;
-        loadMoreBtn.textContent = 'Reintentar';
-      }
-    });
-
-    loadAnalytics(parseInt(rangeSelect?.value ?? '30', 10) || 30);
+    loadAnalyticsSummary();
   </script>
 </AdminLayout>
 
