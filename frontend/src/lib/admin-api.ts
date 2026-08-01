@@ -479,6 +479,8 @@ export interface MediaFile {
   orientation?: number; // Rotación en grados: 0, 90, 180, 270
   spotifyTrackId?: string;
   thumbnailPath?: string; // Poster generado para videos
+  processingStatus?: 'ready' | 'processing' | 'failed'; // Videos: transcode/thumbnail corren en background
+  processingError?: string;
   createdAt?: string;
   updatedAt?: string;
 }

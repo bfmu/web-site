@@ -141,6 +141,18 @@ export class MediaService {
     return updatedMedia;
   }
 
+  // Update interno disparado por el propio backend al terminar de procesar un
+  // video en background (transcode/thumbnail) — no pasa por UpdateMediaDto
+  // porque no es una superficie que un cliente deba poder setear directamente.
+  async updateProcessingResult(
+    id: string,
+    patch: Partial<
+      Pick<Media, 'processingStatus' | 'processingError' | 'thumbnailPath' | 'size'>
+    >,
+  ): Promise<void> {
+    await this.mediaModel.findByIdAndUpdate(id, patch).exec();
+  }
+
   async delete(id: string): Promise<void> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid media ID');

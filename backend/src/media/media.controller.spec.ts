@@ -90,6 +90,7 @@ const fsMock = jest.requireMock('fs') as any;
 const mockMediaService = {
   create: jest.fn(),
   findByPath: jest.fn(),
+  updateProcessingResult: jest.fn(),
 };
 
 function buildFile(overrides: Partial<any> = {}) {
@@ -113,8 +114,10 @@ describe('MediaController.upload', () => {
     sharpMock.__calls.length = 0;
     mockMediaService.create.mockImplementation((dto) => ({
       ...dto,
+      _id: 'fake-media-id',
       toObject: () => dto,
     }));
+    mockMediaService.updateProcessingResult.mockResolvedValue(undefined);
   });
 
   it('acepta un JPEG normal sin pasar por conversión HEIC', async () => {
@@ -200,7 +203,15 @@ describe('MediaController.upload', () => {
     await expect(controller.upload(file)).rejects.toThrow(BadRequestException);
   });
 
-  it('transcodea un video/mp4, genera thumbnail y guarda dimensiones probeadas', async () => {
+  it('mueve el video crudo a destino final y responde con processingStatus "processing", sin esperar a ffmpeg', async () => {
+    let resolveBg: () => void = () => {};
+    const bgPromise = new Promise<void>((resolve) => {
+      resolveBg = resolve;
+    });
+    const bgSpy = jest
+      .spyOn(controller as any, 'processVideoInBackground')
+      .mockReturnValue(bgPromise);
+
     const file = buildFile({
       mimetype: 'video/mp4',
       originalname: 'clip.mov',
@@ -209,43 +220,97 @@ describe('MediaController.upload', () => {
 
     const result = await controller.upload(file);
 
-    // ffmpeg lee directo de file.path (ya en disco vía multer diskStorage) —
-    // no hay paso intermedio de bufferear y reescribir a un temp propio.
-    expect(ffmpegMock).toHaveBeenCalledWith(file.path);
-    expect(fsMock.rmSync).toHaveBeenCalledWith(file.path, { force: true });
-
+    // El archivo crudo se mueve a destino final YA (sin pasar por ffmpeg antes de responder).
+    expect(fsMock.renameSync).toHaveBeenCalledWith(
+      file.path,
+      expect.stringContaining('clip.mp4'),
+    );
+    expect(bgSpy).toHaveBeenCalled();
     expect(result.type).toBe('video');
     expect(result.mimeType).toBe('video/mp4');
     expect(result.originalName).toBe('clip.mp4');
-    expect(result.width).toBe(1280);
-    expect(result.height).toBe(720);
-    expect(result.thumbnailPath).toMatch(/\/uploads\/images\/.*-thumb\.jpg$/);
-    expect(result.size).toBe(2048); // viene de fs.statSync mockeado
+    expect(result.processingStatus).toBe('processing');
+    expect(result.thumbnailPath).toBeUndefined();
+
+    // bgPromise sigue pendiente acá: si upload() la hubiese esperado, el await
+    // de arriba nunca habría resuelto. La resolvemos para no dejar un warning.
+    resolveBg();
   });
 
-  it('rechaza un video que supera los 500MB', async () => {
+  it('rechaza un video que supera los 2GB', async () => {
     const file = buildFile({
       mimetype: 'video/mp4',
       originalname: 'enorme.mp4',
-      size: 600 * 1024 * 1024,
+      size: 2100 * 1024 * 1024,
     });
     await expect(controller.upload(file)).rejects.toThrow(BadRequestException);
   });
+});
 
-  it('devuelve 400 si la transcodificación de video falla', async () => {
-    ffmpegMock.__state.transcodeShouldFail = true;
-    const file = buildFile({ mimetype: 'video/mp4', originalname: 'roto.mp4' });
-    await expect(controller.upload(file)).rejects.toThrow(BadRequestException);
+describe('MediaController.processVideoInBackground', () => {
+  let controller: MediaController;
+  const filePath = '/app/uploads/videos/123-clip.mp4';
+
+  beforeEach(() => {
+    controller = new MediaController(mockMediaService as any);
+    jest.clearAllMocks();
+    ffmpegMock.__state.transcodeShouldFail = false;
+    ffmpegMock.__state.thumbnailShouldFail = false;
+    mockMediaService.updateProcessingResult.mockResolvedValue(undefined);
   });
 
-  it('no falla el upload si solo falla la generación del thumbnail', async () => {
+  it('en éxito: transcodea, genera thumbnail, y actualiza el registro a "ready"', async () => {
+    await (controller as any).processVideoInBackground(
+      'media-id-1',
+      filePath,
+      123,
+    );
+
+    expect(mockMediaService.updateProcessingResult).toHaveBeenCalledWith(
+      'media-id-1',
+      expect.objectContaining({
+        processingStatus: 'ready',
+        thumbnailPath: expect.stringMatching(/\/uploads\/images\/.*-thumb\.jpg$/),
+      }),
+    );
+    // Camino feliz: el archivo final nunca se borra.
+    expect(fsMock.rmSync).not.toHaveBeenCalledWith(filePath, expect.anything());
+  });
+
+  it('si el transcode falla: marca "failed" con processingError y NO borra el archivo crudo', async () => {
+    ffmpegMock.__state.transcodeShouldFail = true;
+
+    await (controller as any).processVideoInBackground(
+      'media-id-2',
+      filePath,
+      456,
+    );
+
+    expect(mockMediaService.updateProcessingResult).toHaveBeenCalledWith(
+      'media-id-2',
+      expect.objectContaining({
+        processingStatus: 'failed',
+        processingError: expect.stringContaining('transcode failed'),
+      }),
+    );
+    expect(fsMock.rmSync).not.toHaveBeenCalledWith(filePath, expect.anything());
+  });
+
+  it('si solo falla el thumbnail (transcode ok): queda "ready" sin thumbnailPath', async () => {
     ffmpegMock.__state.thumbnailShouldFail = true;
-    const file = buildFile({ mimetype: 'video/mp4', originalname: 'clip.mp4' });
 
-    const result = await controller.upload(file);
+    await (controller as any).processVideoInBackground(
+      'media-id-3',
+      filePath,
+      789,
+    );
 
-    expect(result.type).toBe('video');
-    expect(result.thumbnailPath).toBeUndefined();
+    expect(mockMediaService.updateProcessingResult).toHaveBeenCalledWith(
+      'media-id-3',
+      expect.objectContaining({ processingStatus: 'ready' }),
+    );
+    const patch = mockMediaService.updateProcessingResult.mock.calls[0][1];
+    expect(patch.thumbnailPath).toBeUndefined();
   });
 });
 

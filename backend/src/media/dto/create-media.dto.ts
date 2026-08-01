@@ -116,4 +116,13 @@ export class CreateMediaDto {
   @IsOptional()
   @IsString()
   thumbnailPath?: string;
+
+  @ApiPropertyOptional({
+    example: 'processing',
+    description:
+      'Estado del procesamiento en background (solo videos): ready, processing o failed',
+  })
+  @IsOptional()
+  @IsString()
+  processingStatus?: 'ready' | 'processing' | 'failed';
 }

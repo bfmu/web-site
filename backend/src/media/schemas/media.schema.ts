@@ -61,6 +61,12 @@ export class Media {
 
   @Prop()
   thumbnailPath?: string; // Ruta del frame extraído para videos (poster en el grid)
+
+  @Prop({ enum: ['ready', 'processing', 'failed'], default: 'ready' })
+  processingStatus: 'ready' | 'processing' | 'failed'; // Videos: transcode/thumbnail corren en background
+
+  @Prop()
+  processingError?: string;
 }
 
 export const MediaSchema = SchemaFactory.createForClass(Media);

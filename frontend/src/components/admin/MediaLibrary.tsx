@@ -48,6 +48,23 @@ export default function MediaLibrary(): React.ReactElement {
     loadMedia();
   }, [filters]);
 
+  // Mientras haya videos procesándose en background, refresca la lista cada
+  // 5s (silencioso, sin spinner de loading) hasta que todos queden listos —
+  // así el thumbnail aparece solo, sin que el usuario tenga que recargar.
+  const hasProcessingItems = media.some((m) => m.processingStatus === 'processing');
+  useEffect(() => {
+    if (!hasProcessingItems) return;
+    const intervalId = setInterval(() => {
+      getMediaList(filters)
+        .then((response) => {
+          setMedia(response.media);
+          setPagination(response.pagination);
+        })
+        .catch(() => {});
+    }, 5000);
+    return () => clearInterval(intervalId);
+  }, [hasProcessingItems, filters]);
+
   // Esc cierra el modal más "superior" primero (editar > renombrar > eliminar > detalle),
   // en vez de no hacer nada como pasaba antes.
   useEffect(() => {
@@ -184,12 +201,16 @@ export default function MediaLibrary(): React.ReactElement {
     try {
       setUploading(true);
       setUploadProgress(0);
-      await uploadMedia(
+      const uploaded = await uploadMedia(
         file,
         { isPublic: filters.isPublic === true },
         setUploadProgress,
       );
-      showSuccess('Archivo subido correctamente');
+      if (uploaded.processingStatus === 'processing') {
+        showSuccess('Video subido — procesando en segundo plano, aparece solo cuando termina');
+      } else {
+        showSuccess('Archivo subido correctamente');
+      }
       loadMedia();
     } catch (error: any) {
       console.error('Error uploading media:', error);
@@ -319,17 +340,41 @@ export default function MediaLibrary(): React.ReactElement {
                 className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 cursor-pointer hover:shadow-lg transition-shadow"
                 onClick={() => setSelectedMedia(item)}
               >
-                <img
-                  src={getImageUrl(item)}
-                  alt={item.alt || item.originalName}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const img = e.target as HTMLImageElement;
-                    img.onerror = null;
-                    img.src = '/default-avatar.svg';
-                  }}
-                />
-                {item.type === 'video' && (
+                {item.type === 'video' && item.processingStatus === 'processing' ? (
+                  // Sin thumbnailPath todavía, getImageUrl() devuelve '' — un <img src="">
+                  // no dispara onError (no es un request fallido), así que el navegador
+                  // termina mostrando el alt como texto crudo pisando la card. Mejor
+                  // mostrar directamente el estado real en vez de depender del <img>.
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700">
+                    <svg className="h-6 w-6 animate-spin text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" aria-hidden>
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Procesando…</span>
+                  </div>
+                ) : item.type === 'video' && item.processingStatus === 'failed' ? (
+                  <div
+                    className="flex h-full w-full flex-col items-center justify-center gap-1 bg-red-50 px-2 text-center dark:bg-red-900/20"
+                    title={item.processingError}
+                  >
+                    <svg className="h-6 w-6 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                    </svg>
+                    <span className="text-xs text-red-600 dark:text-red-400">Error al procesar</span>
+                  </div>
+                ) : (
+                  <img
+                    src={getImageUrl(item)}
+                    alt={item.alt || item.originalName}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      img.onerror = null;
+                      img.src = '/default-avatar.svg';
+                    }}
+                  />
+                )}
+                {item.type === 'video' && item.processingStatus !== 'processing' && item.processingStatus !== 'failed' && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50">
                       <svg className="h-4 w-4 text-white translate-x-0.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
