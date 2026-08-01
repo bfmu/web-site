@@ -126,6 +126,51 @@ export class MediaController {
     });
   }
 
+  // Corre desatado (fire-and-forget) desde upload() — transcodea a un archivo
+  // temporal separado y recién al terminar lo swapea sobre filePath (rename
+  // atómico), así un lector concurrente nunca ve el archivo a medio escribir.
+  // Errores acá NO tiran excepción hacia arriba: quedan guardados en el
+  // registro (processingStatus/processingError) para que el admin los vea.
+  private async processVideoInBackground(
+    mediaId: string,
+    filePath: string,
+    timestamp: number,
+  ): Promise<void> {
+    const tempOutputPath = `${filePath}.transcoding.mp4`;
+
+    try {
+      await this.transcodeVideo(filePath, tempOutputPath);
+      fs.renameSync(tempOutputPath, filePath);
+    } catch (err) {
+      this.logger.warn(`Failed to transcode video ${filePath}: ${err}`);
+      await this.mediaService.updateProcessingResult(mediaId, {
+        processingStatus: 'failed',
+        processingError: String(err),
+      });
+      return;
+    }
+
+    const imagesDir = path.join(process.cwd(), 'uploads', 'images');
+    if (!fs.existsSync(imagesDir)) {
+      fs.mkdirSync(imagesDir, { recursive: true });
+    }
+
+    let thumbnailPath: string | undefined;
+    try {
+      const thumbFileName = `${timestamp}-thumb.jpg`;
+      await this.generateVideoThumbnail(filePath, imagesDir, thumbFileName);
+      thumbnailPath = `/uploads/images/${thumbFileName}`;
+    } catch (err) {
+      this.logger.warn(`Failed to generate thumbnail for video ${filePath}: ${err}`);
+    }
+
+    await this.mediaService.updateProcessingResult(mediaId, {
+      processingStatus: 'ready',
+      thumbnailPath,
+      size: fs.statSync(filePath).size,
+    });
+  }
+
   @Post('upload')
   @UseGuards(ThrottlerGuard, JwtAuthGuard, RolesGuard)
   @Throttle({ default: { limit: 20, ttl: 60000 } })
@@ -258,40 +303,16 @@ export class MediaController {
       let finalSize = file.size;
 
       if (isVideo) {
-        try {
-          await this.transcodeVideo(sourcePath, filePath);
-        } catch (err) {
-          this.logger.warn(
-            `Failed to transcode video ${file.originalname}: ${err}`,
-          );
-          fs.rmSync(filePath, { force: true });
-          throw new BadRequestException(
-            'No se pudo procesar el video. Probá con otro formato.',
-          );
-        }
+        // El transcode a H.264/AAC y el thumbnail son lentos (ffmpeg puede
+        // tardar varios minutos en CPUs modestas) — mover el crudo a destino
+        // final ahora y procesar en background (ver processVideoInBackground)
+        // evita mantener la request abierta e inactiva ese tiempo, algo que
+        // routers/navegadores terminan cortando (499) igual sin avisar nada.
+        fs.renameSync(sourcePath, filePath);
 
         const dims = await this.probeVideoDimensions(filePath);
         width = dims.width;
         height = dims.height;
-
-        const imagesDir = path.join(process.cwd(), 'uploads', 'images');
-        if (!fs.existsSync(imagesDir)) {
-          fs.mkdirSync(imagesDir, { recursive: true });
-        }
-        try {
-          const thumbFileName = `${timestamp}-thumb.jpg`;
-          await this.generateVideoThumbnail(
-            sourcePath,
-            imagesDir,
-            thumbFileName,
-          );
-          thumbnailPath = `/uploads/images/${thumbFileName}`;
-        } catch (err) {
-          this.logger.warn(
-            `Failed to generate thumbnail for video ${file.originalname}: ${err}`,
-          );
-        }
-
         finalSize = fs.statSync(filePath).size;
       } else {
         // Mover el archivo ya escrito en disco a destino final (rename, sin
@@ -346,11 +367,23 @@ export class MediaController {
           description && description.trim() ? description.trim() : undefined,
         albumId: albumId && albumId.trim() ? albumId.trim() : undefined,
         thumbnailPath,
+        processingStatus: isVideo ? 'processing' : 'ready',
       };
 
       // Crear registro en DB
       const media = await this.mediaService.create(createMediaDto);
       this.logger.log(`Media uploaded: ${fileName} (${finalSize} bytes)`);
+
+      if (isVideo) {
+        const mediaId = String((media as MediaDocument)._id);
+        this.processVideoInBackground(mediaId, filePath, timestamp).catch(
+          (err) => {
+            this.logger.error(
+              `Background video processing crashed for ${fileName}: ${err}`,
+            );
+          },
+        );
+      }
 
       // Convertir documento de Mongoose a objeto plano
       const mediaObj = (media as MediaDocument).toObject();
